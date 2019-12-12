@@ -12,7 +12,7 @@ Data: ddPCR
 ```{r setup chunk, setup, warning=FALSE, message=FALSE, fig.align='center'}
 require("knitr")
 
-knitr::opts_knit$set(root.dir = normalizePath("~/Desktop/Symb_choice/Symbiont Choice 2018"))
+#knitr::opts_knit$set(root.dir = normalizePath("~/Desktop/Symb_choice/Symbiont Choice 2018"))
 ```
 
 ```{r}
@@ -38,50 +38,50 @@ Load in ddPCR data with Threshold set in QuantaSoft Analysis
 ```{r}
 #Read in plate data
 
-Plate1<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE1_20190424_threshold.csv")
-Plate2<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE2_20190429_threshold.csv")
-Plate3<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE3_20190426_threshold.csv")
-Plate3B<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE3B_20190426_threshold.csv")
+Plate1<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE1_20190424_threshold.csv")
+Plate2<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE2_20190429_threshold.csv")
+Plate3<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE3_20190426_threshold.csv")
+Plate3B<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE3B_20190426_threshold.csv")
 Plate3 <- rbind(Plate3,Plate3B) # merge plate 3 and 3b for metadata
-Plate4<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE4_20190427_threshold.csv")
-Plate5<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE5_20190428_threshold.csv")
-Plate6<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE6_20190428_threshold.csv")
-Plate7<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE7_20190429_threshold.csv")
-Plate8<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE8_20190501_threshold.csv")
-Plate9<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE9_20190501_threshold.csv")
-Plate10<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE10_20190501_threshold.csv")
-Plate11<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE11_20190502_threshold.csv")
-Plate12<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE12_20190502_threshold.csv")
-Plate13<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE13_20190503_threshold.csv")
-Plate14<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE14_20190503_threshold.csv")
-Plate15<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE15_20190507_threshold.csv")
-Plate16<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE16_20190508_threshold.csv")
-Plate17<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE17_20190509_threshold.csv")
-Plate18<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE18_20190509_threshold.csv")
-Plate19<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE19_20190509_threshold.csv")
-Plate20<- read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/SHAYLE_PLATE20_20190510_threshold.csv")
+Plate4<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE4_20190427_threshold.csv")
+Plate5<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE5_20190428_threshold.csv")
+Plate6<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE6_20190428_threshold.csv")
+Plate7<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE7_20190429_threshold.csv")
+Plate8<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE8_20190501_threshold.csv")
+Plate9<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE9_20190501_threshold.csv")
+Plate10<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE10_20190501_threshold.csv")
+Plate11<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE11_20190502_threshold.csv")
+Plate12<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE12_20190502_threshold.csv")
+Plate13<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE13_20190503_threshold.csv")
+Plate14<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE14_20190503_threshold.csv")
+Plate15<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE15_20190507_threshold.csv")
+Plate16<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE16_20190508_threshold.csv")
+Plate17<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE17_20190509_threshold.csv")
+Plate18<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE18_20190509_threshold.csv")
+Plate19<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE19_20190509_threshold.csv")
+Plate20<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE20_20190510_threshold.csv")
 
 # read in metadata by plate (some samples are duplicate names, which is why)
-meta1 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate1_meta.csv")
-meta2 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate2_meta.csv")
-meta3 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate3_meta.csv")
-meta4 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate4_meta.csv")
-meta5 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate5_meta.csv")
-meta6 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate6_meta.csv")
-meta7 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate7_meta.csv")
-meta8 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate8_meta.csv")
-meta9 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate9_meta.csv")
-meta10 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate10_meta.csv")
-meta11 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate11_meta.csv")
-meta12 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate12_meta.csv")
-meta13 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate13_meta.csv")
-meta14 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate14_meta.csv")
-meta15 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate15_meta.csv")
-meta16 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate16_meta.csv")
-meta17 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate17_meta.csv")
-meta18 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate18_meta.csv")
-meta19 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate19_meta.csv")
-meta20 <-read.csv("~/Desktop/Symb_choice/Symbiont Choice 2018/ddPCR_thresholdData/Plate20_meta.csv")
+meta1 <-read.csv("ddPCR_thresholdData/Plate1_meta.csv")
+meta2 <-read.csv("ddPCR_thresholdData/Plate2_meta.csv")
+meta3 <-read.csv("ddPCR_thresholdData/Plate3_meta.csv")
+meta4 <-read.csv("ddPCR_thresholdData/Plate4_meta.csv")
+meta5 <-read.csv("ddPCR_thresholdData/Plate5_meta.csv")
+meta6 <-read.csv("ddPCR_thresholdData/Plate6_meta.csv")
+meta7 <-read.csv("ddPCR_thresholdData/Plate7_meta.csv")
+meta8 <-read.csv("ddPCR_thresholdData/Plate8_meta.csv")
+meta9 <-read.csv("ddPCR_thresholdData/Plate9_meta.csv")
+meta10 <-read.csv("ddPCR_thresholdData/Plate10_meta.csv")
+meta11 <-read.csv("ddPCR_thresholdData/Plate11_meta.csv")
+meta12 <-read.csv("ddPCR_thresholdData/Plate12_meta.csv")
+meta13 <-read.csv("ddPCR_thresholdData/Plate13_meta.csv")
+meta14 <-read.csv("ddPCR_thresholdData/Plate14_meta.csv")
+meta15 <-read.csv("ddPCR_thresholdData/Plate15_meta.csv")
+meta16 <-read.csv("ddPCR_thresholdData/Plate16_meta.csv")
+meta17 <-read.csv("ddPCR_thresholdData/Plate17_meta.csv")
+meta18 <-read.csv("ddPCR_thresholdData/Plate18_meta.csv")
+meta19 <-read.csv("ddPCR_thresholdData/Plate19_meta.csv")
+meta20 <-read.csv("ddPCR_thresholdData/Plate20_meta.csv")
 
 # merge each plates meta with plate
 P1<-merge(Plate1, meta1, by="Well")
@@ -286,7 +286,7 @@ F1_plot<-ggplot(data=F1_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
 
 G3 single infection
 ```{r}
-G3_mean <- ddply(C1, c("Day", "Temp"), summarise, #summarize cell counts
+G3_mean <- ddply(G3, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -302,7 +302,7 @@ G3_plot<-ggplot(data=G3_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+
   geom_line(aes(color=Temp))+
-  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred", "gray"))+
   xlab("Days") + #Label the X Axis
   ylim(-10, 400) + #set Y limits
   theme_bw() + #Set the background color
