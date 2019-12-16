@@ -123,6 +123,8 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P5<-P5[!(P5$Well=="D12"),]
     P5<-P5[!(P5$Well=="H03"),]
     P5<-P5[!(P5$Well=="H04"),]
+        P5<-P5[!(P5$Well=="B12"),]#18G
+
 # PLATE 6
     P6<-P6[!(P6$Well=="C12"),]
 # PLATE 8
@@ -140,6 +142,9 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P8<-P8[!(P8$Well=="G04"),]
     P8<-P8[!(P8$Well=="G05"),]
     P8<-P8[!(P8$Well=="H04"),]
+        P8<-P8[!(P8$Well=="F06"),]#61C
+        P8<-P8[!(P8$Well=="C11"),]#66D
+
 # PLATE 9
     P9<-P9[!(P9$Well=="B11"),]
     P9<-P9[!(P9$Well=="C10"),]
@@ -150,6 +155,8 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P9<-P9[!(P9$Well=="F06"),]
     P9<-P9[!(P9$Well=="G02"),]
     P9<-P9[!(P9$Well=="H03"),]
+          P9<-P9[!(P9$Well=="B12"),] ##88D
+
 # PLATE 10
     P10<-P10[!(P10$Well=="C01"),]
     P10<-P10[!(P10$Well=="C07"),]
@@ -157,10 +164,17 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P10<-P10[!(P10$Well=="D10"),]
     P10<-P10[!(P10$Well=="E05"),]
     P10<-P10[!(P10$Well=="H05"),]
+        P10<-P10[!(P10$Well=="E06"),] #106C
+        P10<-P10[!(P10$Well=="C10"),] #112F
+        P10<-P10[!(P10$Well=="G04"),] #100G
+
 
 #PLATE 12
     P12<-P12[!(P12$Well=="A09"),]
     P12<-P12[!(P12$Well=="E05"),]
+        P12<-P12[!(P12$Well=="E04"),]#95C
+        P12<-P12[!(P12$Well=="G05"),]#41G
+
 #PLATE 13
     P13<-P13[!(P13$Well=="A09"),]
     P13<-P13[!(P13$Well=="A12"),]
@@ -173,6 +187,7 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P13<-P13[!(P13$Well=="F06"),]
     P13<-P13[!(P13$Well=="A07"),]
     P13<-P13[!(P13$Well=="C12"),]
+         P13<-P13[!(P13$Well=="G04"),]#147F
 
 #PLATE 14
     P14<-P14[!(P14$Well=="A09"),]
@@ -180,6 +195,7 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
     P14<-P14[!(P14$Well=="B09"),]
         P14<-P14[!(P14$Well=="C03"),] #F1 issue
         P14<-P14[!(P14$Well=="E03"),] #F1 issue
+        P14<-P14[!(P14$Well=="B10"),] #165D
 
 
 #PLATE 15
@@ -193,10 +209,16 @@ Remove samples that I re-ddPCRd due to low droplet count that now have higher co
 #PLATE 17
     P17<-P17[!(P17$Well=="D09"),]
     P17<-P17[!(P17$Well=="E09"),]
+        P17<-P17[!(P17$Well=="H02"),]#178D
+        P17<-P17[!(P17$Well=="C09"),]#189F
+
 #PLATE 18
     P18<-P18[!(P18$Well=="E09"),]
     P18<-P18[!(P18$Well=="F04"),]
     P18<-P18[!(P18$Well=="H04"),]
+        P18<-P18[!(P18$Well=="G05"),]#205C
+        P18<-P18[!(P18$Well=="G04"),]#197G
+
 #PLATE 19
     P19<-P19[!(P19$Well=="C08"),]
 ```
@@ -802,7 +824,7 @@ C1_plot_8000<-ggplot(data=C1_mean_8000, aes(x=Day, y=mean, group = Temp, color=T
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Days") + #Label the X Axis
-  ylim(-10,4000) + #set Y limits
+  ylim(-10,4500) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -838,7 +860,7 @@ D1_plot_8000<-ggplot(data=D1_mean_8000, aes(x=Day, y=mean, group = Temp, color=T
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Days") + #Label the X Axis
-  ylim(-10, 4000) + #set Y limits
+  ylim(-10, 4500) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -873,7 +895,7 @@ F1_plot_8000<-ggplot(data=F1_mean_8000, aes(x=Day, y=mean, group = Temp, color=T
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Days") + #Label the X Axis
-  ylim(-10, 4000) + #set Y limits
+  ylim(-10, 4500) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -908,7 +930,7 @@ G3_plot_8000<-ggplot(data=G3_mean_8000, aes(x=Day, y=mean, group = Temp, color=T
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Days") + #Label the X Axis
-  ylim(-10, 4000) + #set Y limits
+  ylim(-10, 4500) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -983,7 +1005,7 @@ ALL_27_plot_8000<-ggplot(data=ALL_27_8000_mean, aes(x=Day, y=mean, group = Symbi
   geom_line(aes(color=Symbiont))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred","green"))+
   xlab("Days") + #Label the X Axis
-  ylim(-10, 2500) + #set Y limits
+  #ylim(-10, 2500) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1108,11 +1130,10 @@ ALL_27_Day14plot_8000<-ggplot() +
 
 Plot all three ALL 27C days together:
 ```{r}
-ALL_27_Day3plot<-ALL_27_Day3plot+ theme(legend.position = "none") #remove legend
-ALL_27_Day7plot<-ALL_27_Day7plot+ theme(legend.position = "none") #remove legend
-#ALL_27_Day14plot<-ALL_27_Day14plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+ALL_27_Day3plot_8000<-ALL_27_Day3plot_8000+ theme(legend.position = "none") #remove legend
+ALL_27_Day7plot_8000<-ALL_27_Day7plot_8000+ theme(legend.position = "none") #remove legend
 
-grid.arrange(ALL_27_Day3plot, ALL_27_Day7plot, ALL_27_Day14plot, nrow = 1)
+grid.arrange(ALL_27_Day3plot_8000, ALL_27_Day7plot_8000, ALL_27_Day14plot_8000, nrow = 1)
 ```
 
 30C Day 3
