@@ -34,6 +34,30 @@ library("gridExtra") #arrange plots for output
 library(reshape2)
 ```
 
+Load in hemocytometer counts and fluorescent scope counts:
+```{r}
+Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
+Day7Counts<-read.csv("SC18_cellcounts_day7.csv")
+
+#day3
+colnames(Day3Counts)[colnames(Day3Counts)=="Count"] <- "cells.larvae"
+
+
+#remove cols you don't need Day 7
+d7vars<-c("Temp","Day", "Symbiont", "Pot", "Replicate","Cells.per.larva")
+Day7Counts<-Day7Counts[d7vars]
+colnames(Day7Counts)[colnames(Day7Counts)=="Cells.per.larva"] <- "cells.larvae"
+Day7Counts<-na.omit(Day7Counts)
+
+#ADD DAY 14
+
+#combine days:
+Countdat<-rbind(Day3Counts, Day7Counts)
+Countdat1<-Countdat[!(Countdat$Symbiont=="ALL"),] #remove ALLs
+Countdat1<-Countdat1[!(Countdat1$Symbiont=="CONTROL"),] #remove controls
+
+```
+
 
 Load in ddPCR data with Threshold set in QuantaSoft Analysis
 ```{r}
@@ -237,10 +261,6 @@ dData$Temp<-as.character(dData$Temp)
 dData$Day<-as.numeric(dData$Day)
 ```
 
-
-
-
-
 Calculate concentration per larvae <- is this correct
 ```{r}
 # use copies/1ul pcr to calculate how many copies are in 1 larvae. (copies/1ul PCR)*(25ul PCR/y ul.DNA added)*(20uLDNA/1 larvae)
@@ -292,7 +312,6 @@ Decide where your cut off for positive droplets is. Standard is 10,000. You shou
 ```{r}
 # 9000 cutoff
 sData1<-subset(sData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 60 samples)
-
 
 #pull to view under 9000 droplet info
 ALL1<-subset(sData1, Info=="ALL")
@@ -956,10 +975,6 @@ F1_plot_8000<-F1_plot_8000+ theme(legend.position = "none") #remove legend
 grid.arrange(C1_plot_8000, D1_plot_8000, F1_plot_8000,G3_plot_8000, nrow = 2)
 ```
 
-
-
-
-
 #Multi-infection 8000
 
 Subset by Temp treatments
@@ -1101,6 +1116,8 @@ ALL_30_plot_8000<-ALL_30_plot_8000+ theme(legend.position = "none") #remove lege
 grid.arrange(ALL_27_plot_8000, ALL_30_plot_8000, ALL_31_plot_8000, nrow = 1)
 ```
 
+
+
 #Plot infection of individual larvae
 
 27C Day 3
@@ -1194,3 +1211,205 @@ ALL_31_Day3plot_8000<-ALL_31_Day3plot_8000+ theme(legend.position = "none") #rem
 
 grid.arrange(ALL_31_Day3plot_8000, ALL_31_Day7plot_8000,nrow = 1)
 ```
+
+
+### NEXT SECTION
+# Combine ddPCR with the hemocytometer/count data from each time point.
+Organize data. Start with the 9000
+```{r}
+#C1
+#organize the ddPCR data
+C1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+C1_9000b<-C1_9000[C1_vars]
+colnames(C1_9000b)[colnames(C1_9000b)=="Info"] <- "Symbiont"
+
+#organize hemo data
+C1countdat<-subset(Countdat1, Symbiont=="C1")
+C1Full<-rbind(C1_9000b,C1countdat)
+
+
+#D1
+#organize the ddPCR data
+D1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+D1_9000b<-D1_9000[D1_vars]
+colnames(D1_9000b)[colnames(D1_9000b)=="Info"] <- "Symbiont"
+
+#organize hemo data
+D1countdat<-subset(Countdat1, Symbiont=="D1")
+D1Full<-rbind(D1_9000b,D1countdat)
+
+#F1
+#organize the ddPCR data
+F1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+F1_9000b<-F1_9000[F1_vars]
+colnames(F1_9000b)[colnames(F1_9000b)=="Info"] <- "Symbiont"
+
+#organize hemo data
+F1countdat<-subset(Countdat1, Symbiont=="F1")
+F1Full<-rbind(F1_9000b,F1countdat)
+
+#G3
+#organize the ddPCR data
+G3_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+G3_9000b<-G3_9000[G3_vars]
+colnames(G3_9000b)[colnames(G3_9000b)=="Info"] <- "Symbiont"
+
+#organize hemo data
+G3countdat<-subset(Countdat1, Symbiont=="G3")
+G3Full<-rbind(G3_9000b,G3countdat)
+```
+
+##PLOT SINGLE INFECTIONS_9000 SUBSET
+C1 single infection 9000
+```{r}
+C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+C1Full_mean #display table
+```
+Plot C1 single infection
+```{r}
+C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+  ylim(-10,4000) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("C1 average infection per larvae_9000")+
+  theme(plot.title = element_text(size=20, face = "italic"));C1Full_plot_9000
+```
+
+
+D1 single infection
+```{r}
+D1Full_mean_9000 <- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+D1Full_mean_9000 #display table
+```
+Plot D1 single infection
+```{r}
+D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+  ylim(-10, 4000) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text  
+        plot.background =element_blank(), #Set the plot background 
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) + 
+  ggtitle("D1 average infection per larvae")+
+  theme(plot.title = element_text(size=20, face = "italic"));D1Full_plot_9000
+```
+
+F1 single infection  
+```{r}
+F1Full_mean_9000 <- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1Full_mean_9000 #display table
+```
+Plot F1 single infection
+```{r}
+F1Full_plot_9000<-ggplot(data=F1Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+  ylim(-10, 4000) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("F1 average infection per larvae")+
+  theme(plot.title = element_text(size=20, face = "italic"));F1Full_plot_9000
+```
+
+G3 single infection
+```{r}
+G3Full_mean_9000 <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3Full_mean_9000 #display table
+```
+Plot G3 single infection
+```{r}
+G3Full_plot_9000<-ggplot(data=G3Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+  ylim(-10, 4000) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("Full G3 average infection per larvae")+
+  theme(plot.title = element_text(size=20, face = "italic"));G3Full_plot_9000
+``` 
+
+Plot all four SINGLE INFECTION together:
+```{r}
+
+C1Full_plot_9000<-C1Full_plot_9000+ theme(legend.position = "none") #remove legend
+D1Full_plot_9000<-D1Full_plot_9000+ theme(legend.position = "none") #remove legend
+F1Full_plot_9000<-F1Full_plot_9000+ theme(legend.position = "none") #remove legend
+#G3_plot_9000<-G3_plot_9000+ theme(legend.position = "none") #remove legend
+
+grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000, nrow = 2)
+```
+
+
