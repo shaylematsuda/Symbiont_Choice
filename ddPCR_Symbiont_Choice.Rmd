@@ -1502,43 +1502,48 @@ G3Full$cells.larvae_log<-log(G3Full$cells.larvae)
   hist(G3Full$cells.larvae_log) #more normal, scewed right
 ```
 
-Model 1: lk(cell.counts~Day*Temp) using log transformed! (consider - combinging 'tank' and replicate)
+Model 1: lk(cell.counts~Day*Temp) using log transformed!
 ```{r}
 #C1
-C1mod<-lm(log(cells.larvae+1)~Day*Temp, C1Full)
+#C1mod<-lmer(log(cells.larvae+1)~Day*Temp+(1|Pot), C1Full) <- when I add "Pot" as random effect, it gives me singularity error
+
+## ANOVA vs lm()?
+C1mod<-aov(log(cells.larvae+1)~Day*Temp, C1Full)
 summary(C1mod)
   qqPlot(residuals(C1mod))
-## Day and Day:Temp31 are significant
+#Significant: Day, Temp, Day:Temp
 
   #test if poisson changes
   #C1mod2<-lm(log(cells.larvae+1)~Day*Temp, C1Full, family=poisson)
   #summary(C1mod2)
   #model.sel(C1mod, C1mod2) #models same, go with non poisson
 
-D1mod<-lm(log(cells.larvae+1)~Day*Temp, D1Full)
+D1mod<-aov(log(cells.larvae+1)~Day*Temp, D1Full)
 summary(D1mod)
   qqPlot(residuals(D1mod)) #not amazing but not entirely awful
-## Day is significant
-  
-F1mod<-lm(log(cells.larvae+1)~Day*Temp, F1Full)
+## Significant: Day
+
+F1mod<-aov(log(cells.larvae+1)~Day*Temp, F1Full)
 summary(F1mod)
   qqPlot(residuals(F1mod)) #not amazing but not entirely awful
-# Day:Temp30 is significant
-  
-G3mod<-lm(log(cells.larvae+1)~Day*Temp, G3Full)
+##Significance: Day:Temp
+TukeyHSD(F1mod)
+  G3mod<-aov(log(cells.larvae+1)~Day*Temp, G3Full)
 summary(G3mod)
   qqPlot(residuals(G3mod)) #good
-##Day is significant 
+##Significance: Day
+
 ```
 
 Multi-infection data, ALL1 data (cutoff 9000)
 ```{r}
-Allmod<-lmer(log(cells.larvae+1)~Day*Temp*Primer+(1|ALL.number), ALL1)
+Allmod<-lmer(log(cells.larvae+1)~Day*Temp*Primer+(1|ALL.number), ALL1)  #All.number is the larvae ID
 summary(Allmod)
-
-#not sure if it makes sense to run this like this
-Allmod2<-lm(log(cells.larvae+1)~Day*Temp*Primer+ALL.number, ALL1)
-summary(Allmod2)
+#conduct post hoc test
+emm_Allmod = emmeans(Allmod, ~ Day * Temp * Primer, adjust="tukey")
+  #letter display
+cld(emm_Allmod, Letters=c(LETTERS))
+#day is coming out "5.96" figure out why
 ```
 
-Figure out: how to run the mean of the preicted infection (single infections) against the actual infection in the multi infection. 
+Figure out: how to run the mean of the preicted infection (single infections) against the actual infection in the multi infection.
