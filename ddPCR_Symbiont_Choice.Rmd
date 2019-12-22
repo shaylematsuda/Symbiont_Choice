@@ -91,9 +91,12 @@ colnames(Day14Counts)[colnames(Day14Counts)=="Cells.per.larva"] <- "cells.larvae
 Day14Counts<-na.omit(Day14Counts)
 
 #combine days:
-Countdat<-rbind(Day3Counts, Day7Counts)
+Countdat<-rbind(Day3Counts, Day7Counts, Day14Counts)
 Countdat1<-Countdat[!(Countdat$Symbiont=="ALL"),] #remove ALLs
 Countdat1<-Countdat1[!(Countdat1$Symbiont=="CONTROL"),] #remove controls
+Countdat1$Temp<-as.factor(Countdat1$Temp)
+Countdat1$cells.larvae<-as.numeric(Countdat1$cells.larvae)
+
 
 ####Load in ddPCR data with Threshold set in QuantaSoft Analysis
 
@@ -280,17 +283,17 @@ P20<-merge(Plate20, meta20, by="Well")
     P19<-P19[!(P19$Well=="C08"),]
 
 
-#Merge all plates
 
 #merge all plates
 dData1 <- rbind(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20)
 
- #write.csv(dData, "dData.csv")
+ #write.csv(dData1TEST, "dData1TEST.csv")
 #only keep columns you need (Sample, Target, Conc(copies/µL), Copies/20ulWell, Accepted Droplets, Positives, Negatives, Threshold1, metadata)
 
 dData<-dData1[,c(1,2:4,11,16:18,31,66 ,68:79)]
 dData$Conc.copies.µL.<-as.numeric(dData$Conc.copies.µL.)
-dData$Temp<-as.character(dData$Temp)
+dData$Temp<-as.factor(dData$Temp)
+dData$Temp<-factor(dData$Temp, levels=c("27","30","31"))
 dData$Day<-as.factor(dData$Day)
 dData$Day<-factor(dData$Day, levels=c("3","7","14"))
 dData$Pot<-as.factor(dData$Pot)
@@ -323,6 +326,7 @@ FalsePos<-subset(dData, Info=="CONTROL")
 #subset Samples
 sData<-subset(dData, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
 AllAll<-subset(dData, Info=="ALL")
+#write.csv(sData, "sData20191221.csv")
 #write.csv(AllAll, "AllAll.csv")
 
 #subset D1
@@ -336,11 +340,11 @@ AllAll<-subset(dData, Info=="ALL")
 Decide where your cut off for positive droplets is. Standard is 10,000. You should push down to 9000. 
 ```{r}
 # 9000 cutoff
-sData1<-subset(sData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 60 samples)
+sData1<-subset(sData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
 
 #pull to view under 9000 droplet info
 ALL1<-subset(sData1, Info=="ALL")
-#write.csv(ALL1, "Alldroptest9000_20191215.csv")
+write.csv(ALL1, "Alldroptest9000_20191221.csv")
 
 #Just for the multi-infection (single infection numbers are ok)  
 #If we cutoff at 9000:  
@@ -911,8 +915,11 @@ grid.arrange(ALL_31_Day3plot_9000, ALL_31_Day7plot_9000,nrow = 1)
 ``` 
 
 
+
 # Combine ddPCR with the hemocytometer/count data from each time point for "Full" dataset
-Organize data. Start with the 9000
+Organize data.   
+
+C1
 ```{r}
 #C1
 #organize the ddPCR data
@@ -924,6 +931,7 @@ C1_9000b$count.type<-"ddPCR"
 #organize hemo data
 C1countdat<-subset(Countdat1, Symbiont=="C1")
 C1countdat$count.type<-"hemo"
+
 C1Full<-rbind(C1_9000b,C1countdat) #combine hemo and ddPCR
 
 C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type"), summarise, #summarize cell counts
@@ -937,52 +945,192 @@ C1Full_mean #display table
 
 C1Full_mean$code<-paste0(C1Full_mean$Temp, C1Full_mean$Day, C1Full_mean$count.type)
 
-#plot comparisons by dat
-#Day3
-C1Full_mean_Day3<-subset(C1Full_mean, Day=="3")
-C1Full_mean_Day3plot<-ggplot(data=C1Full_mean_Day3,aes(x=code, y=mean, fill=count.type)) +
-  geom_bar(stat="identity");C1Full_mean_Day3plot
+#Compare ddPCR and hemo counts 
 
-#Day7
-C1Full_mean_Day7<-subset(C1Full_mean, Day=="7")
-C1Full_mean_Day7plot<-ggplot(data=C1Full_mean_Day7,aes(x=code, y=mean, fill=count.type)) +
-  geom_bar(stat="identity");C1Full_mean_Day7plot
-
-C1Full_mean_Day14<-subset(C1Full_mean, Day=="14")
-C1Full_mean_Day14plot<-ggplot(data=C1Full_mean_Day14,aes(x=code, y=mean, fill=count.type)) +
-  geom_bar(stat="identity");C1Full_mean_Day14plot
-#### you are missing day 14 HEMO counts! 
+#Day3 C1
+C1Full_Day3<-subset(C1Full, Day=="3")
+C1Full_Day3plot<-ggplot(data=C1Full_Day3,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("C1 Day 3");C1Full_Day3plot
 
 
+#Day7 27
+C1Full_Day7<-subset(C1Full, Day=="7")
+C1Full_Day7plot<-ggplot(data=C1Full_Day7,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("C1 Day 7");C1Full_Day7plot
+
+
+#Day14 27
+C1Full_Day14<-subset(C1Full, Day=="14")
+C1Full_Day14plot<-ggplot(data=C1Full_Day14,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("C1 Day 14");C1Full_Day14plot
+
+#plot together
+grid.arrange(C1Full_Day3plot,C1Full_Day7plot,C1Full_Day14plot, nrow = 1)
+#check on C1 ddPCR higher
+```
+D1  
+```{r}
 #D1
 #organize the ddPCR data
 D1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 D1_9000b<-D1_9000[D1_vars]
 colnames(D1_9000b)[colnames(D1_9000b)=="Info"] <- "Symbiont"
+D1_9000b$count.type<-"ddPCR"
 
 #organize hemo data
 D1countdat<-subset(Countdat1, Symbiont=="D1")
-D1Full<-rbind(D1_9000b,D1countdat)
+D1countdat$count.type<-"hemo"
 
+D1Full<-rbind(D1_9000b,D1countdat) #combine hemo and ddPCR
+
+D1Full_mean<- ddply(D1Full, c("Day", "Temp","count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+D1Full_mean #display table
+
+D1Full_mean$code<-paste0(D1Full_mean$Temp, D1Full_mean$Day, D1Full_mean$count.type)
+
+#Compare ddPCR and hemo counts 
+
+#Day3 D1
+D1Full_Day3<-subset(D1Full, Day=="3")
+D1Full_Day3plot<-ggplot(data=D1Full_Day3,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("D1 Day 3");D1Full_Day3plot
+# 2 hemo counts high
+
+#Day7 
+D1Full_Day7<-subset(D1Full, Day=="7")
+D1Full_Day7plot<-ggplot(data=D1Full_Day7,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("D1 Day 7");D1Full_Day7plot
+#1 hemo count high
+
+#Day14 
+D1Full_Day14<-subset(D1Full, Day=="14")
+D1Full_Day14plot<-ggplot(data=D1Full_Day14,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("D1 Day 14");D1Full_Day14plot
+#hemo counts higher
+
+#plot together
+grid.arrange(D1Full_Day3plot,D1Full_Day7plot,D1Full_Day14plot, nrow = 1)
+```
+
+F1
+```{r}
 #F1
+
 #organize the ddPCR data
 F1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 F1_9000b<-F1_9000[F1_vars]
 colnames(F1_9000b)[colnames(F1_9000b)=="Info"] <- "Symbiont"
+F1_9000b$count.type<-"ddPCR"
 
 #organize hemo data
 F1countdat<-subset(Countdat1, Symbiont=="F1")
-F1Full<-rbind(F1_9000b,F1countdat)
+F1countdat$count.type<-"hemo"
 
+F1Full<-rbind(F1_9000b,F1countdat) #combine hemo and ddPCR
+
+F1Full_mean<- ddply(F1Full, c("Day", "Temp","count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1Full_mean #display table
+
+F1Full_mean$code<-paste0(F1Full_mean$Temp, F1Full_mean$Day, F1Full_mean$count.type)
+
+#Compare ddPCR and hemo counts 
+
+#Day3 F1
+F1Full_Day3<-subset(F1Full, Day=="3")
+F1Full_Day3plot<-ggplot(data=F1Full_Day3,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("F1 Day 3");F1Full_Day3plot
+#1 ddpcr higher 27
+
+#Day7 
+F1Full_Day7<-subset(F1Full, Day=="7")
+F1Full_Day7plot<-ggplot(data=F1Full_Day7,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("F1 Day 7");F1Full_Day7plot
+
+
+#Day14 
+F1Full_Day14<-subset(F1Full, Day=="14")
+F1Full_Day14plot<-ggplot(data=F1Full_Day14,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("F1 Day 14");F1Full_Day14plot
+
+#plot together
+grid.arrange(F1Full_Day3plot,F1Full_Day7plot,F1Full_Day14plot, nrow = 1)
+
+```
+
+G3
+```{r}
 #G3
+
 #organize the ddPCR data
 G3_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 G3_9000b<-G3_9000[G3_vars]
 colnames(G3_9000b)[colnames(G3_9000b)=="Info"] <- "Symbiont"
+G3_9000b$count.type<-"ddPCR"
 
 #organize hemo data
 G3countdat<-subset(Countdat1, Symbiont=="G3")
-G3Full<-rbind(G3_9000b,G3countdat)
+G3countdat$count.type<-"hemo"
+
+G3Full<-rbind(G3_9000b,G3countdat) #combine hemo and ddPCR
+
+G3Full_mean<- ddply(G3Full, c("Day", "Temp","count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3Full_mean #display table
+
+G3Full_mean$code<-paste0(G3Full_mean$Temp, G3Full_mean$Day, G3Full_mean$count.type)
+
+#Compare ddPCR and hemo counts 
+
+#Day3 G3
+G3Full_Day3<-subset(G3Full, Day=="3")
+G3Full_Day3plot<-ggplot(data=G3Full_Day3,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("G3 Day 3");G3Full_Day3plot
+#ddpcr high
+
+#Day7 
+G3Full_Day7<-subset(G3Full, Day=="7")
+G3Full_Day7plot<-ggplot(data=G3Full_Day7,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("G3 Day 7");G3Full_Day7plot
+# ddpcr higher
+
+#Day14 
+G3Full_Day14<-subset(G3Full, Day=="14")
+G3Full_Day14plot<-ggplot(data=G3Full_Day14,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("G3 Day 14");G3Full_Day14plot
+
+
+#plot together
+grid.arrange(G3Full_Day3plot,G3Full_Day7plot,G3Full_Day14plot, nrow = 1)
+
 ```
 
 ##PLOT SINGLE INFECTIONS_9000 SUBSET
