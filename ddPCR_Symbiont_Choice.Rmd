@@ -946,6 +946,10 @@ C1Full_mean #display table
 C1Full_mean$code<-paste0(C1Full_mean$Temp, C1Full_mean$Day, C1Full_mean$count.type)
 
 #Compare ddPCR and hemo counts 
+#all days
+C1Full_Alldayplot<-ggplot(data=C1Full,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("C1 Day");C1Full_Alldayplot
 
 #Day3 C1
 C1Full_Day3<-subset(C1Full, Day=="3")
@@ -998,6 +1002,10 @@ D1Full_mean #display table
 D1Full_mean$code<-paste0(D1Full_mean$Temp, D1Full_mean$Day, D1Full_mean$count.type)
 
 #Compare ddPCR and hemo counts 
+#All days
+D1Full_allDayplot<-ggplot(data=D1Full,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("D1 Day 3");D1Full_allDayplot
 
 #Day3 D1
 D1Full_Day3<-subset(D1Full, Day=="3")
@@ -1052,6 +1060,10 @@ F1Full_mean #display table
 F1Full_mean$code<-paste0(F1Full_mean$Temp, F1Full_mean$Day, F1Full_mean$count.type)
 
 #Compare ddPCR and hemo counts 
+#all Day F1
+F1Full_AllDayplot<-ggplot(data=F1Full,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("F1 Day 3");F1Full_AllDayplot
 
 #Day3 F1
 F1Full_Day3<-subset(F1Full, Day=="3")
@@ -1106,6 +1118,12 @@ G3Full_mean #display table
 G3Full_mean$code<-paste0(G3Full_mean$Temp, G3Full_mean$Day, G3Full_mean$count.type)
 
 #Compare ddPCR and hemo counts 
+#all day
+G3Full_AllDayplot<-ggplot(data=G3Full,aes(Temp, cells.larvae)) +
+  geom_point(aes(colour=factor(count.type)))+
+  ggtitle("G3 Day 3");G3Full_AllDayplot
+#ddpcr high
+
 
 #Day3 G3
 G3Full_Day3<-subset(G3Full, Day=="3")
