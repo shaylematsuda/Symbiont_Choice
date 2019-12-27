@@ -1718,19 +1718,21 @@ G3Full2<-G3Full
 #single infection, add new column "single.multi"
 C1Full2$single.multi<-"single"
 C1Full2$single.multi<-factor(C1Full2$single.multi, levels=c("single","multi"))
-C1Full2vars<-c("Temp","Day", "Primer", "Pot", "Replicate","cells.larvae","single.multi")
+C1Full2vars<-c("Temp","Day", "Symbiont", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
 C1Full3<-C1Full2[C1Full2vars]
 
 #multi infection, add new column "single.multi"
 C1ALL<-subset(ALL1, Primer=="C1") #subset Primer
 C1ALL$single.multi<-"multi" #multi
-C1ALLvars<-c("Temp","Day", "Primer", "Pot", "Replicate","cells.larvae","single.multi")
+C1ALLvars<-c("Temp","Day", "Primer", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
 C1ALLb<-C1ALL[C1ALLvars]
 C1ALLb$cells.larvae_log<-log(C1ALLb$cells.larvae+1) #log
 colnames(C1ALLb)[colnames(C1ALLb)=="Primer"] <- "Symbiont"
 
 #combine the dataframes
-C1_EO<-rbind(C1ALLb, C1Full)
+C1_EO<-rbind(C1ALLb, C1Full3)
+C1_EO$single.multi<-factor(C1_EO$single.multi, levels=c("single","multi"))
+
 ```
 C1 Day 3
 ```{r}
@@ -1759,7 +1761,9 @@ C1_EO.D3_plot<-ggplot(data=C1_EO.D3mean, aes(x=single.multi, y=mean, group = Tem
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
-  #ylim(-10,5000) + #set Y limits
+  #ylim(0,3000) + #set Y limits
+         scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1769,7 +1773,7 @@ C1_EO.D3_plot<-ggplot(data=C1_EO.D3mean, aes(x=single.multi, y=mean, group = Tem
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Cells/Larvae"))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("C1_Expected vs Observed")+
   theme(plot.title = element_text(size=20, face = "italic"));C1_EO.D3_plot
 ```
@@ -1802,7 +1806,8 @@ C1_EO.D7_plot<-ggplot(data=C1_EO.D7mean, aes(x=single.multi, y=mean, group = Tem
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
-  #ylim(-10,5000) + #set Y limits
+  #ylim(0,3000) + #set Y limits
+         scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1812,7 +1817,7 @@ C1_EO.D7_plot<-ggplot(data=C1_EO.D7mean, aes(x=single.multi, y=mean, group = Tem
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Cells/Larvae"))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("C1_Day7 Expected vs Observed")+
   theme(plot.title = element_text(size=20, face = "italic"));C1_EO.D7_plot
 ```
@@ -1838,7 +1843,7 @@ C1_EO.D14mean <- ddply(C1_EO.D14, c( "Temp","single.multi"), summarise, #summari
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 C1_EO.D14mean #display table
-#C1_EO.D14mean<-na.omit(C1_EO.D14mean)
+C1_EO.D14mean<-na.omit(C1_EO.D14mean)
 
 C1_EO.D14_plot<-ggplot(data=C1_EO.D14mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -1847,7 +1852,8 @@ C1_EO.D14_plot<-ggplot(data=C1_EO.D14mean, aes(x=single.multi, y=mean, group = T
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
-  #ylim(-10,5000) + #set Y limits
+  #ylim(0,3000) + #set Y limits
+         scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1857,28 +1863,42 @@ C1_EO.D14_plot<-ggplot(data=C1_EO.D14mean, aes(x=single.multi, y=mean, group = T
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Cells/Larvae"))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("C1_Day14 Expected vs Observed")+
   theme(plot.title = element_text(size=20, face = "italic"));C1_EO.D14_plot
 
+```
+Plot together
+
+```{r}
+
+C1_EO.D3_plot<-C1_EO.D3_plot+ theme(legend.position = "none") #remove legend
+C1_EO.D7_plot<-C1_EO.D7_plot+ theme(legend.position = "none") #remove legend
+C1_EO.D14_plot<-C1_EO.D14_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(C1_EO.D3_plot, C1_EO.D7_plot, C1_EO.D14_plot, nrow = 1)
 ```
 
 D1
 ```{r}
 #single infection, add new column "single.multi"
-D1Full$single.multi<-"single"
-D1Full$single.multi<-factor(D1Full$single.multi, levels=c("single","multi"))
+D1Full2$single.multi<-"single"
+D1Full2$single.multi<-factor(D1Full2$single.multi, levels=c("single","multi"))
+D1Full2vars<-c("Temp","Day", "Symbiont", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
+D1Full3<-D1Full2[D1Full2vars]
 
 #multi infection, add new column "single.multi"
 D1ALL<-subset(ALL1, Primer=="D1") #subset Primer
 D1ALL$single.multi<-"multi" #multi
-D1ALLvars<-c("Temp","Day", "Primer", "Pot", "Replicate","cells.larvae","single.multi")
+D1ALLvars<-c("Temp","Day", "Primer", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
 D1ALLb<-D1ALL[D1ALLvars]
 D1ALLb$cells.larvae_log<-log(D1ALLb$cells.larvae+1) #log
 colnames(D1ALLb)[colnames(D1ALLb)=="Primer"] <- "Symbiont"
 
 #combine the dataframes
-D1_EO<-rbind(D1ALLb, D1Full)
+D1_EO<-rbind(D1ALLb, D1Full3)
+D1_EO$single.multi<-factor(D1_EO$single.multi, levels=c("single","multi"))
+
 ```
 
 DAY3
@@ -1910,6 +1930,7 @@ D1_EO.D3_plot<-ggplot(data=D1_EO.D3mean, aes(x=single.multi, y=mean, group = Tem
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
   #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1924,8 +1945,6 @@ D1_EO.D3_plot<-ggplot(data=D1_EO.D3mean, aes(x=single.multi, y=mean, group = Tem
   theme(plot.title = element_text(size=20, face = "italic"));D1_EO.D3_plot
 
 ```
-
-
 
 DAY7
 ```{R}
@@ -1957,6 +1976,7 @@ D1_EO.D7_plot<-ggplot(data=D1_EO.D7mean, aes(x=single.multi, y=mean, group = Tem
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
   #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1966,7 +1986,7 @@ D1_EO.D7_plot<-ggplot(data=D1_EO.D7mean, aes(x=single.multi, y=mean, group = Tem
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Cells/Larvae"))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("D1_Day7 Expected vs Observed")+
   theme(plot.title = element_text(size=20, face = "italic"));D1_EO.D7_plot
 ```
@@ -1990,7 +2010,7 @@ D1_EO.D14mean <- ddply(D1_EO.D14, c( "Temp","single.multi"), summarise, #summari
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 D1_EO.D14mean #display table
-#C1_EO.D14mean<-na.omit(C1_EO.D14mean)
+D1_EO.D14mean<-na.omit(D1_EO.D14mean)
 
 D1_EO.D14_plot<-ggplot(data=D1_EO.D14mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -2000,6 +2020,7 @@ D1_EO.D14_plot<-ggplot(data=D1_EO.D14mean, aes(x=single.multi, y=mean, group = T
   scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
   xlab("Temp") + #Label the X Axis
   #ylim(-10,5000) + #set Y limits
+  #scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2009,17 +2030,28 @@ D1_EO.D14_plot<-ggplot(data=D1_EO.D14mean, aes(x=single.multi, y=mean, group = T
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Cells/Larvae"))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("D1_Day14 Expected vs Observed")+
   theme(plot.title = element_text(size=20, face = "italic"));D1_EO.D14_plot
 ```
 
+Plot together
 
+```{r}
+
+D1_EO.D3_plot<-D1_EO.D3_plot+ theme(legend.position = "none") #remove legend
+D1_EO.D7_plot<-D1_EO.D7_plot+ theme(legend.position = "none") #remove legend
+D1_EO.D14_plot<-D1_EO.D14_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(D1_EO.D3_plot, D1_EO.D7_plot, D1_EO.D14_plot, nrow = 1)
+```
 F1
 ```{r}
 #single infection, add new column "single.multi"
-F1Full$single.multi<-"single"
-F1Full$single.multi<-factor(F1Full$single.multi, levels=c("single","multi"))
+F1Full2$single.multi<-"single"
+F1Full2$single.multi<-factor(F1Full2$single.multi, levels=c("single","multi"))
+F1Full2vars<-c("Temp","Day", "Symbiont", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
+F1Full3<-C1Full2[F1Full2vars]
 
 #multi infection, add new column "single.multi"
 F1ALL<-subset(ALL1, Primer=="F1") #subset Primer
@@ -2030,9 +2062,13 @@ F1ALLb$cells.larvae_log<-log(F1ALLb$cells.larvae+1) #log
 colnames(F1ALLb)[colnames(F1ALLb)=="Primer"] <- "Symbiont"
 
 #combine the dataframes
-F1_EO<-rbind(F1ALLb, F1Full)
+F1_EO<-rbind(F1ALLb, F1Full3)
+F1_EO$single.multi<-factor(F1_EO$single.multi, levels=c("single","multi"))
 
+```
 # Day 3
+```{r}
+
 F1_EO.D3<-subset(F1_EO, Day=="3")
 
 F1_EOmod<-lm(cells.larvae_log~Temp*single.multi, F1_EO.D3)
@@ -2040,7 +2076,42 @@ summary(F1_EOmod)
 emm_F1_EOmod = emmeans(F1_EOmod, ~ Temp*single.multi, adjust="tukey")
 cld(emm_F1_EOmod, Letters=c(LETTERS)) #letter display
 
+#means
+F1_EO.D3mean <- ddply(F1_EO.D3, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1_EO.D3mean #display table
+
+
+F1_EO.D3_plot<-ggplot(data=F1_EO.D3mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("F1_27C_Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));F1_EO.D3_plot
+
+```
 # Day 7
+```{r}
 F1_EO.D7<-subset(F1_EO, Day=="7")
 
 F1_EOmodD7<-lm(cells.larvae_log~Temp*single.multi, F1_EO.D7)
@@ -2048,20 +2119,102 @@ summary(F1_EOmodD7)
 emm_F1_EOmodD7 = emmeans(F1_EOmodD7, ~ Temp*single.multi, adjust="tukey")
 cld(emm_F1_EOmodD7, Letters=c(LETTERS)) #letter display
 
+
+#means
+F1_EO.D7mean <- ddply(F1_EO.D7, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1_EO.D7mean #display table
+
+
+F1_EO.D7_plot<-ggplot(data=F1_EO.D7mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("F1_Day7 Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));F1_EO.D7_plot
+
+```
 # Day 14
+```{r}
 F1_EO.D14<-subset(F1_EO, Day=="14")
 
 F1_EOmodD14<-lm(cells.larvae_log~Temp*single.multi, F1_EO.D14)
 summary(F1_EOmodD14)
 emm_F1_EOmodD14 = emmeans(F1_EOmodD14, ~ Temp*single.multi, adjust="tukey")
 cld(emm_F1_EOmodD14, Letters=c(LETTERS)) #letter display
+
+
+#means
+F1_EO.D14mean <- ddply(F1_EO.D14, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1_EO.D14mean #display table
+F1_EO.D14mean<-na.omit(F1_EO.D14mean)
+
+F1_EO.D14_plot<-ggplot(data=F1_EO.D14mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("F1_Day14 Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));F1_EO.D14_plot
 ```
 
+Plot together
+
+```{r}
+
+F1_EO.D3_plot<-F1_EO.D3_plot+ theme(legend.position = "none") #remove legend
+F1_EO.D7_plot<-F1_EO.D7_plot+ theme(legend.position = "none") #remove legend
+F1_EO.D14_plot<-F1_EO.D14_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(F1_EO.D3_plot, F1_EO.D7_plot, F1_EO.D14_plot, nrow = 1)
+```
 G3
 ```{r}
 #single infection, add new column "single.multi"
-G3Full$single.multi<-"single"
-G3Full$single.multi<-factor(G3Full$single.multi, levels=c("single","multi"))
+G3Full2$single.multi<-"single"
+G3Full2$single.multi<-factor(G3Full2$single.multi, levels=c("single","multi"))
+G3Full2vars<-c("Temp","Day", "Symbiont", "Pot", "Replicate","cells.larvae","single.multi","cells.larvae_log")
+G3Full3<-G3Full2[G3Full2vars]
 
 #multi infection, add new column "single.multi"
 G3ALL<-subset(ALL1, Primer=="G3") #subset Primer
@@ -2072,9 +2225,13 @@ G3ALLb$cells.larvae_log<-log(G3ALLb$cells.larvae+1) #log
 colnames(G3ALLb)[colnames(G3ALLb)=="Primer"] <- "Symbiont"
 
 #combine the dataframes
-G3_EO<-rbind(G3ALLb, G3Full)
+G3_EO<-rbind(G3ALLb, G3Full3)
+G3_EO$single.multi<-factor(G3_EO$single.multi, levels=c("single","multi"))
+
+```
 
 # Day 3
+```{r}
 G3_EO.D3<-subset(G3_EO, Day=="3")
 
 G3_EOmod<-lm(cells.larvae_log~Temp*single.multi, G3_EO.D3)
@@ -2082,7 +2239,43 @@ summary(G3_EOmod)
 emm_G3_EOmod = emmeans(G3_EOmod, ~ Temp*single.multi, adjust="tukey")
 cld(emm_G3_EOmod, Letters=c(LETTERS)) #letter display
 
+
+#means
+G3_EO.D3mean <- ddply(G3_EO.D3, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3_EO.D3mean #display table
+
+
+G3_EO.D3_plot<-ggplot(data=G3_EO.D3mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("G3_27C_Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));G3_EO.D3_plot
+```
+
 # Day 7
+```{r}
 G3_EO.D7<-subset(G3_EO, Day=="7")
 
 G3_EOmodD7<-lm(cells.larvae_log~Temp*single.multi, G3_EO.D7)
@@ -2090,15 +2283,94 @@ summary(G3_EOmodD7)
 emm_G3_EOmodD7 = emmeans(G3_EOmodD7, ~ Temp*single.multi, adjust="tukey")
 cld(emm_G3_EOmodD7, Letters=c(LETTERS)) #letter display
 
+
+#means
+G3_EO.D7mean <- ddply(G3_EO.D7, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3_EO.D7mean #display table
+
+
+G3_EO.D7_plot<-ggplot(data=G3_EO.D7mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("G3_Day7 Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));G3_EO.D7_plot
+```
+
 # Day 14
+```{r}
 G3_EO.D14<-subset(G3_EO, Day=="14")
 
 G3_EOmodD14<-lm(cells.larvae_log~Temp*single.multi, G3_EO.D14)
 summary(G3_EOmodD14)
 emm_G3_EOmodD14 = emmeans(G3_EOmodD14, ~ Temp*single.multi, adjust="tukey")
 cld(emm_G3_EOmodD14, Letters=c(LETTERS)) #letter display
+
+#means
+G3_EO.D14mean <- ddply(G3_EO.D14, c( "Temp","single.multi"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3_EO.D14mean #display table
+G3_EO.D14mean<-na.omit(G3_EO.D14mean)
+
+G3_EO.D14_plot<-ggplot(data=G3_EO.D14mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "orange", "darkred"))+
+  xlab("Temp") + #Label the X Axis
+  #ylim(-10,5000) + #set Y limits
+  scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("G3_Day14 Expected vs Observed")+
+  theme(plot.title = element_text(size=20, face = "italic"));G3_EO.D14_plot
 ```
 
+Plot together
+
+```{r}
+
+G3_EO.D3_plot<-G3_EO.D3_plot+ theme(legend.position = "none") #remove legend
+G3_EO.D7_plot<-G3_EO.D7_plot+ theme(legend.position = "none") #remove legend
+G3_EO.D14_plot<-G3_EO.D14_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(G3_EO.D3_plot, G3_EO.D7_plot, G3_EO.D14_plot, nrow = 1)
+```
 
 ## Relative abundances for NMDS for ALLs
 ```{r}
