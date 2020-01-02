@@ -1807,7 +1807,7 @@ All_PA_27_D14<-subset(All_PA_27, Day==14)
 #Statistics
 
 Single infections
-```{r}
+```{r} 
 hist(C1Full$cells.larvae) #not normal
 hist(D1Full$cells.larvae) #not normal
 hist(F1Full$cells.larvae) #not normal
@@ -1824,6 +1824,7 @@ G3Full$cells.larvae_log<-log(G3Full$cells.larvae+1)
   hist(G3Full$cells.larvae_log) #more normal, scewed right
   
 Singles<-rbind(C1Full,D1Full,F1Full,G3Full)
+hist(Singles$cells.larvae_log) # still large left tail
 ```
 
 SINGLE
@@ -1960,9 +1961,197 @@ G3Full_D14<-subset(G3Full, Day==14)
   anova(G3_D14_mod)
   #emmeans(G3_D14_mod, pairwise ~ Temp)
 ```
+ All singles
+ 
+```{r}
+#subset by temp
+AllSing_27<-subset(Singles, Temp==27)
+AllSing_30<-subset(Singles, Temp==30)
+AllSing_31<-subset(Singles, Temp==31)
+
+# subset by day
+AllSing_27_D3<-subset(AllSing_27, Day==3)
+AllSing_27_D7<-subset(AllSing_27, Day==7)
+AllSing_27_D14<-subset(AllSing_27, Day==14)
+
+AllSing_30_D3<-subset(AllSing_30, Day==3)
+AllSing_30_D7<-subset(AllSing_30, Day==7)
+AllSing_30_D14<-subset(AllSing_30, Day==14)
+
+AllSing_31_D3<-subset(AllSing_31, Day==3)
+AllSing_31_D7<-subset(AllSing_31, Day==7)
+AllSing_31_D14<-subset(AllSing_31, Day==14)
+
+
+#### 27C
+## Day 3
+AllSing_27_D3_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_27_D3)
+anova(AllSing_27_D3_mod) 
+emm_AllSing_27_D3_mod = emmeans(AllSing_27_D3_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_27_D3_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 7
+AllSing_27_D7_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_27_D7)
+anova(AllSing_27_D7_mod) 
+emm_AllSing_27_D7_mod = emmeans(AllSing_27_D7_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_27_D7_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 14
+AllSing_27_D14_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_27_D14)
+anova(AllSing_27_D14_mod) 
+emm_AllSing_27_D14_mod = emmeans(AllSing_27_D14_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_27_D14_mod, Letters=c(LETTERS)) #letter display 
+
+#### 30C
+## Day 3
+AllSing_30_D3_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_30_D3)
+anova(AllSing_30_D3_mod) 
+emm_AllSing_30_D3_mod = emmeans(AllSing_30_D3_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_30_D3_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 7
+AllSing_30_D7_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_30_D7)
+anova(AllSing_30_D7_mod) 
+emm_AllSing_30_D7_mod = emmeans(AllSing_30_D7_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_30_D7_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 14
+AllSing_30_D14_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_30_D14)
+anova(AllSing_30_D14_mod) 
+emm_AllSing_30_D14_mod = emmeans(AllSing_30_D14_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_30_D14_mod, Letters=c(LETTERS)) #letter display 
+
+
+#### 30C
+## Day 3
+AllSing_31_D3_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_31_D3)
+anova(AllSing_31_D3_mod) 
+emm_AllSing_31_D3_mod = emmeans(AllSing_31_D3_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_31_D3_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 7S
+AllSing_31_D7_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_31_D7)
+anova(AllSing_31_D7_mod) 
+emm_AllSing_31_D7_mod = emmeans(AllSing_31_D7_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_31_D7_mod, Letters=c(LETTERS)) #letter display 
+
+## Day 14
+AllSing_31_D14_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_31_D14)
+anova(AllSing_31_D14_mod) 
+emm_AllSing_31_D14_mod = emmeans(AllSing_31_D14_mod, ~  Symbiont, adjust="tukey")
+cld(emm_AllSing_31_D14_mod, Letters=c(LETTERS)) #letter display 
 
 
 
+
+
+```
+
+Single comparision at days between symbs
+```{r}
+
+#subset by day
+AllSing_D3<-subset(Singles, Day==3)
+AllSing_D3$Symbiont<-as.character(AllSing_D3$Symbiont)
+AllSing_D7<-subset(Singles, Day==7)
+AllSing_D7$Symbiont<-as.character(AllSing_D7$Symbiont)
+AllSing_D14<-subset(Singles, Day==14)
+AllSing_D14$Symbiont<-as.character(AllSing_D14$Symbiont)
+
+#Day 3
+AllSing_D3_mean <- ddply(AllSing_D3, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D3_mean #display table
+
+AllSing_D3_mean_plot<-ggplot(AllSing_D3_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 3");AllSing_D3_mean_plot   
+
+#Day 7
+AllSing_D7_mean <- ddply(AllSing_D7, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D7_mean #display table
+
+AllSing_D7_mean_plot<-ggplot(AllSing_D7_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 7");AllSing_D7_mean_plot   
+
+
+#Day 14
+AllSing_D14_mean <- ddply(AllSing_D14, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D14_mean #display table
+
+AllSing_D14_mean_plot<-ggplot(AllSing_D14_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 14");AllSing_D14_mean_plot   
+
+# plot all three together
+AllSing_D3_mean_plot<-AllSing_D3_mean_plot+ theme(legend.position = "none") #remove legend
+AllSing_D7_mean_plot<-AllSing_D7_mean_plot+ theme(legend.position = "none") #remove legend
+AllSing_D14_mean_plot<-AllSing_D14_mean_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(AllSing_D3_mean_plot, AllSing_D7_mean_plot, AllSing_D14_mean_plot, nrow = 1)
+
+
+```
+ 
+
+ 
 ```{r}
 ## 
 MULTImod<-lmer(log(cells.larvae+1)~Day*Temp*Symbiont+(1|Pot), Singles)
@@ -2091,7 +2280,8 @@ C1_EO.D3mean #display table
 C1_EO.D3_plot<-ggplot(data=C1_EO.D3mean, aes(x=single.multi, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=5, show.legend = T)+
+  geom_point(aes(color=Temp,shape=single.multi), size=5, show.legend = T)+
+    scale_shape_manual(values=c(19,1))+
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
   xlab("Infection type") + #Label the X Axis
