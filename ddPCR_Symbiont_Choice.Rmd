@@ -1571,7 +1571,7 @@ G3_MULTI_plot<-ggplot(data=G3_MULTI_mean, aes(x=Day, y=mean, group = Temp, color
 
 Plot all Symbiont multi ALL  together:
 ```{r}
-#line plot
+#line plot 
 C1_MULTI_plot<-C1_MULTI_plot+ theme(legend.position = "none") #remove legend
 D1_MULTI_plot<-D1_MULTI_plot+ theme(legend.position = "none") #remove legend
 F1_MULTI_plot<-F1_MULTI_plot+ theme(legend.position = "none") #remove legend
@@ -1786,19 +1786,14 @@ Infect27_plot<-ggplot(NumbSymb_B, aes(y=value, x=Day, full=Temp)) +
 ```
 
 ```{r}
-# Stacked bar plots
-#27
+# Stacked bar plots 
+#27 
 All_PA_27<-subset(ALLcast_9000_cast3, Temp==27)
 All_PA_27_D3<-subset(All_PA_27, Day==3)
 All_PA_27_D7<-subset(All_PA_27, Day==7)
 All_PA_27_D14<-subset(All_PA_27, Day==14)
 
-
-
-
-
-
-```
+``` 
 
 
 
@@ -2216,7 +2211,7 @@ emmeans(AllmodDay14, pairwise ~ Temp |Primer)
 
 ###Compare expected vs observed. Do this at each Time point (2-way easier to interpret)
 C1
-```{r} 
+```{r}  
 #copy df 
 C1Full2<-C1Full
 D1Full2<-D1Full
@@ -3094,8 +3089,36 @@ ggplot(ALLdata.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw(
 #by Temp
 ggplot(ALLdata.nmds_xy, aes(MDS1, MDS2, color = Temp)) + geom_point() + theme_bw()
 
+## testing plots
+#combine day and temp
+ALLdata.nmds_xy$code<-paste0(ALLdata.nmds_xy$Temp, ALLdata.nmds_xy$Day)
+
+ggplot() + 
+  #geom_polygon(data=ALLdata.nmds_xy,aes(x=MDS1,y=MDS2,fill=code,group=code),alpha=0.30) + # add the convex hulls
+  geom_point(data=ALLdata.nmds_xy,aes(x=MDS1,y=MDS2,shape=Day,colour=Temp),size=4) + # add the point markers
+  coord_equal() +
+  theme_bw() + 
+  theme(axis.text.x = element_blank(),  # remove x-axis text
+        axis.text.y = element_blank(), # remove y-axis text
+        axis.ticks = element_blank(),  # remove axis ticks
+        axis.title.x = element_text(size=18), # remove x-axis labels
+        axis.title.y = element_text(size=18), # remove y-axis labels
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),  #remove major-grid labels
+        panel.grid.minor = element_blank(),  #remove minor-grid labels
+        plot.background = element_blank())
+
+#This is all the data with ellipses. hard to read but nice to have. 
+ggplot(ALLdata.nmds_xy, aes(MDS1, MDS2, color=code))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()
 
 
+```
+
+nmds by temp - raw data
+```{r}
 ##### subset by Temp
 #27C
 #sample 106, C1 counts is 3000+ way high, likely error, check
@@ -3119,7 +3142,22 @@ ALLdata_Temp27.nmds_xy <- data.frame(ALLdata_Temp27.nmds$points)
 
 ALLdata_Temp27.nmds_xy$Day <- ALLcast_abund_Temp27$Day
 
-#by Day
+
+ALLdata_Temp27.nmds_xy$code<-paste0(ALLdata_Temp27.nmds_xy$Temp, ALLdata_Temp27.nmds_xy$Day)
+
+temp27nmds<-ggplot(ALLdata_Temp27.nmds_xy, aes(MDS1, MDS2, color=Day))+   
+  scale_colour_manual(values = c("Orange", "Blue", "Green"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+      ggtitle("Raw counts: Temp 27C");temp27nmds
+
+
+
+
+
+
+#by temp 30
 ggplot(ALLdata_Temp27.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
 
 
@@ -3146,7 +3184,19 @@ ALLdata_Temp30.nmds_xy <- data.frame(ALLdata_Temp30.nmds$points)
 
 ALLdata_Temp30.nmds_xy$Day <- ALLcast_abund_Temp30$Day
 
-#by Day
+
+temp30nmds<-ggplot(ALLdata_Temp30.nmds_xy, aes(MDS1, MDS2, color=Day))+
+    scale_colour_manual(values = c("Orange", "Blue", "Green"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+      ggtitle("Temp 30C");temp30nmds
+
+
+
+
+
+#by TEMP
 ggplot(ALLdata_Temp30.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
 
 #31C
@@ -3171,6 +3221,22 @@ ALLdata_Temp31.nmds$stress #.114
 ALLdata_Temp31.nmds_xy <- data.frame(ALLdata_Temp31.nmds$points)
 
 ALLdata_Temp31.nmds_xy$Day <- ALLcast_abund_Temp31$Day
+
+temp31nmds<-ggplot(ALLdata_Temp31.nmds_xy, aes(MDS1, MDS2, color=Day))+
+  scale_colour_manual(values = c("Orange", "Blue"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+    ggtitle("Temp 31C");temp31nmds
+
+
+#plot all together
+grid.arrange(temp27nmds, temp30nmds, temp31nmds, nrow = 1)
+
+```
+
+NMDS BY DAY 
+```{R}
 
 #by Day
 ggplot(ALLdata_Temp31.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
@@ -3197,20 +3263,380 @@ ALLdata_Day3.nmds_xy <- data.frame(ALLdata_Day3.nmds$points)
 
 ALLdata_Day3.nmds_xy$Temp <- ALLcast_abund_Day3$Temp
 
-#by Temp
-ggplot(ALLdata_Day3.nmds_xy, aes(MDS1, MDS2, color = Temp)) + geom_point() + theme_bw()+  geom_polygon(data=ALLdata_Day3.nmds_xy,aes(x=MDS1,y=MDS2,fill=Temp,group=Temp),alpha=0.30)  # add the convex hulls
-
-ordiplot(ALLdata_Day3.nmds, type = "n", main = "hulls")
-orditorp(ALLdata_Day3.nmds_xy, display = "sites", labels = F, pch = c(16, 8, 17, 18) [as.numeric(ALLdata_Day3.nmds_xy$Temp)], col = c("green", "blue", "orange") [as.numeric(ALLdata_Day3.nmds_xy$Temp)], cex = 1)
-ordihull(ALLdata_Day3.nmds_xy, groups = ALLdata_Day3.nmds_xy$Temp, draw = "polygon", lty = 1, col = "grey90")
+Day3_nmds<-ggplot(ALLdata_Day3.nmds_xy, aes(MDS1, MDS2, color=Temp))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+  ggtitle("Day 3");Day3_nmds
 
 ```
 
 
+##nmds- relative abundances!
+Use df: ALL_RelA_a or ALL_RelA_b
+
+```{r}
+#make a df with just RelRelabundance
+ALLcast_Relabund<-ALL_RelA_a
+ALLcast_Relabund<-na.omit(ALLcast_Relabund) #get rid of NAs
+ALLcast_Relabund_b<-ALLcast_Relabund[-c(1:3)] #remove metadata
+
+#NMDS
+set.seed(2)
+
+ALLdataRelabund.nmds <- metaMDS(comm = ALLcast_Relabund_b, distance = "bray")
+plot(ALLdataRelabund.nmds$points) 
+ALLdataRelabund.nmds$stress #0.097
+
+ALLdataRelabund.nmds_xy <- data.frame(ALLdataRelabund.nmds$points)
+
+ALLdataRelabund.nmds_xy$Temp <- ALLcast_Relabund$Temp #add metadata back in
+ALLdataRelabund.nmds_xy$Day <- ALLcast_Relabund$Day
+
+#by Day
+ggplot(ALLdataRelabund.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
+
+#by Temp
+ggplot(ALLdataRelabund.nmds_xy, aes(MDS1, MDS2, color = Temp)) + geom_point() + theme_bw()
+
+## testing plots
+#combine day and temp
+ALLdataRelabund.nmds_xy$code<-paste0(ALLdataRelabund.nmds_xy$Temp, ALLdataRelabund.nmds_xy$Day)
+
+ggplot() + 
+  #geom_polygon(data=ALLdata.nmds_xy,aes(x=MDS1,y=MDS2,fill=code,group=code),alpha=0.30) + # add the convex hulls
+  geom_point(data=ALLdataRelabund.nmds_xy,aes(x=MDS1,y=MDS2,shape=Day,colour=Temp),size=4) + # add the point markers
+  coord_equal() +
+  theme_bw() + 
+  theme(axis.text.x = element_blank(),  # remove x-axis text
+        axis.text.y = element_blank(), # remove y-axis text
+        axis.ticks = element_blank(),  # remove axis ticks
+        axis.title.x = element_text(size=18), # remove x-axis labels
+        axis.title.y = element_text(size=18), # remove y-axis labels
+        panel.background = element_blank(), 
+        panel.grid.major = element_blank(),  #remove major-grid labels
+        panel.grid.minor = element_blank(),  #remove minor-grid labels
+        plot.background = element_blank())
+
+#This is all the data with ellipses. hard to read but nice to have. 
+ggplot(ALLdataRelabund.nmds_xy, aes(MDS1, MDS2, color=code))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()
+
+```
+
+By temp all RELABUND
+```{r}
+##### subset by Temp
+#27C
+ALLcast_Relabund_Temp27<-ALL_RelA_a
+ALLcast_Relabund_Temp27<-subset(ALLcast_Relabund_Temp27, Temp=="27")
+ALLcast_Relabund_Temp27_b<-ALLcast_Relabund_Temp27[-c(1:3)] #remove metadata
+
+#NMDS
+set.seed(2)
+
+ALLdata_Temp27.nmds <- metaMDS(comm = ALLcast_Relabund_Temp27_b, distance = "bray")
+plot(ALLdata_Temp27.nmds$points) 
+ALLdata_Temp27.nmds$stress #.139
+
+ALLdata_Temp27.nmds_xy <- data.frame(ALLdata_Temp27.nmds$points)
+
+ALLdata_Temp27.nmds_xy$Day <- ALLcast_Relabund_Temp27$Day
+
+
+ALLdata_Temp27.nmds_xy$code<-paste0(ALLdata_Temp27.nmds_xy$Temp, ALLdata_Temp27.nmds_xy$Day)
+
+temp27nmdsRelabund<-ggplot(ALLdata_Temp27.nmds_xy, aes(MDS1, MDS2, color=Day))+   
+  scale_colour_manual(values = c("Orange", "Blue", "Green"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+      ggtitle("Relative Abundance Temp 27C");temp27nmdsRelabund
+
+#by temp 30
+ggplot(ALLdata_Temp27.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
+
+#30C
+
+ALLcast_Relabund_Temp30<-ALL_RelA_a
+ALLcast_Relabund_Temp30<-subset(ALLcast_Relabund_Temp30, Temp=="30")
+
+ALLcast_Relabund_Temp30_b<-ALLcast_Relabund_Temp30[-c(1:3)] #remove metadata
+
+#NMDS
+set.seed(2)
+
+ALLdata_Temp30.nmds <- metaMDS(comm = ALLcast_Relabund_Temp30_b, distance = "bray")
+plot(ALLdata_Temp30.nmds$points) 
+ALLdata_Temp30.nmds$stress #.05
+
+ALLdata_Temp30.nmds_xy <- data.frame(ALLdata_Temp30.nmds$points)
+
+ALLdata_Temp30.nmds_xy$Day <- ALLcast_Relabund_Temp30$Day
+
+
+temp30nmdsRelabund<-ggplot(ALLdata_Temp30.nmds_xy, aes(MDS1, MDS2, color=Day))+
+    scale_colour_manual(values = c("Orange", "Blue", "Green"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+      ggtitle("Temp 30C");temp30nmdsRelabund
 
 
 
 
+
+#by TEMP
+ggplot(ALLdata_Temp30.nmds_xy, aes(MDS1, MDS2, color = Day)) + geom_point() + theme_bw()
+
+#31C
+#sample 106, C1 counts is 3100+ way high, likely error, check
+
+ALLcast_Relabund_Temp31<-ALL_RelA_a
+ALLcast_Relabund_Temp31<-subset(ALLcast_Relabund_Temp31, Temp=="31")
+
+ALLcast_Relabund_Temp31_b<-ALLcast_Relabund_Temp31[-c(1:3)] #remove metadata
+
+#NMDS
+set.seed(2)
+
+ALLdata_Temp31.nmds <- metaMDS(comm = ALLcast_Relabund_Temp31_b, distance = "bray")
+plot(ALLdata_Temp31.nmds$points) 
+ALLdata_Temp31.nmds$stress #.06
+
+ALLdata_Temp31.nmds_xy <- data.frame(ALLdata_Temp31.nmds$points)
+
+ALLdata_Temp31.nmds_xy$Day <- ALLcast_Relabund_Temp31$Day
+
+temp31nmdsRelabund<-ggplot(ALLdata_Temp31.nmds_xy, aes(MDS1, MDS2, color=Day))+
+  scale_colour_manual(values = c("Orange", "Blue"))+
+  geom_point(position=position_jitter(.1), shape=3)+##separates overlapping points
+  stat_ellipse(type='t',size =1)+ ##draws 95% confidence interval ellipses
+  theme_minimal()+
+    ggtitle("Temp 31C");temp31nmdsRelabund
+
+
+#plot all together
+grid.arrange(temp27nmdsRelabund, temp30nmdsRelabund, temp31nmdsRelabund, nrow = 1)
+
+#plot raw counts over relabund
+grid.arrange(temp27nmds, temp30nmds, temp31nmds,temp27nmdsRelabund, temp30nmdsRelabund, temp31nmdsRelabund, nrow = 2)
+
+
+```
+
+
+#Let's try a heatmap
+by temp on day 3
+relabundance data
+```{r}
+#day 3
+
+heat_relabund_D3<-ALL_RelA_a
+heat_relabund_D3<-subset(heat_relabund_D3, Day==3)
+heat_relabund_D3$code<-paste0(heat_relabund_D3$Temp, "_",heat_relabund_D3$ALL.number) #code
+row.names(heat_relabund_D3)<-heat_relabund_D3$code
+
+#order by temp
+heat_relabund_D3_b <- heat_relabund_D3[order(heat_relabund_D3$Temp),]
+heat_relabund_D3_b<-heat_relabund_D3_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_D3_b_matrix <- data.matrix(heat_relabund_D3_b)
+
+library(RColorBrewer)
+#make heatmap
+heat_relabund_D3_b_heatmap <- heatmap(heat_relabund_D3_b_matrix, col = cm.colors(200),main="heatmap Day 3")
+
+
+#day 7
+
+heat_relabund_D7<-ALL_RelA_a
+heat_relabund_D7<-subset(heat_relabund_D7, Day==7)
+heat_relabund_D7$code<-paste0(heat_relabund_D7$Temp, "_",heat_relabund_D7$ALL.number) #code
+row.names(heat_relabund_D7)<-heat_relabund_D7$code
+
+#order by temp
+heat_relabund_D7_b <- heat_relabund_D7[order(heat_relabund_D7$Temp),]
+heat_relabund_D7_b<-heat_relabund_D7_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_D7_b_matrix <- data.matrix(heat_relabund_D7_b)
+
+#make heatmap
+heat_relabund_D7_b_heatmap <- heatmap(heat_relabund_D7_b_matrix, col = cm.colors(200),main="heatmap Day 7")
+
+#day 14
+
+heat_relabund_D14<-ALL_RelA_a
+heat_relabund_D14<-subset(heat_relabund_D14, Day==14)
+heat_relabund_D14$code<-paste0(heat_relabund_D14$Temp, "_",heat_relabund_D14$ALL.number) #code
+row.names(heat_relabund_D14)<-heat_relabund_D14$code
+
+#order by temp
+heat_relabund_D14_b <- heat_relabund_D14[order(heat_relabund_D14$Temp),]
+heat_relabund_D14_b<-heat_relabund_D14_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_D14_b_matrix <- data.matrix(heat_relabund_D14_b)
+
+#make heatmap
+heat_relabund_D14_b_heatmap <- heatmap(heat_relabund_D14_b_matrix, col = cm.colors(200),main="heatmap Day 14")
+```
+
+heatmaps by temp
+```{r}
+#27c
+
+heat_relabund_27<-ALL_RelA_a
+heat_relabund_27<-subset(heat_relabund_27, Temp==27)
+heat_relabund_27$code<-paste0(heat_relabund_27$Day, "_",heat_relabund_27$ALL.number) #code
+row.names(heat_relabund_27)<-heat_relabund_27$code
+
+#order by temp
+heat_relabund_27_b <- heat_relabund_27[order(heat_relabund_27$Day),]
+heat_relabund_27_b<-heat_relabund_27_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_27_b_matrix <- data.matrix(heat_relabund_27_b)
+
+#make heatmap
+heat_relabund_27_b_heatmap <- heatmap(heat_relabund_27_b_matrix, col = cm.colors(200),main="heatmap 27C")
+
+
+#30C
+
+heat_relabund_30<-ALL_RelA_a
+heat_relabund_30<-subset(heat_relabund_30, Temp==30)
+heat_relabund_30$code<-paste0(heat_relabund_30$Day, "_",heat_relabund_30$ALL.number) #code
+row.names(heat_relabund_30)<-heat_relabund_30$code
+
+#order by temp
+heat_relabund_30_b <- heat_relabund_30[order(heat_relabund_30$Day),]
+heat_relabund_30_b<-heat_relabund_30_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_30_b_matrix <- data.matrix(heat_relabund_30_b)
+
+#make heatmap
+heat_relabund_30_b_heatmap <- heatmap(heat_relabund_30_b_matrix, col = cm.colors(200),main="heatmap 30C")
+
+#31C
+
+heat_relabund_31<-ALL_RelA_a
+heat_relabund_31<-subset(heat_relabund_31, Temp==31)
+heat_relabund_31$code<-paste0(heat_relabund_31$Day, "_",heat_relabund_31$ALL.number) #code
+row.names(heat_relabund_31)<-heat_relabund_31$code
+
+#order by temp
+heat_relabund_31_b <- heat_relabund_31[order(heat_relabund_31$Day),]
+heat_relabund_31_b<-heat_relabund_31_b[-c(1:3, 8)] #remove metadata
+
+#make matrix
+heat_relabund_31_b_matrix <- data.matrix(heat_relabund_31_b)
+
+#make heatmap
+heat_relabund_31_b_heatmap <- heatmap(heat_relabund_31_b_matrix, col = cm.colors(200),main="heatmap 31C")
+```
+
+
+# let's look at some plots of raw counts by single vs multi infection.
+
+C1
+C1Full2 = Single cells.larvae raw
+ALLcast_9000_cast2 = Alls
+```{r}
+MultiCounts<-ALLcast_9000_cast2
+MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
+MultiCounts2<-MultiCounts[-c(1,4:7)] #remove metadata
+MultiCounts2$single.multi<-"multi"
+MultiCounts2$Symbiont<-"All"
+
+
+SingleCounts<-rbind(C1Full2,D1Full2,F1Full2,G3Full2)
+SingleCounts<-SingleCounts[-c(4:5,7:8)] #remove metadata
+
+CountsCompare<-rbind(SingleCounts, MultiCounts2) # combine
+
+#MEANs
+CountsCompare_mean <- ddply(CountsCompare, c("single.multi","Temp","Day","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+CountsCompare_mean #display table
+
+#make a code
+#CountsCompare_mean$code<-paste0(CountsCompare_mean$single.multi, "_",CountsCompare_mean$Day,"_", CountsCompare_mean$Temp) #code
+
+CountsCompare_mean<-CountsCompare_mean[ , order(names(CountsCompare_mean))]
+
+#subset by temp
+CountsCompare27<-subset(CountsCompare_mean, Temp=="27")
+
+CountsCompare27_plot<-ggplot(CountsCompare27, aes(y=mean, x=Day, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            #scale_fill_locuszoom()+
+   xlab("Day")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Counts compare 27C");CountsCompare27_plot   
+
+#30
+CountsCompare30<-subset(CountsCompare_mean, Temp=="30")
+
+CountsCompare30_plot<-ggplot(CountsCompare30, aes(y=mean, x=Day, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            #scale_fill_locuszoom()+
+   xlab("Day")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Counts compare 30C");CountsCompare30_plot   
+
+
+#31
+CountsCompare31<-subset(CountsCompare_mean, Temp=="31")
+
+CountsCompare31_plot<-ggplot(CountsCompare31, aes(y=mean, x=Day, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            #scale_fill_locuszoom()+
+   xlab("Day")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Counts compare 31C");CountsCompare31_plot   
+
+```
 
 
 
