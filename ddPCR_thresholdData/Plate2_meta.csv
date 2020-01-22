@@ -21,7 +21,7 @@ Plate,Well,Sample,Day,Temp,Symbiont,Pot,Replicate,Box,Number,Primer,Info,ALL.num
 2,B08,G3B_5,,,,,,,,G3,CopyNumber,,4,
 2,B09,CONTROL_30C_1A_D3_G3ITS2,3,30,APO,1,A,J,41,G3,CONTROL,,4,
 2,B10,CONTROL_30C_1A_D3_G3ITS2,3,30,APO,1,A,J,41,G3,CONTROL,,4,
-2,B11,G3_30C_1A_D7,7,30,G3,1,A,B,34,G3,CONTROL,,4,
+2,B11,G3_30C_1A_D7,7,30,G3,1,A,B,34,G3,G3,,4,
 2,B12,G3_10C_1B_D7,7,31,G3,1,B,L,27,G3,G3,,4,
 2,C01,D1A_3,,,,,,,,D1,CopyNumber,,4,
 2,C02,D1C_1,,,,,,,,D1,CopyNumber,,4,
