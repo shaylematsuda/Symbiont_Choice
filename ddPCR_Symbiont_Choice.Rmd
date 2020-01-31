@@ -299,66 +299,16 @@ dData$Temp<-factor(dData$Temp, levels=c("27","30","31"))
 dData$Day<-as.factor(dData$Day)
 dData$Day<-factor(dData$Day, levels=c("3","7","14"))
 dData$Pot<-as.factor(dData$Pot)
+```
 
 
-#Calculate concentration per larvae <- is this correct
-
-# use copies/1ul pcr to calculate how many copies are in 1 larvae. (copies/1ul PCR)*(25ul PCR/y ul.DNA added)*(20uLDNA/1 larvae)
-dData$copies.larvae<-(dData$Conc.copies.µL.)*(25/dData$ul.DNA)*20
-
-# divide copies by copy number per clade (CALC IN EXCEL, QCd)
-dData$copyNum[dData$Primer=="C1"]<-2
-dData$copyNum[dData$Primer=="D1"]<-1
-dData$copyNum[dData$Primer=="F1"]<-3
-dData$copyNum[dData$Primer=="G3"]<-19
-
-# calc number of Sym cells in larvae
-dData$cells.larvae<-dData$copies.larvae/dData$copyNum
-  dData<-dData[!(dData$Info=="NTC"),]
-  
-#Subset data for diff analyses
-
-#subset only copynumber calc samples
-CopyNumber<-subset(dData, Info=="CopyNumber")
+#false positives 
+```{r}
 
 #subset only FalsePositives
 FalsePos<-subset(dData, Info=="CONTROL")
 #write.csv(FalsePos, "FalsePos.csv")
 
-#subset Samples
-sData<-subset(dData, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
-#write.csv(sData, "sData20191221.csv")
-
-#subset D1
-#D1data<-subset(dData, Info=="D1")
-#write.csv(D1data, "D1data.csv")
-#subset F1
-#F1data<-subset(dData, Info=="F1")
-#write.csv(F1data, "F1data.csv")
-```
-
-Decide where your cut off for positive droplets is. Standard is 10,000. You should push down to 9000. 
-```{r}
-# 9000 cutoff
-sData1<-subset(sData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
-
-#pull to view under 9000 droplet info
-ALL1<-subset(sData1, Info=="ALL")
-write.csv(ALL1, "Alldroptest9000_20191221.csv")
-
-#Just for the multi-infection (single infection numbers are ok)  
-#If we cutoff at 9000:  
-#Without adding together sep runs, we lose: 21 Larvae  
-#Adding together sep runs, we lose: 18 larvae
-
-#If we cutof at 8000:  
-#Without adding together sep runs, we lose:7  Larvae  
-#Adding together sep runs, we lose:  6 larvae
-# 8000 data code in backup script
-```
-
-#false positives 
-```{r}
 FalsePos1<-FalsePos #make copy
 
 #divide into each clade
@@ -393,191 +343,103 @@ sum(FP_G3$Positives) # 60 positives per 70 wells
 60/70 # .857 -> .9 events per well, Threshold =4 99%, 5 for 95%. LOD = 8 95%, 11 for 99%
 ```
 
+Droplet cutoff, false pos rate, copy number, cells/larvae calc
+```{r}
 
-###9000 droplet Cut off
-Subset for each Infection trial (C1, D1, F1, G3, ALL)
+# 9000 cutoff - if total droplets are below 9000 remove samples 
+
+dData1<-subset(dData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
+
+
+#subset by primer to then account for false positives by primer
+C1_9000_fp<-subset(dData1, Primer=="C1")
+D1_9000_fp<-subset(dData1, Primer=="D1")
+F1_9000_fp<-subset(dData1, Primer=="F1")
+G3_9000_fp<-subset(dData1, Primer=="G3")
+
+#False pos, if Pos dropletes not above threshold, change to 0 positives
+C1_9000_fp$Positives[C1_9000$Positives<9] <- 0
+D1_9000_fp$Positives[D1_9000$Positives<9] <- 0
+F1_9000_fp$Positives[F1_9000$Positives<11] <- 0
+G3_9000_fp$Positives[G3_9000$Positives<11] <- 0
+
+dData2<-rbind(C1_9000_fp,D1_9000_fp,F1_9000_fp,G3_9000_fp )
+
+# use copies/1ul pcr to calculate how many copies are in 1 larvae. 
+#(copies/1ul PCR)*(25ul PCR/y ul.DNA added)*(20uLDNA/1 larvae)
+dData2$copies.larvae<-(dData2$Conc.copies.µL.)*(25/dData2$ul.DNA)*20
+
+# divide copies by copy number per clade (CALC IN EXCEL, QCd)
+dData2$copyNum[dData2$Primer=="C1"]<-2
+dData2$copyNum[dData2$Primer=="D1"]<-1
+dData2$copyNum[dData2$Primer=="F1"]<-3
+dData2$copyNum[dData2$Primer=="G3"]<-19
+
+# calc number of Sym cells in larvae
+dData2$cells.larvae<-dData2$copies.larvae/dData2$copyNum
+  dData2<-dData2[!(dData2$Info=="NTC"),]
+
+#subset Samples
+sData<-subset(dData2, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
+#write.csv(sData, "sData20191221.csv")
+```
+
+
+# Subset for each Infection trial (C1, D1, F1, G3, ALL)
 ```{r} 
-C1_9000<-subset(sData1, Info=="C1")
-D1_9000<-subset(sData1, Info=="D1")
-F1_9000<-subset(sData1, Info=="F1")
-G3_9000<-subset(sData1, Info=="G3")
-ALL_9000<-subset(sData1, Info=="ALL")
-#write.csv(ALL, "Alldroptest9000A.csv")
-
-#False pos, if Pos dropletees not above threshold, change to 0
-
-C1_9000$Positives[C1_9000$Positives<9] <- 0
-D1_9000$Positives[D1_9000$Positives<9] <- 0
-F1_9000$Positives[F1_9000$Positives<11] <- 0
-G3_9000$Positives[G3_9000$Positives<11] <- 0
-
-
+#subset by infection (singles and multi)
+C1_9000<-subset(sData, Info=="C1")
+D1_9000<-subset(sData, Info=="D1")
+F1_9000<-subset(sData, Info=="F1")
+G3_9000<-subset(sData, Info=="G3")
+ALL_9000<-subset(sData, Info=="ALL")
 # for the Alls, cast for Primer
 # remove unneeded columns
 ALL_9000a<-ALL_9000[,c("ALL.number","Primer","cells.larvae","Day","Temp")]
 #write.csv(ALL_9000a, "ALL_9000a.csv")
-#cast by primers
+
+#cast by primers - do this to see which larvae not all primers amplified and cut them
  ALLcast_9000_cast<-dcast(ALL_9000a, ALL.number~Primer, value.var = "cells.larvae") # cast()
-# this returns 1s and 0s, since I have missing primers in some (20) samples here. In order to get this to work right, I need to remove the rest of those larvae before casting. There needs to be a beter way/ 
+ 
+### IF you decide to remove them, this is how:  ***************************decide if you want to use this data instead!
  
  # Remove rest of primers/larvae of missing ones (n=21 larvae)
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="136"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="135"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="236"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="227"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="111"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="120"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="137"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="204"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="30"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="188"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="130"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="138"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="231"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="125"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="187"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="209"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="122"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="208"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="232"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="233"),]
-  ALL_9000a<-ALL_9000a[!(ALL_9000a$ALL.number=="177"),]
+  ALL_9000b<-ALL_9000a[!(ALL_9000a$ALL.number=="136"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="135"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="236"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="227"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="111"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="120"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="137"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="204"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="30"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="188"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="130"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="138"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="231"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="125"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="187"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="209"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="122"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="208"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="232"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="233"),]
+  ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="177"),]
 
-
-
-  
-  
-  #Cast with samps removed without data for all 4 zoox types
- ALLcast_9000_cast2<-dcast(ALL_9000a, ALL.number+Temp+Day~Primer, value.var = "cells.larvae") # cast()
-
-# try tidyverse spread
-  #library(tidyverse)
-  #test<-spread(ALL_9000a,Primer, cells.larvae, fill=NA) #not working, likely due to same error above. 
-```
-
-
-
-
-#ALL Plot infection of individual larvae, multi-infection
-ALL 27C Day 3, stacked bars individuals
-```{r}
-ALL_27_Day3_9000<-subset(ALL_27_9000, Day==3)
-ALL_27_Day3plot_9000<-ggplot() + 
-                  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_27_Day3_9000,
-                           stat="identity")+
-  ylim(0,3500)+
-  ggtitle("Day 3, 27C");ALL_27_Day3plot_9000
-```
-
-ALL 27C Day 7
-```{r}
-ALL_27_Day7_9000<-subset(ALL_27_9000, Day==7)
-ALL_27_Day7plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_27_Day7_9000,
-                           stat="identity")+
-  ylim(0,3500)+
-  ggtitle("Day 7, 27C");ALL_27_Day7plot_9000
-```
-
-ALL 27C Day 14
-```{r}
-ALL_27_Day14_9000<-subset(ALL_27_9000, Day==14)
-ALL_27_Day14plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_27_Day14_9000,
-                           stat="identity")+
-  ylim(0,3500)+
-  ggtitle("Day 14, 27C");ALL_27_Day14plot_9000 
-``` 
-
-Plot all three ALL 27C days together:
-```{r}
-ALL_27_Day3plot_9000<-ALL_27_Day3plot_9000+ theme(legend.position = "none") #remove legend
-ALL_27_Day7plot_9000<-ALL_27_Day7plot_9000+ theme(legend.position = "none") #remove legend
-ALL_27_Day14plot_9000<-ALL_27_Day14plot_9000+ theme(legend.position = "none") #remove legend
-
-grid.arrange(ALL_27_Day3plot_9000, ALL_27_Day7plot_9000, ALL_27_Day14plot_9000, nrow = 1)
-```
-
-30C Day 3
-```{r}
-ALL_30_Day3_9000<-subset(ALL_30_9000, Day==3) 
-ALL_30_Day3plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_30_Day3_9000,
-                           stat="identity")+
-   ylim(0,11000)+
-  ggtitle("Day 3, 30C");ALL_30_Day3plot_9000
-```
-
-30C Day 7
-```{r}
-ALL_30_Day7_9000<-subset(ALL_30_9000, Day==7)
-ALL_30_Day7plot_9000<-ggplot() +  
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_30_Day7_9000,
-                           stat="identity")+
- ylim(0,11000)+
-  ggtitle("Day 7, 30C");ALL_30_Day7plot_9000
-```
-
-30C Day 14
-```{r}
-ALL_30_Day14_9000<-subset(ALL_30_9000, Day==14)
-ALL_30_Day14plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_30_Day14_9000,
-                           stat="identity")+
-   ylim(0,11000)+
-  ggtitle("Day 14, 30C");ALL_30_Day14plot_9000
-```
-
-Plot all three ALL 30C days together:
-```{r}
-ALL_30_Day3plot_9000<-ALL_30_Day3plot_9000+ theme(legend.position = "none") #remove legend 
-ALL_30_Day7plot_9000<-ALL_30_Day7plot_9000+ theme(legend.position = "none") #remove legend
-ALL_30_Day14plot_9000<-ALL_30_Day14plot_9000+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
-
-grid.arrange(ALL_30_Day3plot_9000, ALL_30_Day7plot_9000, ALL_30_Day14plot_9000, nrow = 1)
-```
-
-31C Day 3
-```{r}
-ALL_31_Day3_9000<-subset(ALL_31_9000, Day==3)
-ALL_31_Day3plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_31_Day3_9000,
-                           stat="identity")+
-   #ylim(0,3500)+
-  ggtitle("Day 3, 31C");ALL_31_Day3plot_9000
-``` 
-31C Day 7
-```{r}
-ALL_31_Day7_9000<-subset(ALL_31_9000, Day==7)
-ALL_31_Day7plot_9000<-ggplot() + 
-  geom_bar(aes(y = cells.larvae, x = ALL.number, fill = Symbiont), data = ALL_31_Day7_9000,
-                           stat="identity")+
-   ylim(0,3500)+
-  ggtitle("Day 7, 31C");ALL_31_Day7plot_9000
-```
-
-Plot all two ALL 31C days together:
-```{r}
-ALL_31_Day3plot_9000<-ALL_31_Day3plot_9000+ theme(legend.position = "none") #remove legend 
-#ALL_31_Day7plot_9000<-ALL_30_Day7plot_9000+ theme(legend.position = "none") #remove legend
+  #Cast with samps removed without data for all 4 zoox types if you want to use this data!
+ ALLcast_9000_cast2a<-dcast(ALL_9000a, ALL.number+Temp+Day~Primer, value.var = "cells.larvae") # cast()
  
-grid.arrange(ALL_31_Day3plot_9000, ALL_31_Day7plot_9000,nrow = 1)
-``` 
+  ALLcast_9000_cast2b<-dcast(ALL_9000b, ALL.number+Temp+Day~Primer, value.var = "cells.larvae") # cast()
 
-Plot all ALL cell counts all temps together 3x3
-```{r}
-grid.arrange(ALL_27_Day3plot_9000, ALL_27_Day7plot_9000, ALL_27_Day14plot_9000, ALL_30_Day3plot_9000, ALL_30_Day7plot_9000, ALL_30_Day14plot_9000,ALL_31_Day3plot_9000,ALL_31_Day7plot_9000,nrow = 3)
 ```
 
 
-
-
-# Combine ddPCR with the hemocytometer/count data from each time point for "Full" dataset
-Organize data.   
+# Combine ddPCR with the hemocytometer/count data from each time point for "Full" dataset for INDIVIDUAL INFECTIONS
+Organize data  
 
 C1 oragnize, ddpcr + hemo
 ```{r}
-#C1
+#C1 
 #organize the ddPCR data 
 C1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 C1_9000b<-C1_9000[C1_vars]
@@ -674,19 +536,19 @@ D1Full_Day3plot<-ggplot(data=D1Full_Day3,aes(Temp, cells.larvae)) +
 # 2 hemo counts high
 
 #Day7 
-D1Full_Day7<-subset(D1Full, Day=="7")
-D1Full_Day7plot<-ggplot(data=D1Full_Day7,aes(Temp, cells.larvae)) +
+D1Full_Day7<-subset(D1Full, Day=="7") 
+D1Full_Day7plot<-ggplot(data=D1Full_Day7,aes(Temp, cells.larvae)) + 
   geom_point(aes(colour=factor(count.type)))+
   ggtitle("D1 Day 7");D1Full_Day7plot
 #1 hemo count high
-
+ 
 #Day14 
 D1Full_Day14<-subset(D1Full, Day=="14")
-D1Full_Day14plot<-ggplot(data=D1Full_Day14,aes(Temp, cells.larvae)) +
-  geom_point(aes(colour=factor(count.type)))+
-  ggtitle("D1 Day 14");D1Full_Day14plot
-#hemo counts higher
-
+D1Full_Day14plot<-ggplot(data=D1Full_Day14,aes(Temp, cells.larvae)) + 
+  geom_point(aes(colour=factor(count.type)))+ 
+  ggtitle("D1 Day 14");D1Full_Day14plot 
+#hemo counts higher 
+ 
 #plot together
 grid.arrange(D1Full_Day3plot,D1Full_Day7plot,D1Full_Day14plot, nrow = 1)
 ```
@@ -785,10 +647,10 @@ G3Full_AllDayplot<-ggplot(data=G3Full,aes(Temp, cells.larvae)) +
 
 
 #Day3 G3
-G3Full_Day3<-subset(G3Full, Day=="3")
+G3Full_Day3<-subset(G3Full, Day=="3") 
 G3Full_Day3plot<-ggplot(data=G3Full_Day3,aes(Temp, cells.larvae)) +
   geom_point(aes(colour=factor(count.type)))+
-  ggtitle("G3 Day 3");G3Full_Day3plot
+  ggtitle("G3 Day 3");G3Full_Day3plot 
 #ddpcr high
 
 #Day7 
@@ -797,13 +659,13 @@ G3Full_Day7plot<-ggplot(data=G3Full_Day7,aes(Temp, cells.larvae)) +
   geom_point(aes(colour=factor(count.type)))+
   ggtitle("G3 Day 7");G3Full_Day7plot
 # ddpcr higher
-
+ 
 #Day14 
 G3Full_Day14<-subset(G3Full, Day=="14")
 G3Full_Day14plot<-ggplot(data=G3Full_Day14,aes(Temp, cells.larvae)) +
   geom_point(aes(colour=factor(count.type)))+
   ggtitle("G3 Day 14");G3Full_Day14plot
-
+ 
 
 #plot together
 grid.arrange(G3Full_Day3plot,G3Full_Day7plot,G3Full_Day14plot, nrow = 1)
@@ -816,17 +678,17 @@ C1 single infection plot
 C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-C1Full_mean #display table
+C1Full_mean #display table 
 
 #plot with yaxis log10, real data (not transformed)
 C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
   geom_line(aes(color=Temp))+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
   xlab("Days") + #Label the X Axis
@@ -846,8 +708,6 @@ C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, colo
   ggtitle("Cladocopium")+
   theme(plot.title = element_text(size=20, face = "italic"));C1Full_plot_9000
 
-
-
 ```
 
 D1 single infection plot
@@ -859,7 +719,7 @@ D1Full_mean_9000 <- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell c
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired 
 )
-D1Full_mean_9000 #display table 
+D1Full_mean_9000 #display table  
 
 D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -869,12 +729,12 @@ D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp,
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
   xlab("Days") + #Label the X Axis
   #ylim(-10, 5000) + #set Y limit
-       scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+
+       scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(1,5000))+ 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
         panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.major = element_blank(), #Set the major gridlines 
         panel.grid.minor = element_blank(), #Set the minor gridlines
         text = element_text(size=18),  # set element text  
         plot.background =element_blank(), #Set the plot background 
@@ -882,44 +742,6 @@ D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp,
   ylab(expression(paste("cells/larvae"))) + 
   ggtitle("Durusdinium")+
   theme(plot.title = element_text(size=20, face = "italic"));D1Full_plot_9000
-
-
-### do it again with log values
-#Log raw means
-D1Full$cells.larvae_log<-log(D1Full$cells.larvae+1)
-
-D1Full_meanlog<- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-D1Full_meanlog #display table
-
-
-D1Full_log_plot_9000<-ggplot(data=D1Full_meanlog, aes(x=Day, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+
-  geom_line(aes(color=Temp))+
-  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
-  xlab("Days") + #Label the X Axis
-  ylim(0,7.5) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("log"[10],"(cells/larvae)"))) +
-  ggtitle("D1Full_log")+
-  theme(plot.title = element_text(size=20, face = "italic"));D1Full_log_plot_9000
-
-
 ```
 
 F1 single infection  plot
@@ -952,45 +774,8 @@ F1Full_plot_9000<-ggplot(data=F1Full_mean_9000, aes(x=Day, y=mean, group = Temp,
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("Cells/Larvae"))) +
-  ggtitle("Fugacium")+
+  ggtitle("Fugacium")+ 
   theme(plot.title = element_text(size=20, face = "italic"));F1Full_plot_9000
-
-
-### do it again with log values
-#Log raw means
-F1Full$cells.larvae_log<-log(F1Full$cells.larvae+1)
-
-F1Full_meanlog<- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-F1Full_meanlog #display table
-
-
-F1Full_log_plot_9000<-ggplot(data=F1Full_meanlog, aes(x=Day, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+
-  geom_line(aes(color=Temp))+
-  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
-  xlab("Days") + #Label the X Axis
-  ylim(0,7.5) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("log"[10],"(cells/larvae)"))) +
-  ggtitle("F1Full_log")+
-  theme(plot.title = element_text(size=20, face = "italic"));F1Full_log_plot_9000
-
 
 ```
 
@@ -1004,7 +789,7 @@ G3Full_mean_9000 <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell c
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 G3Full_mean_9000 #display table
-
+ 
 G3Full_plot_9000<-ggplot(data=G3Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
@@ -1027,40 +812,7 @@ G3Full_plot_9000<-ggplot(data=G3Full_mean_9000, aes(x=Day, y=mean, group = Temp,
   theme(plot.title = element_text(size=20, face = "italic"));G3Full_plot_9000
 
 
-### do it again with log values
-#Log raw means
-G3Full$cells.larvae_log<-log(G3Full$cells.larvae+1)
 
-G3Full_meanlog<- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-G3Full_meanlog #display table
-
-
-G3Full_log_plot_9000<-ggplot(data=G3Full_meanlog, aes(x=Day, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+
-  geom_line(aes(color=Temp))+
-  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
-  xlab("Days") + #Label the X Axis
-  ylim(-0,7.5) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("log"[10],"(cells/larvae)"))) +
-  ggtitle("G3Full_log")+
-  theme(plot.title = element_text(size=20, face = "italic"));G3Full_log_plot_9000
 ``` 
 
 Plot all four SINGLE INFECTION together:
@@ -1071,202 +823,36 @@ D1Full_plot_9000<-D1Full_plot_9000+ theme(legend.position = "none") #remove lege
 F1Full_plot_9000<-F1Full_plot_9000+ theme(legend.position = "none") #remove legend
 G3Full_plot_9000<-G3Full_plot_9000+ theme(legend.position = "none") #remove legend
 grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000, nrow = 1)
-
-#logs (remove the 'log' to print non logscale)
-C1Full_log_plot_9000<-C1Full_log_plot_9000+ theme(legend.position = "none") #remove legend
-D1Full_log_plot_9000<-D1Full_log_plot_9000+ theme(legend.position = "none") #remove legend
-F1Full_log_plot_9000<-F1Full_log_plot_9000+ theme(legend.position = "none") #remove legend
-#G3_plot_9000<-G3_plot_9000+ theme(legend.position = "none") #remove legend
-
-grid.arrange(C1Full_log_plot_9000, D1Full_log_plot_9000, F1Full_log_plot_9000,G3Full_log_plot_9000, nrow = 2)
 ```
 
-
-
-##Make Relative Abundance dataframe, rerun plots of infection with RA, ddPCR
-```{r}
-#ALLS, ddPCR
-
-#use ALLcast_9000_cast2
-#calc relative abundance for each
-
-ALL_RelA<-ALLcast_9000_cast2 #copy
-
-ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Gerakladium<-ALL_RelA$G3/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-
-ALL_RelA<-na.omit(ALL_RelA)# remove any rows without values for primers
-ALL_RelAvar<-c("Day", "Temp", "ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
-ALL_RelA_a<-ALL_RelA[ALL_RelAvar]
-ALL_RelA_b<-melt(ALL_RelA_a, id=c("Day", "Temp", "ALL.number"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
-colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="variable"]<-"Symbiont" #rename value col
-
-``` 
-
-Plot RA as stacked bar plots by Day and then by temp 
-```{r}
-
-#pull out by temp
-ALL_RelA_27<-subset(ALL_RelA_b, Temp=="27")
-ALL_RelA_30<-subset(ALL_RelA_b, Temp=="30")
-ALL_RelA_31<-subset(ALL_RelA_b, Temp=="31")
-
-```
-
-27C - ALL relative abundance stacked bar
-```{r}
-#27C means
-ALL_RelA_27_mean <- ddply(ALL_RelA_27, c("Day", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-ALL_RelA_27_mean #display table
-
-#round to nearest integer
-ALL_RelA_27_mean$mean100<-ALL_RelA_27_mean$mean*100
-ALL_RelA_27_mean$mean100r<-round(ALL_RelA_27_mean$mean100, digits = 1)
-
-#using locuszoom https://www.r-bloggers.com/palettes-in-r/
-
-#stacked bar plot 27C by day  ****** not ordering right yet
-#ALL_RelA_27_mean <- ddply(ALL_RelA_27_mean, .(Day),
-                     #transform, pos = cumsum(mean100r) - (0.5 * mean100r))
-
-            
- ALL_STP_27<-ggplot(ALL_RelA_27_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) + 
-           geom_bar(stat="identity")+
-            geom_text(size=10, position=position_stack(vjust = 0.5))+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae (%)"))) +
-  ggtitle("27C");ALL_STP_27           
-            
-```
-
-30C - ALL relative abundance stacked bar
-```{r}
-#30C means
-ALL_RelA_30_mean <- ddply(ALL_RelA_30, c("Day", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-ALL_RelA_30_mean #display table
-
-#round to nearest integer
-ALL_RelA_30_mean$mean100<-ALL_RelA_30_mean$mean*100
-ALL_RelA_30_mean$mean100r<-round(ALL_RelA_30_mean$mean100, digits = 1)
-
-#plot
-ALL_STP_30<-ggplot(ALL_RelA_30_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) + 
-           geom_bar(stat="identity")+
-            geom_text(size=10, position=position_stack(vjust = 0.5))+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae (%)"))) +
-  ggtitle("30C");ALL_STP_30           
-            
-```
-31C - ALL relative abundance stacked bar
-```{r}
-#31C means
-ALL_RelA_31_mean <- ddply(ALL_RelA_31, c("Day", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-ALL_RelA_31_mean #display table
-
-#round to nearest integer
-ALL_RelA_31_mean$mean100<-ALL_RelA_31_mean$mean*100
-ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 1)
-
-#plot
-ALL_STP_31<-ggplot(ALL_RelA_31_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) + 
-           geom_bar(stat="identity")+
-           # geom_text(size=10, position=position_stack(vjust = 0.5))+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae (%)"))) +
-  ggtitle("31C");ALL_STP_31           
-            
-```
-
-Plot all temps together (Rel Abund)
-```{r}
-
-ALL_STP_27<-ALL_STP_27+ theme(legend.position = "none") #remove legend
-ALL_STP_30<-ALL_STP_30+ theme(legend.position = "none") #remove legend
-ALL_STP_31<-ALL_STP_31+ theme(legend.position = "none") #remove legend
-
-grid.arrange(ALL_STP_27, ALL_STP_30, ALL_STP_31, nrow = 1)
-``` 
-
-
-#Multi-infection 9000 ddPCR only
-Subset by Temp treatments, ALL
+#Multi-infection raw counts
+Subset by Temp treatments
 raw counts: line and bar plots 
 ```{r}  
-ALL_27_9000c<-subset(ALLcast_9000_cast2, Temp==27)
-ALL_30_9000c<-subset(ALLcast_9000_cast2, Temp==30)
-ALL_31_9000c<-subset(ALLcast_9000_cast2, Temp==31)
+#use ALLcast_9000_cast2a THIS IS WITHOUT SAMPS REMOVED WHEN ALL NOT AMPED, DECIDE IF YOU WANT TO RERUN
+ALL_27_9000c<-subset(ALLcast_9000_cast2a, Temp==27)
+ALL_30_9000c<-subset(ALLcast_9000_cast2a, Temp==30)
+ALL_31_9000c<-subset(ALLcast_9000_cast2a, Temp==31)
 
 # melt
-ALL_27_9000<-melt(ALL_27_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
-colnames(ALL_27_9000)[colnames(ALL_27_9000)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_27_9000)[colnames(ALL_27_9000)=="variable"]<-"Symbiont" #rename value col
+ALL_27_9000d<-melt(ALL_27_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+colnames(ALL_27_9000d)[colnames(ALL_27_9000d)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_27_9000d)[colnames(ALL_27_9000d)=="variable"]<-"Symbiont" #rename value col
 
 
-ALL_30_9000<-melt(ALL_30_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
-colnames(ALL_30_9000)[colnames(ALL_30_9000)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_30_9000)[colnames(ALL_30_9000)=="variable"]<-"Symbiont" #rename value col
+ALL_30_9000d<-melt(ALL_30_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+colnames(ALL_30_9000d)[colnames(ALL_30_9000d)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_30_9000d)[colnames(ALL_30_9000d)=="variable"]<-"Symbiont" #rename value col
 
 
-ALL_31_9000<-melt(ALL_31_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
-colnames(ALL_31_9000)[colnames(ALL_31_9000)=="value"]<-"cells.larvae" #rename value col 
-colnames(ALL_31_9000)[colnames(ALL_31_9000)=="variable"]<-"Symbiont" #rename value col 
+ALL_31_9000d<-melt(ALL_31_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+colnames(ALL_31_9000d)[colnames(ALL_31_9000d)=="value"]<-"cells.larvae" #rename value col 
+colnames(ALL_31_9000d)[colnames(ALL_31_9000d)=="variable"]<-"Symbiont" #rename value col 
 ``` 
 
 ALL Ambient 27C
 ```{r}
-ALL_27_9000_mean <- ddply(ALL_27_9000, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
+ALL_27_9000_mean <- ddply(ALL_27_9000d, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -1321,7 +907,7 @@ ALL_RAW_27<-ggplot(ALL_27_9000_mean, aes(y=mean1, x=Day, fill=Symbiont, label=me
 
 ALL High 30C
 ```{r}
-ALL_30_mean_9000 <- ddply(ALL_30_9000, c("Day", "Temp","Symbiont"), summarise, #summarize cell count
+ALL_30_mean_9000 <- ddply(ALL_30_9000d, c("Day", "Temp","Symbiont"), summarise, #summarize cell count
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                   sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -1377,7 +963,7 @@ ALL_RAW_30<-ggplot(ALL_30_mean_9000, aes(y=mean1, x=Day, fill=Symbiont, label=me
 
 ALL High 31C
 ```{r}
-ALL_31_mean_9000 <- ddply(ALL_31_9000, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
+ALL_31_mean_9000 <- ddply(ALL_31_9000d, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -1452,20 +1038,20 @@ grid.arrange(ALL_27_plot_9000, ALL_30_plot_9000, ALL_31_plot_9000,ALL_STP_27, AL
 
 ##Plot multi raw counts under plots of single counts, pull multi out by clade
 ```{r}
-C1_27C_multi<-subset(ALL_27_9000, Symbiont=="C1")
-D1_27C_multi<-subset(ALL_27_9000, Symbiont=="D1")
-F1_27C_multi<-subset(ALL_27_9000, Symbiont=="F1")
-G3_27C_multi<-subset(ALL_27_9000, Symbiont=="G3")
+C1_27C_multi<-subset(ALL_27_9000d, Symbiont=="C1")
+D1_27C_multi<-subset(ALL_27_9000d, Symbiont=="D1")
+F1_27C_multi<-subset(ALL_27_9000d, Symbiont=="F1")
+G3_27C_multi<-subset(ALL_27_9000d, Symbiont=="G3")
 
-C1_30C_multi<-subset(ALL_30_9000, Symbiont=="C1")
-D1_30C_multi<-subset(ALL_30_9000, Symbiont=="D1")
-F1_30C_multi<-subset(ALL_30_9000, Symbiont=="F1")
-G3_30C_multi<-subset(ALL_30_9000, Symbiont=="G3")
+C1_30C_multi<-subset(ALL_30_9000d, Symbiont=="C1")
+D1_30C_multi<-subset(ALL_30_9000d, Symbiont=="D1")
+F1_30C_multi<-subset(ALL_30_9000d, Symbiont=="F1")
+G3_30C_multi<-subset(ALL_30_9000d, Symbiont=="G3")
 
-C1_31C_multi<-subset(ALL_31_9000, Symbiont=="C1")
-D1_31C_multi<-subset(ALL_31_9000, Symbiont=="D1")
-F1_31C_multi<-subset(ALL_31_9000, Symbiont=="F1")
-G3_31C_multi<-subset(ALL_31_9000, Symbiont=="G3")
+C1_31C_multi<-subset(ALL_31_9000d, Symbiont=="C1")
+D1_31C_multi<-subset(ALL_31_9000d, Symbiont=="D1")
+F1_31C_multi<-subset(ALL_31_9000d, Symbiont=="F1")
+G3_31C_multi<-subset(ALL_31_9000d, Symbiont=="G3")
 
 #bind by clade
 #C1
@@ -1640,21 +1226,21 @@ grid.arrange(C1Full_plot_9000,C1_MULTI_plot, D1Full_plot_9000,D1_MULTI_plot, F1F
 
 ###Plot by Day
 ```{r} 
-ALL_D3_9000c<-subset(ALLcast_9000_cast2, Day=="3")
-ALL_D7_9000c<-subset(ALLcast_9000_cast2, Day=="7") 
-ALL_D14_9000c<-subset(ALLcast_9000_cast2, Day=="14")
+ALL_D3_9000e<-subset(ALLcast_9000_cast2a, Day=="3")
+ALL_D7_9000e<-subset(ALLcast_9000_cast2a, Day=="7") 
+ALL_D14_9000e<-subset(ALLcast_9000_cast2a, Day=="14")
  
 # melt
-ALL_D3_9000<-melt(ALL_D3_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+ALL_D3_9000<-melt(ALL_D3_9000e, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
 colnames(ALL_D3_9000)[colnames(ALL_D3_9000)=="value"]<-"cells.larvae" #rename value col
 colnames(ALL_D3_9000)[colnames(ALL_D3_9000)=="variable"]<-"Symbiont" #rename value col
 
 
-ALL_D7_9000<-melt(ALL_D7_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+ALL_D7_9000<-melt(ALL_D7_9000e, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
 colnames(ALL_D7_9000)[colnames(ALL_D7_9000)=="value"]<-"cells.larvae" #rename value col
 colnames(ALL_D7_9000)[colnames(ALL_D7_9000)=="variable"]<-"Symbiont" #rename value col 
  
-ALL_D14_9000<-melt(ALL_D14_9000c, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
+ALL_D14_9000<-melt(ALL_D14_9000e, id=c("ALL.number","Temp","Day"), measure.vars = c("C1","D1","F1","G3"))
 colnames(ALL_D14_9000)[colnames(ALL_D14_9000)=="value"]<-"cells.larvae" #rename value col
 colnames(ALL_D14_9000)[colnames(ALL_D14_9000)=="variable"]<-"Symbiont" #rename value col
 ```
@@ -1775,7 +1361,7 @@ THIS IS A MESS...
 ```{r}
 #use ALL_9000a or ALLcast_9000_cast2
 
-ALLcast_9000_cast3<-ALLcast_9000_cast2 #copy df
+ALLcast_9000_cast3<-ALLcast_9000_cast2a #copy df
 #if any symb present, call 1, if none call 0
 ALLcast_9000_cast3$C1PA[ALLcast_9000_cast3$C1>0]<-1 
 ALLcast_9000_cast3$D1PA[ALLcast_9000_cast3$D1>0]<-1
@@ -1825,9 +1411,6 @@ Infect27_plot<-ggplot(NumbSymb_B, aes(y=value, x=Day, full=Temp)) +
   ylab(expression(paste("# of types of symbionts"))) +
   ggtitle("27C");Infect27_plot           
             
-
-
-
 ```
 
 ```{r}
@@ -1839,6 +1422,428 @@ All_PA_27_D7<-subset(All_PA_27, Day==7)
 All_PA_27_D14<-subset(All_PA_27, Day==14)
 
 ``` 
+
+##Make Relative Abundance dataframe, rerun ALL MULTI plots above with relative abundance data
+```{r}
+#ALLS, ddPCR
+
+#use ALLcast_9000_cast2b
+#calc relative abundance for each
+
+ALL_RelA<-ALLcast_9000_cast2b #copy
+
+ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
+ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
+ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
+ALL_RelA$Gerakladium<-ALL_RelA$G3/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
+
+ALL_RelA<-na.omit(ALL_RelA)# remove any rows without values for primers
+ALL_RelAvar<-c("Day", "Temp", "ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+ALL_RelA_a<-ALL_RelA[ALL_RelAvar]
+ALL_RelA_b<-melt(ALL_RelA_a, id=c("Day", "Temp", "ALL.number"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="variable"]<-"Symbiont" #rename value col
+
+``` 
+
+Plot RA as stacked bar plots by Day and then by temp 
+```{r}
+
+#pull out by temp
+ALL_RelA_27<-subset(ALL_RelA_b, Temp=="27")
+ALL_RelA_30<-subset(ALL_RelA_b, Temp=="30")
+ALL_RelA_31<-subset(ALL_RelA_b, Temp=="31")
+
+```
+
+27C - ALL relative abundance stacked bar
+```{r}
+#27C means
+ALL_RelA_27_mean <- ddply(ALL_RelA_27, c("Day", "Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ALL_RelA_27_mean #display table
+
+#round to nearest integer
+ALL_RelA_27_mean$mean100<-ALL_RelA_27_mean$mean*100
+ALL_RelA_27_mean$mean100r<-round(ALL_RelA_27_mean$mean100, digits = 1)
+
+  #bar plot          
+ ALL_STP_27<-ggplot(ALL_RelA_27_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) +  
+           geom_bar(stat="identity")+ 
+            geom_text(size=10, position=position_stack(vjust = 0.5))+
+            scale_fill_locuszoom()+ 
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae (%)"))) +  
+  ggtitle("27C");ALL_STP_27     
+ 
+ #line plot
+ ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
+  geom_line(aes(color=Symbiont))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("27C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_27_line
+            
+```
+
+30C - ALL relative abundance stacked bar
+```{r}
+#30C means
+ALL_RelA_30_mean <- ddply(ALL_RelA_30, c("Day", "Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ALL_RelA_30_mean #display table
+
+#round to nearest integer
+ALL_RelA_30_mean$mean100<-ALL_RelA_30_mean$mean*100
+ALL_RelA_30_mean$mean100r<-round(ALL_RelA_30_mean$mean100, digits = 1)
+
+#bar plot
+ALL_STP_30<-ggplot(ALL_RelA_30_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) + 
+           geom_bar(stat="identity")+
+            geom_text(size=10, position=position_stack(vjust = 0.5))+
+            scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae (%)"))) +
+  ggtitle("30C");ALL_STP_30     
+
+
+#line plot
+ ALL_STP_30_line<-ggplot(data=ALL_RelA_30_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
+  geom_line(aes(color=Symbiont))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("30C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_30_line
+            
+```
+31C - ALL relative abundance stacked bar
+```{r}
+#31C means
+ALL_RelA_31_mean <- ddply(ALL_RelA_31, c("Day", "Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ALL_RelA_31_mean #display table
+
+#round to nearest integer
+ALL_RelA_31_mean$mean100<-ALL_RelA_31_mean$mean*100
+ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 1)
+
+#bar plot
+ALL_STP_31<-ggplot(ALL_RelA_31_mean, aes(y=mean100r, x=Day, fill=Symbiont, label=mean100r)) + 
+           geom_bar(stat="identity")+
+            geom_text(size=10, position=position_stack(vjust = 0.5))+
+            scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae (%)"))) +
+  ggtitle("31C");ALL_STP_31    
+
+#line plot
+ ALL_STP_31_line<-ggplot(data=ALL_RelA_31_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
+  geom_line(aes(color=Symbiont))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("31C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_31_line
+            
+```
+
+Plot all temps together (Rel Abund)
+```{r}
+ #bar
+ALL_STP_27<-ALL_STP_27+ theme(legend.position = "none") #remove legend 
+ALL_STP_30<-ALL_STP_30+ theme(legend.position = "none") #remove legend
+ALL_STP_31<-ALL_STP_31+ theme(legend.position = "none") #remove legend
+grid.arrange(ALL_STP_27, ALL_STP_30, ALL_STP_31, nrow = 1)
+
+#line
+ALL_STP_27_line<-ALL_STP_27_line+ theme(legend.position = "none") #remove legend 
+ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
+#ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
+ 
+grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
+``` 
+
+##Plot multi RelAbund under plots of single counts, pull multi out by clade
+```{r}
+C1_27C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Cladocopium")
+D1_27C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Durusdinium")
+F1_27C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Fugacium")
+G3_27C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Gerakladium")
+
+C1_30C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Cladocopium")
+D1_30C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Durusdinium")
+F1_30C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Fugacium")
+G3_30C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Gerakladium")
+
+C1_31C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Cladocopium")
+D1_31C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Durusdinium")
+F1_31C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Fugacium")
+G3_31C_multi_RelAb<-subset(ALL_RelA_b, Symbiont=="Gerakladium")
+
+#bind by clade
+#C1
+C1_MULTI_RelAb<-rbind(C1_27C_multi_RelAb,C1_30C_multi_RelAb,C1_31C_multi_RelAb)
+#D1
+D1_MULTI_RelAb<-rbind(D1_27C_multi_RelAb,D1_30C_multi_RelAb,D1_31C_multi_RelAb)
+#C1
+F1_MULTI_RelAb<-rbind(F1_27C_multi_RelAb,F1_30C_multi_RelAb,F1_31C_multi_RelAb)
+#C1
+G3_MULTI_RelAb<-rbind(G3_27C_multi_RelAb,G3_30C_multi_RelAb,G3_31C_multi_RelAb)
+```
+
+PLOT C1 Multi infection
+```{r}
+C1_MULTI_RelAb_mean <- ddply(C1_MULTI_RelAb, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+C1_MULTI_RelAb_mean #display table
+C1_MULTI_RelAb_mean<-na.omit(C1_MULTI_RelAb_mean)
+
+C1_MULTI_RelAb_plot<-ggplot(data=C1_MULTI_RelAb_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("27C C1 Multi Relabund")+
+  theme(plot.title = element_text(size=20, face = "italic"));C1_MULTI_RelAb_plot
+``` 
+
+PLOT D1 Multi infection
+```{r}
+D1_MULTI_RelAb_mean <- ddply(D1_MULTI_RelAb, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+D1_MULTI_RelAb_mean #display table
+D1_MULTI_RelAb_mean<-na.omit(D1_MULTI_RelAb_mean)
+
+D1_MULTI_RelAb_plot<-ggplot(data=D1_MULTI_RelAb_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+    ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Cells/Larvae"))) +
+  ggtitle("D1 27C Multi RelAbund")+
+  theme(plot.title = element_text(size=20, face = "italic"));D1_MULTI_RelAb_plot
+``` 
+
+PLOT F1 Multi infection
+```{r}
+F1_MULTI_RelAb_mean <- ddply(F1_MULTI_RelAb, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+F1_MULTI_RelAb_mean #display table
+F1_MULTI_RelAb_mean<-na.omit(F1_MULTI_RelAb_mean)
+
+F1_MULTI_RelAb_plot<-ggplot(data=F1_MULTI_RelAb_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+      ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("F1 27C Multi Raw Counts")+
+  theme(plot.title = element_text(size=20, face = "italic"));F1_MULTI_RelAb_plot
+``` 
+
+PLOT G3 Multi infection
+```{r}
+G3_MULTI_RelAb_mean <- ddply(G3_MULTI_RelAb, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+G3_MULTI_RelAb_mean #display table
+G3_MULTI_RelAb_mean<-na.omit(G3_MULTI_RelAb_mean)
+
+G3_MULTI_RelAb_plot<-ggplot(data=G3_MULTI_RelAb_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("Days") + #Label the X Axis
+        ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("G3 27C Multi RelAbund")+
+  theme(plot.title = element_text(size=20, face = "italic"));G3_MULTI_RelAb_plot
+``` 
+
+Plot all Symbiont multi ALL  together:
+```{r}
+#line plot 
+C1_MULTI_RelAb_plot<-C1_MULTI_RelAb_plot+ theme(legend.position = "none") #remove legend
+D1_MULTI_RelAb_plot<-D1_MULTI_RelAb_plot+ theme(legend.position = "none") #remove legend
+F1_MULTI_RelAb_plot<-F1_MULTI_RelAb_plot+ theme(legend.position = "none") #remove legend
+G3_MULTI_RelAb_plot<-G3_MULTI_RelAb_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+C1Full_plot_9000<-C1Full_plot_9000+ theme(legend.position = "none") #remove legend
+D1Full_plot_9000<-D1Full_plot_9000+ theme(legend.position = "none") #remove legend
+F1Full_plot_9000<-F1Full_plot_9000+ theme(legend.position = "none") #remove legend
+G3_MULTI_plot<-G3_MULTI_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(C1_MULTI_RelAb_plot, D1_MULTI_RelAb_plot, F1_MULTI_RelAb_plot, G3_MULTI_RelAb_plot, nrow = 1)
+
+# plot single relabund plots over Multi clade plots
+grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000,
+  C1_MULTI_RelAb_plot, D1_MULTI_RelAb_plot, F1_MULTI_RelAb_plot, G3_MULTI_RelAb_plot, nrow = 2)
+
+# plot single relabund plots over Multi clade plots - plot clades next to eachother, not on top
+grid.arrange(C1Full_plot_9000,C1_MULTI_RelAb_plot, D1Full_plot_9000,D1_MULTI_RelAb_plot, F1Full_plot_9000,F1_MULTI_RelAb_plot, G3Full_plot_9000,G3_MULTI_RelAb_plot, nrow = 2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3592,6 +3597,7 @@ heat_relabund_31_b_heatmap <- heatmap(heat_relabund_31_b_matrix, col = cm.colors
 C1
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2 = Alls
+Raw counts, on long y-axis
 ```{r}
 MultiCounts<-ALLcast_9000_cast2
 MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
@@ -3605,16 +3611,14 @@ SingleCounts<-SingleCounts[-c(4:5,7:8)] #remove metadata
 
 CountsCompare<-rbind(SingleCounts, MultiCounts2) # combine
 
-#logged
-CountsCompare$cells.larvae_log<-log(CountsCompare$cells.larvae+1)
 
 #MEANs
 CountsCompare_mean <- ddply(CountsCompare, c("single.multi","Temp","Day","Symbiont"), summarise, #summarize cell count
-                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
-                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
-                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 ) 
 CountsCompare_mean #display table
 
@@ -3628,9 +3632,9 @@ CountsCompare27<-subset(CountsCompare_mean, Temp=="27")
 
 CountsCompare27_plot<-ggplot(CountsCompare27, aes(y=mean, x=Day, fill=Symbiont)) + 
            geom_bar(stat="identity",position=position_dodge())+ 
-       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  #Label the X Axis 
             #scale_fill_locuszoom()+
-    geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
                  position=position_dodge(.9)) +
    xlab("Day")+ 
  theme_bw() + #Set the background color
@@ -3650,9 +3654,9 @@ CountsCompare30<-subset(CountsCompare_mean, Temp=="30")
 
 CountsCompare30_plot<-ggplot(CountsCompare30, aes(y=mean, x=Day, fill=Symbiont)) + 
            geom_bar(stat="identity",position=position_dodge())+ 
-       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  
             #scale_fill_locuszoom()+
-   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
                  position=position_dodge(.9)) +
    xlab("Day")+ 
  theme_bw() + #Set the background color
@@ -3673,7 +3677,7 @@ CountsCompare31<-subset(CountsCompare_mean, Temp=="31")
 
 CountsCompare31_plot<-ggplot(CountsCompare31, aes(y=mean, x=Day, fill=Symbiont)) + 
            geom_bar(stat="identity",position=position_dodge())+ 
-       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  #Label the X Axis 
             #scale_fill_locuszoom()+
    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
                  position=position_dodge(.9)) +
@@ -3695,8 +3699,14 @@ CountsCompare31_plot<-ggplot(CountsCompare31, aes(y=mean, x=Day, fill=Symbiont))
 
 grid.arrange(CountsCompare27_plot, CountsCompare30_plot,CountsCompare31_plot, nrow=1)
 
-```
+#stats run on logged data for normality
 
+#logged
+CountsCompare$cells.larvae_log<-log(CountsCompare$cells.larvae+1)
+
+
+
+```
 
 
 
