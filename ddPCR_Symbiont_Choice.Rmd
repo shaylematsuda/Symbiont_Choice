@@ -70,7 +70,7 @@ library(huxtable)
 library(flextable)
 ```
 
-Setup data
+Setup data: Hemocytometer and scope counts
 ```{r}
 ####Load in hemocytometer counts and fluorescent scope counts:
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
@@ -99,9 +99,9 @@ Countdat1<-Countdat1[!(Countdat1$Symbiont=="CONTROL"),] #remove controls
 Countdat1$Temp<-as.factor(Countdat1$Temp)
 Countdat1$cells.larvae<-as.numeric(Countdat1$cells.larvae)
 
-
-####Load in ddPCR data with Threshold set in QuantaSoft Analysis
-
+```
+#Load in ddPCR data with Threshold set in QuantaSoft Analysis
+```{r}
 #Read in ddPCR plate data
 Plate1<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE1_20190424_threshold.csv")
 Plate2<- read.csv("ddPCR_thresholdData/SHAYLE_PLATE2_20190429_threshold.csv")
@@ -385,7 +385,7 @@ sData<-subset(dData2, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
 ```
 
 
-# Subset for each Infection trial (C1, D1, F1, G3, ALL)
+# Subset for each ddPCR Infection trial (C1, D1, F1, G3, ALL)
 ```{r} 
 #subset by infection (singles and multi)
 C1_9000<-subset(sData, Info=="C1")
@@ -395,13 +395,13 @@ G3_9000<-subset(sData, Info=="G3")
 ALL_9000<-subset(sData, Info=="ALL")
 # for the Alls, cast for Primer
 # remove unneeded columns
-ALL_9000a<-ALL_9000[,c("ALL.number","Primer","cells.larvae","Day","Temp")]
+ALL_9000a<-ALL_9000[,c("ALL.number","Primer","cells.larvae","Day","Temp","Pot")]
 #write.csv(ALL_9000a, "ALL_9000a.csv")
 
 #cast by primers - do this to see which larvae not all primers amplified and cut them
  ALLcast_9000_cast<-dcast(ALL_9000a, ALL.number~Primer, value.var = "cells.larvae") # cast()
  
-### IF you decide to remove them, this is how:  ***************************decide if you want to use this data instead!
+### For Relative Abundance, remove larvae without amplification in all 4 symbiont genera: 
  
  # Remove rest of primers/larvae of missing ones (n=21 larvae)
   ALL_9000b<-ALL_9000a[!(ALL_9000a$ALL.number=="136"),]
@@ -426,45 +426,232 @@ ALL_9000a<-ALL_9000[,c("ALL.number","Primer","cells.larvae","Day","Temp")]
   ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="233"),]
   ALL_9000b<-ALL_9000b[!(ALL_9000b$ALL.number=="177"),]
 
-  #Cast with samps removed without data for all 4 zoox types if you want to use this data!
- ALLcast_9000_cast2a<-dcast(ALL_9000a, ALL.number+Temp+Day~Primer, value.var = "cells.larvae") # cast()
- 
-  ALLcast_9000_cast2b<-dcast(ALL_9000b, ALL.number+Temp+Day~Primer, value.var = "cells.larvae") # cast()
+# Raw df
+ ALLcast_9000_cast2a<-dcast(ALL_9000a, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
 
+ # Relative Abundance df
+  ALLcast_9000_cast2b<-dcast(ALL_9000b, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
 ```
 
 
 # Combine ddPCR with the hemocytometer/count data from each time point for "Full" dataset for INDIVIDUAL INFECTIONS
 Organize data  
 
-C1 oragnize, ddpcr + hemo
+oragnize, scope + hemo data
+```{r}
+# create count.type for hemo and scope
+Countdat_D3<-subset(Countdat1, Day=="3") #subset day 3, scope counts, individuals
+Countdat_D3$count.type<-"scope"
+Countdat_D714<-subset(Countdat1, Day=="7"|Day=="14") #subset days 7 and 14, hemo counts
+Countdat_D714$count.type<-"hemo"
+
+Countdat_2<-rbind(Countdat_D3,Countdat_D714) #bind together for non-ddPCR dataset
+```
+
+ ddPCR vs hemo + scope
 ```{r}
 #C1 
-#organize the ddPCR data 
+#organize the ddPCR data for individual infections  
 C1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 C1_9000b<-C1_9000[C1_vars]
 colnames(C1_9000b)[colnames(C1_9000b)=="Info"] <- "Symbiont"
 C1_9000b$count.type<-"ddPCR"
+summary(C1_9000b$cells.larvae)
+
+hist(C1_9000b$cells.larvae) #not normal
+C1_9000b$cells.larvae_log<-log(C1_9000b$cells.larvae+1)
+  hist(C1_9000b$cells.larvae_log, w=.01, breaks = 10) #more normal but not great
+  
+#  C1_9000b$cells.larvae_sqrt<-sqrt(C1_9000b$cells.larvae) #sqrt not great
+#hist(C1_9000b$cells.larvae_sqrt)
+
+C1_9000b$cells.larvae_1oX<-1/(C1_9000b$cells.larvae) #1/x not great
+hist(C1_9000b$cells.larvae_1oX)
+
+C1_9000b$cells.larvae_x2<-(C1_9000b$cells.larvae)^2 #x^2 not great
+hist(C1_9000b$cells.larvae_x2)
+
+
+  
 
 #organize hemo data
-C1countdat<-subset(Countdat1, Symbiont=="C1")
-C1countdat$count.type<-"hemo"
+C1countdat<-subset(Countdat_2, Symbiont=="C1")
+hist(C1countdat$cells.larvae)
+
+C1countdat$cells.larvae_log<-log10(C1countdat$cells.larvae+1)
+hist(C1countdat$cells.larvae_log)
 
 C1Full<-rbind(C1_9000b,C1countdat) #combine hemo and ddPCR
 
 
+C1Full$cells.larvae_log<-log(C1Full$cells.larvae+1)
+hist(C1Full$cells.larvae_log, breaks=50)
+
+
 #Raw means
-C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type"), summarise, #summarize cell counts
+C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);C1Full_mean #display table
+
+# Remove rows with <3 replicates
+C1Full_mean<-C1Full_mean[!(C1Full_mean$N==1),]
+
+C1vars2<-c("Day", "Temp","count.type", "mean","Symbiont")
+C1Full_means2<-C1Full_mean[C1vars2]
+
+#Day 3 scope vs ddpcr
+C1Full_means3<-subset(C1Full_means2, Day=="3")
+C1Full_means3<-dcast(C1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+#Day 7 and 14 scope vs ddpcr
+C1Full_means4<-subset(C1Full_means2, Day=="7"|Day=="14")
+C1Full_means4<-dcast(C1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+
+
+#D1 
+#organize the ddPCR data 
+D1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+D1_9000b<-D1_9000[D1_vars]
+colnames(D1_9000b)[colnames(D1_9000b)=="Info"] <- "Symbiont"
+D1_9000b$count.type<-"ddPCR"
+
+#organize hemo data
+D1countdat<-subset(Countdat_2, Symbiont=="D1")
+D1Full<-rbind(D1_9000b,D1countdat) #combine hemo and ddPCR
+
+#Raw means
+D1Full_mean<- ddply(D1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-C1Full_mean #display table
+);D1Full_mean #display table
 
-C1Full_mean$code<-paste0(C1Full_mean$Temp, C1Full_mean$Day, C1Full_mean$count.type)
+D1vars2<-c("Day", "Temp","count.type", "mean","Symbiont")
+D1Full_means2<-D1Full_mean[D1vars2]
 
+#Day 3 scope vs ddpcr
+D1Full_means3<-subset(D1Full_means2, Day=="3")
+D1Full_means3<-dcast(D1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+#Day 7 and 14 scope vs ddpcr
+D1Full_means4<-subset(D1Full_means2, Day=="7"|Day=="14")
+D1Full_means4<-dcast(D1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+
+#F1 
+#organize the ddPCR data 
+F1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+F1_9000b<-F1_9000[F1_vars]
+colnames(F1_9000b)[colnames(F1_9000b)=="Info"] <- "Symbiont"
+F1_9000b$count.type<-"ddPCR"
+
+#organize hemo data
+F1countdat<-subset(Countdat_2, Symbiont=="F1")
+F1Full<-rbind(F1_9000b,F1countdat) #combine hemo and ddPCR
+
+#Raw means
+F1Full_mean<- ddply(F1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);F1Full_mean #display table
+
+# Remove rows with <5 replicates
+F1Full_mean<-F1Full_mean[!(F1Full_mean$N==1),]
+
+F1vars2<-c("Day", "Temp","count.type", "mean", "Symbiont")
+F1Full_means2<-F1Full_mean[F1vars2]
+
+#Day 3 scope vs ddpcr
+F1Full_means3<-subset(F1Full_means2, Day=="3")
+F1Full_means3<-dcast(F1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+#Day 7 and 14 scope vs ddpcr
+F1Full_means4<-subset(F1Full_means2, Day=="7"|Day=="14")
+F1Full_means4<-dcast(F1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+
+#G3 
+#organize the ddPCR data 
+G3_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+G3_9000b<-G3_9000[G3_vars]
+colnames(G3_9000b)[colnames(G3_9000b)=="Info"] <- "Symbiont"
+G3_9000b$count.type<-"ddPCR"
+
+#organize hemo data
+G3countdat<-subset(Countdat_2, Symbiont=="G3")
+G3Full<-rbind(G3_9000b,G3countdat) #combine hemo and ddPCR
+
+#Raw means
+G3Full_mean<- ddply(G3Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);G3Full_mean #display table
+
+
+
+G3vars2<-c("Day", "Temp","count.type", "mean","Symbiont")
+G3Full_means2<-G3Full_mean[G3vars2]
+
+#Day 3 scope vs ddpcr
+G3Full_means3<-subset(G3Full_means2, Day=="3")
+G3Full_means3<-dcast(G3Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+#Day 7 and 14 scope vs ddpcr
+G3Full_means4<-subset(G3Full_means2, Day=="7"|Day=="14")
+G3Full_means4<-dcast(G3Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+
+
+
+######## Make Day 3 scope vs ddPCR plot
+ScopeddPCR<-rbind(C1Full_means3,D1Full_means3,F1Full_means3,G3Full_means3)
+##### not working
+ScopeddPCR<-dcast(ScopeddPCR, id=c("Day", "Temp","Symbiont"), measure.vars = "ddPCR", "scope")
+
+
+ggplot(ScopeddPCR, aes(x=scope, y=ddPCR, group=Symbiont))+
+         geom_line()+
+        geom_point()+
+         scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,1000))+
+           scale_x_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,1000))
+
+
+
+######## Make Day 3=7 and 14 hemo vs ddPCR plot
+HemoddPCR<-rbind(C1Full_means4,D1Full_means4,F1Full_means4,G3Full_means4)
+
+
+ggplot(HemoddPCR, aes(x=hemo, y=ddPCR, group=count.type))+
+         geom_line()+
+        geom_point()+
+         scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
+             scale_x_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))
+
+
+############## figure out how to color this by group. or not. put a line thorugh it all. 
+
+
+
+
+
+
+
+```
+
+###old plots, delete later
+```{r}
 #Compare ddPCR and hemo counts 
 #all days
 C1Full_Alldayplot<-ggplot(data=C1Full,aes(Temp, cells.larvae)) +
@@ -2012,9 +2199,9 @@ G3Full_D14<-subset(G3Full, Day==14)
 #subset by temp
 AllSing_27<-subset(Singles, Temp==27)
 AllSing_30<-subset(Singles, Temp==30)
-AllSing_31<-subset(Singles, Temp==31)
+AllSing_31<-subset(Singles, Temp==31) 
 
-# subset by day
+# subset by day 
 AllSing_27_D3<-subset(AllSing_27, Day==3)
 AllSing_27_D7<-subset(AllSing_27, Day==7)
 AllSing_27_D14<-subset(AllSing_27, Day==14)
@@ -2080,7 +2267,7 @@ anova(AllSing_31_D7_mod)
 emm_AllSing_31_D7_mod = emmeans(AllSing_31_D7_mod, ~  Symbiont, adjust="tukey")
 cld(emm_AllSing_31_D7_mod, Letters=c(LETTERS)) #letter display 
 
-## Day 14
+## Day 14 
 AllSing_31_D14_mod<-lmer(log(cells.larvae+1)~Symbiont+(1|Pot), AllSing_31_D14)
 anova(AllSing_31_D14_mod) 
 emm_AllSing_31_D14_mod = emmeans(AllSing_31_D14_mod, ~  Symbiont, adjust="tukey")
@@ -2097,12 +2284,12 @@ Single comparision at days between symbs
 
 #subset by day
 AllSing_D3<-subset(Singles, Day==3)
-AllSing_D3$Symbiont<-as.character(AllSing_D3$Symbiont)
+AllSing_D3$Symbiont<-as.character(AllSing_D3$Symbiont) 
 AllSing_D7<-subset(Singles, Day==7)
 AllSing_D7$Symbiont<-as.character(AllSing_D7$Symbiont)
 AllSing_D14<-subset(Singles, Day==14)
 AllSing_D14$Symbiont<-as.character(AllSing_D14$Symbiont)
-
+ 
 #Day 3
 AllSing_D3_mean <- ddply(AllSing_D3, c("Temp","Symbiont"), summarise, #summarize cell count
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
