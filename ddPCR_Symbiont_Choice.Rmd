@@ -35,7 +35,7 @@ library(ggplot2)
 library("gridExtra") #arrange plots for output
 library(reshape2)
 library("ggsci")#set bar colors
-
+library("qqplotr")
 
 library("plotrix") #functions in tapply
 library("pscl")
@@ -491,7 +491,7 @@ hist(C1Full$cells.larvae_log)
 
 
 #Raw means
-C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type","Symbiont","Pot"), summarise, #summarize cell counts
                  N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
@@ -502,16 +502,16 @@ C1Full_mean<- ddply(C1Full, c("Day", "Temp","count.type","Symbiont"), summarise,
 # Remove rows with <3 replicates (one r=1)
 C1Full_mean<-C1Full_mean[!(C1Full_mean$N==1),]
 
-C1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","sd")
+C1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 C1Full_means2<-C1Full_mean[C1vars2]
 
 #Day 3 scope vs ddpcr
 C1Full_means3<-subset(C1Full_means2, Day=="3")
-C1Full_means3<-dcast(C1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+C1Full_means3<-dcast(C1Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 #Day 7 and 14 scope vs ddpcr
 C1Full_means4<-subset(C1Full_means2, Day=="7"|Day=="14")
-C1Full_means4<-dcast(C1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+C1Full_means4<-dcast(C1Full_means4, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 
 
@@ -536,7 +536,7 @@ D1Full<-rbind(D1_9000b,D1countdat) #combine hemo and ddPCR
 hist(D1Full$cells.larvae_log)
 
 #Raw means
-D1Full_mean<- ddply(D1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+D1Full_mean<- ddply(D1Full, c("Day", "Temp","count.type","Symbiont","Pot"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
@@ -544,16 +544,16 @@ D1Full_mean<- ddply(D1Full, c("Day", "Temp","count.type","Symbiont"), summarise,
                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );D1Full_mean #display table
 
-D1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","sd")
+D1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 D1Full_means2<-D1Full_mean[D1vars2]
 
 #Day 3 scope vs ddpcr
 D1Full_means3<-subset(D1Full_means2, Day=="3")
-D1Full_means3<-dcast(D1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+D1Full_means3<-dcast(D1Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 #Day 7 and 14 scope vs ddpcr
 D1Full_means4<-subset(D1Full_means2, Day=="7"|Day=="14")
-D1Full_means4<-dcast(D1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+D1Full_means4<-dcast(D1Full_means4, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 
 #F1
@@ -575,7 +575,7 @@ F1Full<-rbind(F1_9000b,F1countdat) #combine hemo and ddPCR
 hist(F1Full$cells.larvae_log) #not amazing left squew
 
 #Raw means
-F1Full_mean<- ddply(F1Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+F1Full_mean<- ddply(F1Full, c("Day", "Temp","count.type","Symbiont","Pot"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
@@ -583,16 +583,16 @@ F1Full_mean<- ddply(F1Full, c("Day", "Temp","count.type","Symbiont"), summarise,
                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );F1Full_mean #display table
 
-F1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","sd")
+F1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 F1Full_means2<-F1Full_mean[F1vars2]
 
 #Day 3 scope vs ddpcr
 F1Full_means3<-subset(F1Full_means2, Day=="3")
-F1Full_means3<-dcast(F1Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+F1Full_means3<-dcast(F1Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 #Day 7 and 14 scope vs ddpcr
 F1Full_means4<-subset(F1Full_means2, Day=="7"|Day=="14")
-F1Full_means4<-dcast(F1Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+F1Full_means4<-dcast(F1Full_means4, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 
 
@@ -616,7 +616,7 @@ G3Full<-rbind(G3_9000b,G3countdat) #combine hemo and ddPCR
 hist(G3Full$cells.larvae_log) #not amazing left squew
 
 #Raw means
-G3Full_mean<- ddply(G3Full, c("Day", "Temp","count.type","Symbiont"), summarise, #summarize cell counts
+G3Full_mean<- ddply(G3Full, c("Day", "Temp","count.type","Symbiont","Pot"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
@@ -624,21 +624,21 @@ G3Full_mean<- ddply(G3Full, c("Day", "Temp","count.type","Symbiont"), summarise,
                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );G3Full_mean #display table
 
-G3vars2<-c("Day", "Temp","count.type", "mean","Symbiont","sd")
+G3vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 G3Full_means2<-G3Full_mean[G3vars2]
 
 #Day 3 scope vs ddpcr
 G3Full_means3<-subset(G3Full_means2, Day=="3")
-G3Full_means3<-dcast(G3Full_means3, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+G3Full_means3<-dcast(G3Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 #Day 7 and 14 scope vs ddpcr
 G3Full_means4<-subset(G3Full_means2, Day=="7"|Day=="14")
-G3Full_means4<-dcast(G3Full_means4, Temp+Day+Symbiont~count.type, value.var = "mean") # cast()
+G3Full_means4<-dcast(G3Full_means4, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 
 ```
 
 
-Make plots
+Make plots: do these work, that's the question. 
 ```{r}
 ######## Make Day 3 scope vs ddPCR plot
 ScopeddPCR<-rbind(C1Full_means3,D1Full_means3,F1Full_means3,G3Full_means3)
@@ -646,6 +646,7 @@ ScopeddPCR<-rbind(C1Full_means3,D1Full_means3,F1Full_means3,G3Full_means3)
 #colnames(ScopeddPCR)[colnames(ScopeddPCR) == 'value'] <- 'cell.count.means.log'  #rename col
 #colnames(ScopeddPCR)[colnames(ScopeddPCR) == 'variable'] <- 'count.type'      #rename col
 
+#write.csv(ScopeddPCR,"ScopeddPCR_meanTable.csv")
 
 ggplot(ScopeddPCR, aes(x=scope, y=ddPCR, group=Symbiont))+
         geom_point(aes(color=factor(Symbiont)))+
@@ -659,24 +660,66 @@ geom_smooth(method="lm")
 
 ######## Make Day 3=7 and 14 hemo vs ddPCR plot
 HemoddPCR<-rbind(C1Full_means4,D1Full_means4,F1Full_means4,G3Full_means4)
+#write.csv(HemoddPCR,"HemoddPCR_meanTable.csv")
+HemoddPCR_D7<-subset(HemoddPCR, Day=="7")
+HemoddPCR_D14<-subset(HemoddPCR, Day=="14")
 
-
-
+#D7 and D14
 ggplot(HemoddPCR, aes(x=hemo, y=ddPCR, group=Symbiont))+
         geom_point(aes(color=factor(Symbiont)))+
 geom_smooth(method="lm")
   
 ggplot(HemoddPCR, aes(x=hemo, y=ddPCR))+
         geom_point(aes(color=factor(Symbiont)))+
-geom_smooth(method="lm") +
+geom_smooth(method="lm") 
+  
+# D7
+  ggplot(HemoddPCR_D7, aes(x=hemo, y=ddPCR, group=Symbiont))+
+        geom_point(aes(color=factor(Symbiont)))+
+geom_smooth(method="lm")
+  
+ggplot(HemoddPCR_D7, aes(x=hemo, y=ddPCR))+
+        geom_point(aes(color=factor(Symbiont)))+
+geom_smooth(method="lm") 
     
+
+# D14
+  ggplot(HemoddPCR_D14, aes(x=hemo, y=ddPCR, group=Symbiont))+
+        geom_point(aes(color=factor(Symbiont)))+
+geom_smooth(method="lm")
+  
+ggplot(HemoddPCR_D14, aes(x=hemo, y=ddPCR))+
+        geom_point(aes(color=factor(Symbiont)))+
+geom_smooth(method="lm") 
 
 ### question, is this good enough to show any correlation? 
 
 
 ```
 
-###old plots, delete later
+Run stats on the counts themselves:
+```{r}
+# Day 3 scope vs ddCPR, the data is logged   <-are these stats even right?
+D3_ddPCRscope<-lm(ddPCR~scope*Temp*Pot, ScopeddPCR)
+summary(D3_ddPCRscope)
+qqPlot(residuals(D3_ddPCRscope)) 
+plot(allEffects(D3_ddPCRscope))
+
+
+# Day 7 scope vs ddCPR, the data is logged
+D7_ddPCRhemo<-lm(ddPCR~hemo*Temp*Pot, HemoddPCR_D7)
+summary(D7_ddPCRhemo)
+
+# Day 14 scope vs ddCPR, the data is logged   <----- this one is significant
+D14_ddPCRhemo<-lm(ddPCR~hemo*Temp*Pot, HemoddPCR_D14)
+summary(D14_ddPCRhemo)
+plot(allEffects(D14_ddPCRhemo))
+
+```
+
+
+
+###old dot plots, delete later once you feel good about your other comparision
 ```{r}
 #Compare ddPCR and hemo counts 
 #all days
