@@ -699,6 +699,8 @@ geom_smooth(method="lm")
 
 Run stats on the counts themselves:
 ```{r}
+# ALL CLADES TOGETHER
+
 # Day 3 scope vs ddCPR, the data is logged   <-are these stats even right?
 D3_ddPCRscope<-lm(ddPCR~scope*Temp*Pot, ScopeddPCR)
 summary(D3_ddPCRscope)
@@ -715,6 +717,68 @@ D14_ddPCRhemo<-lm(ddPCR~hemo*Temp*Pot, HemoddPCR_D14)
 summary(D14_ddPCRhemo)
 plot(allEffects(D14_ddPCRhemo))
 
+
+### By Symbiont, subset  by clade
+ScopeddPCR_C1<-subset(ScopeddPCR, Symbiont=="C1")
+ScopeddPCR_D1<-subset(ScopeddPCR, Symbiont=="D1")
+ScopeddPCR_F1<-subset(ScopeddPCR, Symbiont=="F1")
+ScopeddPCR_G3<-subset(ScopeddPCR, Symbiont=="G3")
+
+HemoddPCR_D7_C1<-subset(HemoddPCR_D7, Symbiont=="C1")
+HemoddPCR_D7_D1<-subset(HemoddPCR_D7, Symbiont=="D1")
+HemoddPCR_D7_F1<-subset(HemoddPCR_D7, Symbiont=="F1")
+HemoddPCR_D7_G3<-subset(HemoddPCR_D7, Symbiont=="G3")
+
+HemoddPCR_D14_C1<-subset(HemoddPCR_D14, Symbiont=="C1")
+HemoddPCR_D14_D1<-subset(HemoddPCR_D14, Symbiont=="D1")
+HemoddPCR_D14_F1<-subset(HemoddPCR_D14, Symbiont=="F1")
+HemoddPCR_D14_G3<-subset(HemoddPCR_D14, Symbiont=="G3")
+
+# Day 3 scope vs ddCPR, the data is logged  
+
+#ScopeddPCR_C1 REMOVED POT bc low n
+ScopeddPCR_C1_D3<-lm(ddPCR~scope*Temp, ScopeddPCR_C1)   #C1
+summary(ScopeddPCR_C1_D3)
+plot(allEffects(ScopeddPCR_C1_D3))
+
+ScopeddPCR_D1_D3<-lm(ddPCR~scope*Temp, ScopeddPCR_D1)   #D1
+summary(ScopeddPCR_D1_D3)
+plot(allEffects(ScopeddPCR_D1_D3))
+
+ScopeddPCR_F1_D3<-lm(ddPCR~scope*Temp, ScopeddPCR_F1)   #F1
+summary(ScopeddPCR_F1_D3)
+plot(allEffects(ScopeddPCR_F1_D3))
+
+ScopeddPCR_G3_D3<-lm(ddPCR~scope*Temp, ScopeddPCR_G3)   #G3
+summary(ScopeddPCR_G3_D3)
+plot(allEffects(ScopeddPCR_G3_D3))
+
+# Day 7 scope vs ddCPR, the data is logged
+D7_ddPCRhemo_C1<-lm(ddPCR~hemo*Temp, HemoddPCR_D7_C1)    #C1
+summary(D7_ddPCRhemo_C1)
+
+D7_ddPCRhemo_D1<-lm(ddPCR~hemo*Temp, HemoddPCR_D7_D1)    #D1
+summary(D7_ddPCRhemo_D1)
+
+D7_ddPCRhemo_F1<-lm(ddPCR~hemo*Temp, HemoddPCR_D7_F1)    #D1
+summary(D7_ddPCRhemo_F1)
+
+D7_ddPCRhemo_G3<-lm(ddPCR~hemo*Temp, HemoddPCR_D7_G3)    #G3
+summary(D7_ddPCRhemo_G3)
+
+# Day 14 scope vs ddCPR, the data is logged   
+
+D14_ddPCRhemo_C1<-lm(ddPCR~hemo*Temp, HemoddPCR_D14_C1)   #C1
+summary(D14_ddPCRhemo_C1)
+
+D14_ddPCRhemo_D1<-lm(ddPCR~hemo*Temp, HemoddPCR_D14_D1)   #D1
+summary(D14_ddPCRhemo_D1)
+
+D14_ddPCRhemo_F1<-lm(ddPCR~hemo*Temp, HemoddPCR_D14_F1)   #F1
+summary(D14_ddPCRhemo_F1)
+
+D14_ddPCRhemo_G3<-lm(ddPCR~hemo*Temp, HemoddPCR_D14_G3)   #G3
+summary(D14_ddPCRhemo_G3)
 ```
 
 
