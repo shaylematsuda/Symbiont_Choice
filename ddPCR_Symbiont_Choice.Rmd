@@ -433,7 +433,7 @@ Raw and relative abundance data frames for Multi-infection
  ALLcast_9000_cast2a<-dcast(ALL_9000a, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
 
  # Relative Abundance df
-  ALLcast_9000_cast2b<-dcast(ALL_9000b, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
+ALLcast_9000_cast2b<-dcast(ALL_9000b, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
 ```
 
 
@@ -452,7 +452,7 @@ Countdat_2<-rbind(Countdat_D3,Countdat_D714) #bind together for non-ddPCR datase
 ```
 
 #####Stats and plots: ddPCR vs hemo + scope, prove not different 
-
+TODO ****** get an R2 from model, and beta estimate (near 1 ideally)
 ```{r} 
 #C1 
 #organize the ddPCR data for individual infections  
@@ -696,11 +696,12 @@ geom_smooth(method="lm")
 
 ```
 Run stats on the counts themselves:
+TODO******run this on the means (make a mean table as you plotted above then run mod on just method v method)
 ```{r} 
 # ALL CLADES TOGETHER   <- this doesn't really make sense to do
 
   # Day 3 scope vs ddCPR, the data is logged   <-are these stats even right?
-  D3_ddPCRscope<-lm(ddPCR~scope*Temp*Pot, ScopeddPCR)
+  D3_ddPCRscope<-lm(ddPCR~scope, ScopeddPCR)
   summary(D3_ddPCRscope)
   qqPlot(residuals(D3_ddPCRscope)) #good
   plot(allEffects(D3_ddPCRscope))
@@ -1084,6 +1085,8 @@ InitialInfect<-rbind(Initial_C1,Initial_D1,Initial_F1,Initial_G3)
 MidInfect<-rbind(Mid_C1,Mid_D1,Mid_F1,Mid_G3)
 FinInfect<-rbind(Fin_C1,Fin_D1,Fin_F1,Fin_G3)
 
+#combine for a FULL dataset
+Single_full<-rbind(InitialInfect,MidInfect,FinInfect)
 
 
 # by temp
@@ -1173,10 +1176,10 @@ MidInfect_mean #display table
 
 #Day 14
 FinInfect_mean <- ddply(FinInfect, c("Symbiont", "Temp"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important* 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
-                 se   = sd / sqrt(N), #calculate standard error
+                 se   = sd / sqrt(N), #calculate standard error 
                  max = max(Infect, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
 
 FinInfect_mean #display table 
@@ -1190,7 +1193,7 @@ InitialInfect_all_plot<-ggplot(data=InitialInfect_mean, aes(x=Temp, y=mean, grou
   geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
   geom_line(aes(color=Symbiont))+
   #scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
-  xlab(" cell counts") + #Label the X Axis
+  xlab("Temp") + #Label the X Axis
   #ylim(0,2000) + #set Y limits
    #scale_y_log10()+
        #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
@@ -1371,73 +1374,86 @@ grid.arrange(Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 1)
 
 Analyze binomial with a logistic binomial regression model.   
 ```{r}
+# model by day, time, symbiont
+#***AH*** This is huge. Not sure if we want to use this since it includes many comparisions we don't need
+Full_mod<-glmer(Infect~Temp+Symbiont+Day+Temp:Symbiont+(1|Pot:Symbiont:Temp),data=Single_full, family="binomial")
+Anova(Full_mod)
+summary(Full_mod)    
+dispersion_glmer(Full_mod) #0.9259873
+
 #Day 3
+
 #C1 
-C1_infect<- glmer(Infect~Temp+(1|Pot),data=Initial_C1, family="binomial")
+C1_infect<- glmer(Infect~Temp+(1|Pot),data=Initial_C1, family="binomial") #nest smallest to largest 
+#C1_infect2<- glmer(Infect~Temp+(1|Pot),data=Initial_C1, family="binomial") #do this to check, same values
 Anova(C1_infect)   #btw this is Type II Wald chisquare test
-summary(effect(c("Temp"), xlevels=3, C1_infect))   # what do these pvals coorespond to
-dispersion_glmer(C1_infect) #1.14 does that mean it's overdispersed??                  *****************
-plot(residuals(C1_infect)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+summary(C1_infect) #look at deviance of df, should be similar to df residuals. also look to ake sure it worked
+summary(effect(c("Temp"), xlevels=3, C1_infect))   # THINK: you can report your means from above or the means the model has. This take into consideration the random effects so use it. 
+dispersion_glmer(C1_infect) #1.14 (you want lower than 1.4)
+plot(residuals(C1_infect)) + abline(h=0, lty=2) 
 
 #D1 
-D1_infect<- glmer(Infect~Temp+(1|Pot),data=Initial_D1, family="binomial")
+D1_infect<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Initial_D1, family="binomial")
 Anova(D1_infect)
+summary(D1_infect)
 summary(effect(c("Temp"), xlevels=3, D1_infect))   # what do these pvals coorespond to
 dispersion_glmer(D1_infect) #0.829                 *****************
-plot(residuals(D1_infect)) + abline(h=0, lty=2) #this looks top heavy                     ****************
+plot(residuals(D1_infect)) + abline(h=0, lty=2)
 
 #F1 
-F1_infect<- glmer(Infect~Temp+(1|Pot),data=Initial_F1, family="binomial")
+F1_infect<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Initial_F1, family="binomial")
 Anova(F1_infect)
-summary(effect(c("Temp"), xlevels=3, F1_infect))   # what do these pvals coorespond to
-dispersion_glmer(F1_infect) #1.16 does that mean it's overdispersed??                  *****************
-plot(residuals(F1_infect)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+summary(effect(c("Temp"), xlevels=3, F1_infect))   
+dispersion_glmer(F1_infect) #1.16
+plot(residuals(F1_infect)) + abline(h=0, lty=2) 
 
 #G3 
-G3_infect<- glmer(Infect~Temp+(1|Pot),data=Initial_G3, family="binomial")
+G3_infect<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Initial_G3, family="binomial")
 Anova(G3_infect)
 summary(effect(c("Temp"), xlevels=3, G3_infect))   # what do these pvals coorespond to
-dispersion_glmer(G3_infect) #1.14 does that mean it's overdispersed??                  *****************
-plot(residuals(G3_infect)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+dispersion_glmer(G3_infect) #0.73                 *****************
+plot(residuals(G3_infect)) + abline(h=0, lty=2) 
+
+
 
 #All
 Day3_infectAll<-rbind(Initial_C1,Initial_D1, Initial_F1, Initial_G3)
 
-Day3_infectAll_infect<- glmer(Infect~Temp*Symbiont+(1|Pot),data=Day3_infectAll, family="binomial")
+Day3_infectAll_infect<- glmer(Infect~Temp*Symbiont+(1|Pot:Symbiont:Temp),data=Day3_infectAll, family="binomial")
 Anova(Day3_infectAll_infect)
 summary(effect(c("Temp"), xlevels=3, Day3_infectAll_infect))   # what do these pvals coorespond to
-dispersion_glmer(Day3_infectAll_infect) #1.14 does that mean it's overdispersed??                  *****************
+dispersion_glmer(Day3_infectAll_infect) #0.989795                *****************
 plot(residuals(Day3_infectAll_infect)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
 
 #Day 7
 
 #C1 
-Mid_C1_mod<- glmer(Infect~Temp+(1|Pot),data=Mid_C1, family="binomial")
+Mid_C1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Mid_C1, family="binomial")
 Anova(Mid_C1_mod)   #btw this is Type II Wald chisquare test
 summary(effect(c("Temp"), xlevels=3, Mid_C1_mod))   # what do these pvals coorespond to
-dispersion_glmer(Mid_C1_mod) #1.14 does that mean it's overdispersed??                  *****************
+dispersion_glmer(Mid_C1_mod) #.09499825
 plot(residuals(Mid_C1_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
 
 #D1 
-Mid_D1_mod<- glmer(Infect~Temp+(1|Pot),data=Mid_D1, family="binomial")
+Mid_D1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Mid_D1, family="binomial")
 Anova(Mid_D1_mod)
 summary(effect(c("Temp"), xlevels=3, Mid_D1_mod))   # what do these pvals coorespond to
-dispersion_glmer(Mid_D1_mod) #0.829                 *****************
+dispersion_glmer(Mid_D1_mod) #0.7577132               *****************
 plot(residuals(Mid_D1_mod)) + abline(h=0, lty=2) #this looks top heavy                     ****************
 
 #F1 
-Mid_F1_mod<- glmer(Infect~Temp+(1|Pot),data=Mid_F1, family="binomial")
+Mid_F1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Mid_F1, family="binomial")
 Anova(Mid_F1_mod)
 summary(effect(c("Temp"), xlevels=3, Mid_F1_mod))   # what do these pvals coorespond to
-dispersion_glmer(Mid_F1_mod) #1.16 does that mean it's overdispersed??                  *****************
+dispersion_glmer(Mid_F1_mod) #1.127244
 plot(residuals(Mid_F1_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
 
 #G3 
 
-Mid_G3_mod<- glmer(Infect~Temp+(1|Pot),data=Mid_G3, family="binomial")
+Mid_G3_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Mid_G3, family="binomial")
 Anova(Mid_G3_mod)
 summary(effect(c("Temp"), xlevels=3, Mid_G3_mod))   # what do these pvals coorespond to
-dispersion_glmer(Mid_G3_mod) #1.14 does that mean it's overdispersed??                  *****************
+dispersion_glmer(Mid_G3_mod) #0.5570597
 plot(residuals(Mid_G3_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
 
 #All
@@ -1448,11 +1464,58 @@ Mid_F1 <- subset(Mid_F1, select = -c(cells.larvae_log)) #remove this col
 
 Day7_infectAll<-rbind(Mid_C1,Mid_D1, Mid_F1, Mid_G3)
 
-Day7_infectAll_infect<- glmer(Infect~Temp*Symbiont+(1|Pot),data=Day7_infectAll, family="binomial")
+Day7_infectAll_infect<- glmer(Infect~Temp*Symbiont+(1|Pot:Symbiont:Temp),data=Day7_infectAll, family="binomial")
 Anova(Day7_infectAll_infect)
-summary( Day7_infectAll) # what do these pvals coorespond to
-dispersion_glmer(Day7_infectAll) #1.14 does that mean it's overdispersed??                  *****************
-plot(residuals(Day7_infectAll)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+summary(Day7_infectAll) # what do these pvals coorespond to
+dispersion_glmer(Day7_infectAll_infect) #0.8829768
+plot(residuals(Day7_infectAll_infect)) + abline(h=0, lty=2) 
+
+#Day 14
+
+#C1 
+Fin_C1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Fin_C1, family="binomial")
+Anova(Fin_C1_mod)   #btw this is Type II Wald chisquare test
+summary(effect(c("Temp"), xlevels=3, Fin_C1_mod))   # what do these pvals coorespond to
+dispersion_glmer(Fin_C1_mod) #.7511981
+plot(residuals(Fin_C1_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+
+#D1 
+Fin_D1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Fin_D1, family="binomial")
+Anova(Fin_D1_mod)
+summary(effect(c("Temp"), xlevels=3, Fin_D1_mod))   # what do these pvals coorespond to
+dispersion_glmer(Fin_D1_mod) #0.7577132               *****************
+plot(residuals(Fin_D1_mod)) + abline(h=0, lty=2) #this looks top heavy                     ****************
+
+#F1 
+Fin_F1_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Fin_F1, family="binomial")
+Anova(Fin_F1_mod)
+summary(effect(c("Temp"), xlevels=3, Fin_F1_mod))   # what do these pvals coorespond to
+dispersion_glmer(Fin_F1_mod) #1.10907
+plot(residuals(Fin_F1_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+
+#G3 
+
+Fin_G3_mod<- glmer(Infect~Temp+(1|Pot:Symbiont:Temp),data=Fin_G3, family="binomial")
+Anova(Fin_G3_mod)
+summary(effect(c("Temp"), xlevels=3, Fin_G3_mod))   # what do these pvals coorespond to
+dispersion_glmer(Fin_G3_mod) #0.5570597
+plot(residuals(Fin_G3_mod)) + abline(h=0, lty=2) #Dispersed randomly                      ****************
+
+#All
+Fin_C1 <- subset(Fin_C1, select = -c(zscore)) #remove this col
+Fin_D1 <- subset(Fin_D1, select = -c(cells.larvae_log)) #remove this col
+Fin_G3 <- subset(Fin_G3, select = -c(cells.larvae_log)) #remove this col
+Fin_F1 <- subset(Fin_F1, select = -c(cells.larvae_log)) #remove this col
+Fin_F1 <- subset(Fin_F1, select = -c(ID)) #remove this col
+
+Day14_infectAll<-rbind(Fin_C1,Fin_D1, Fin_F1, Fin_G3)
+
+##**AH*** why isn't this running right?
+Day14_infectAll_infect<- glmer(Infect~Temp*Symbiont+(1|Pot:Symbiont:Temp),data=Day14_infectAll, family="binomial")
+Anova(Day14_infectAll_infect)
+summary(Day14_infectAll) # what do these pvals coorespond to
+dispersion_glmer(Day14_infectAll_infect) #0.8829768
+plot(residuals(Day14_infectAll_infect)) + abline(h=0, lty=2) 
 
 
 ```
@@ -1487,7 +1550,7 @@ C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, colo
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
+        panel.border = element_blank(), #Set the border 
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
         text = element_text(size=18),  # set element text
@@ -1521,7 +1584,7 @@ C1Full_mean_z #display table
 
 #plot with yaxis log10, real data (not transformed)
 C1Full_plot_9000_z<-ggplot(data=C1Full_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), 
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
   geom_line(aes(color=Temp))+
