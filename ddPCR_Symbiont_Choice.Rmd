@@ -1081,8 +1081,24 @@ Fin_G3$Infect[Fin_G3$cells.larvae==0]<-0
 hist(Fin_G3$Infect)
 
 #combine
+Initial_C1 <- subset(Initial_C1, select = -c(cells.larvae_log)) #remove this col
+Initial_D1 <- subset(Initial_D1, select = -c(cells.larvae_log)) #remove this col
+Initial_F1 <- subset(Initial_F1, select = -c(cells.larvae_log)) #remove this col
+Initial_G3 <- subset(Initial_G3, select = -c(cells.larvae_log)) #remove this col
+
 InitialInfect<-rbind(Initial_C1,Initial_D1,Initial_F1,Initial_G3)  
+
+Mid_C1 <- subset(Mid_C1, select = -c(cells.larvae_log)) #remove this col
+Mid_D1 <- subset(Mid_D1, select = -c(cells.larvae_log)) #remove this col
+Mid_F1 <- subset(Mid_F1, select = -c(cells.larvae_log)) #remove this col
+Mid_G3 <- subset(Mid_G3, select = -c(cells.larvae_log)) #remove this col
+
 MidInfect<-rbind(Mid_C1,Mid_D1,Mid_F1,Mid_G3)
+
+Fin_D1 <- subset(Fin_D1, select = -c(cells.larvae_log)) #remove this col
+Fin_F1 <- subset(Fin_F1, select = -c(cells.larvae_log)) #remove this col
+Fin_G3 <- subset(Fin_G3, select = -c(cells.larvae_log)) #remove this col
+
 FinInfect<-rbind(Fin_C1,Fin_D1,Fin_F1,Fin_G3)
 
 #combine for a FULL dataset
@@ -1123,7 +1139,7 @@ FinInfect_D14<-subset(FinInfect, Day=="14")
 
 means All temps by day
 ```{r}
-#Day 3
+#Day 3 
 InitialInfect_mean <- ddply(InitialInfect, c("Symbiont", "Temp"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -1186,7 +1202,7 @@ FinInfect_mean #display table
 ```
 plot all temps by day
 ```{r}
-#Day3
+#Day3 
 InitialInfect_all_plot<-ggplot(data=InitialInfect_mean, aes(x=Temp, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
@@ -1206,7 +1222,7 @@ InitialInfect_all_plot<-ggplot(data=InitialInfect_mean, aes(x=Temp, y=mean, grou
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
+  ylab(expression(paste("percent infected"))) +
   ggtitle("Day 3 Infection")+
   theme(plot.title = element_text(size=20, face = "italic"));InitialInfect_all_plot
 
@@ -1230,7 +1246,7 @@ MidInfect_all_plot<-ggplot(data=MidInfect_mean, aes(x=Temp, y=mean, group = Symb
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
+  ylab(expression(paste("percent infected"))) +
   ggtitle("Day 7 Infection")+
   theme(plot.title = element_text(size=20, face = "italic"));MidInfect_all_plot
 
@@ -1254,7 +1270,7 @@ FinInfect_all_plot<-ggplot(data=FinInfect_mean, aes(x=Temp, y=mean, group = Symb
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
+  ylab(expression(paste("percent infected"))) +
   ggtitle("Day 14 Infection")+
   theme(plot.title = element_text(size=20, face = "italic"));FinInfect_all_plot
 
@@ -1264,7 +1280,7 @@ MidInfect_all_plot<-MidInfect_all_plot+ theme(legend.position = "none") #remove 
 grid.arrange(InitailInfect_all_plot, MidInfect_all_plot, FinInfect_all_plot, nrow = 1)
 ```
 means All Days by Temp
-```{r}
+```{r} 
 #27C
 Infect_27mean <- ddply(Temp27, c("Symbiont", "Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -1303,7 +1319,7 @@ IMFmean<-rbind(Infect_27mean,Infect_30mean,Infect_31mean)
 ```
 plot all temps by day:  HEY You need to figure out how to order the df by Symbiont type for color in plots
 ```{r}
-#27C
+#27C 
 Infect_27_plot<-ggplot(data=Infect_27mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
@@ -1374,7 +1390,7 @@ grid.arrange(Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 1)
 
 Analyze binomial with a logistic binomial regression model.   
 ```{r}
-# model by day, time, symbiont
+# model by day, time, symbiont 
 #***AH*** This is huge. Not sure if we want to use this since it includes many comparisions we don't need
 Full_mod<-glmer(Infect~Temp+Symbiont+Day+Temp:Symbiont+(1|Pot:Symbiont:Temp),data=Single_full, family="binomial")
 Anova(Full_mod)
@@ -1521,23 +1537,30 @@ plot(residuals(Day14_infectAll_infect)) + abline(h=0, lty=2)
 ```
 
 
+##PLOT SINGLE INFECTIONS, full dataset
+Organize singles into df with 0s removed
+```{r}
+C1Fulla<-subset(C1Full, cells.larvae_round>0)
+D1Fulla<-subset(D1Full, cells.larvae_round>0)
+F1Fulla<-subset(F1Full, cells.larvae_round>0)
+G3Fulla<-subset(G3Full, cells.larvae_round>0)
+
+```
 
 
-
-##PLOT SINGLE INFECTIONS, full dataset 
 C1 single infection plot 
 ```{r} 
-C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
+C1Fulla_mean <- ddply(C1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
 
-C1Full_mean #display table 
+C1Fulla_mean #display table 
 
 #plot with yaxis log10, real data (not transformed)
-C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+C1Fulla_plot_9000<-ggplot(data=C1Fulla_mean, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
@@ -1558,32 +1581,26 @@ C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day, y=mean, group = Temp, colo
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
   ggtitle("Cladocopium")+
-  theme(plot.title = element_text(size=20, face = "italic"));C1Full_plot_9000
-
-
-
-
+  theme(plot.title = element_text(size=20, face = "italic"));C1Fulla_plot_9000
 ``` 
 
-
-# Individual z-score
 C1 single infection z-score plot
-```{r}  
+```{r}   
 #use the log data to calc zscore by clade (all time and temp included by clade)
-scale(C1Full$cells.larvae_log, center=T, scale=T)
-C1Full$zscore<-(C1Full$cells.larvae_log - mean(C1Full$cells.larvae_log))/sd(C1Full$cells.larvae_log)
+scale(C1Fulla$cells.larvae_log, center=T, scale=T)
+C1Fulla$zscore<-(C1Fulla$cells.larvae_log - mean(C1Fulla$cells.larvae_log))/sd(C1Fulla$cells.larvae_log)
 
-C1Full_mean_z <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
+C1Fulla_mean_z <- ddply(C1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(zscore)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean((zscore), na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd((zscore), na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max((zscore), na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-C1Full_mean_z #display table 
+C1Fulla_mean_z #display table 
 
 #plot with yaxis log10, real data (not transformed)
-C1Full_plot_9000_z<-ggplot(data=C1Full_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+C1Fulla_plot_9000_z<-ggplot(data=C1Fulla_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), 
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
@@ -1604,22 +1621,22 @@ C1Full_plot_9000_z<-ggplot(data=C1Full_mean_z, aes(x=Day, y=mean, group = Temp, 
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("z-score cells/larvae"))) +
   ggtitle("Cladocopium")+
-  theme(plot.title = element_text(size=20, face = "italic"));C1Full_plot_9000_z
+  theme(plot.title = element_text(size=20, face = "italic"));C1Fulla_plot_9000_z
 
 ```
 
 D1 single infection plot
-```{r} 
-D1Full_mean_9000 <- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell counts
+```{r}  
+D1Fulla_mean_9000 <- ddply(D1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's 
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired 
 )
-D1Full_mean_9000 #display table  
+D1Fulla_mean_9000 #display table  
 
-D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+D1Fulla_plot_9000<-ggplot(data=D1Fulla_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+
@@ -1639,27 +1656,27 @@ D1Full_plot_9000<-ggplot(data=D1Full_mean_9000, aes(x=Day, y=mean, group = Temp,
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) + 
   ggtitle("Durusdinium")+
-  theme(plot.title = element_text(size=20, face = "italic"));D1Full_plot_9000
+  theme(plot.title = element_text(size=20, face = "italic"));D1Fulla_plot_9000
 ```
 D1 single infection z-score plot
-```{r} 
+```{r}  
 #use the log data to calc zscore
-scale(C1Full$cells.larvae_log, center=T, scale=T)
+scale(D1Fulla$cells.larvae_log, center=T, scale=T)
 
-scale(D1Full$cells.larvae_log, center=T, scale=T)
-D1Full$zscore<-(D1Full$cells.larvae_log - mean(D1Full$cells.larvae_log))/sd(D1Full$cells.larvae_log)
+scale(D1Fulla$cells.larvae_log, center=T, scale=T)
+D1Fulla$zscore<-(D1Fulla$cells.larvae_log - mean(D1Fulla$cells.larvae_log))/sd(D1Fulla$cells.larvae_log)
 
-D1Full_mean_z <- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell counts
+D1Fulla_mean_z <- ddply(D1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(zscore)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean((zscore), na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd((zscore), na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max((zscore), na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-D1Full_mean_z #display table 
+D1Fulla_mean_z #display table 
 
 #plot with yaxis log10, real data (not transformed)
-D1Full_plot_9000_z<-ggplot(data=D1Full_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+D1Fulla_plot_9000_z<-ggplot(data=D1Fulla_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
@@ -1677,22 +1694,22 @@ D1Full_plot_9000_z<-ggplot(data=D1Full_mean_z, aes(x=Day, y=mean, group = Temp, 
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("z-score cells/larvae"))) +
   ggtitle("Durusdinium z-score")+
-  theme(plot.title = element_text(size=20, face = "italic"));D1Full_plot_9000_z
+  theme(plot.title = element_text(size=20, face = "italic"));D1Fulla_plot_9000_z
 
 ```
 F1 single infection  plot
-```{r}
-F1Full_mean_9000 <- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts 
+```{r} 
+F1Fulla_mean_9000 <- ddply(F1Fulla, c("Day", "Temp"), summarise, #summarize cell counts 
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-F1Full_mean_9000 #display table
+F1Fulla_mean_9000 #display table
 
 
-F1Full_plot_9000<-ggplot(data=F1Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+F1Fulla_plot_9000<-ggplot(data=F1Fulla_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+
@@ -1711,26 +1728,26 @@ F1Full_plot_9000<-ggplot(data=F1Full_mean_9000, aes(x=Day, y=mean, group = Temp,
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("Cells/Larvae"))) +
   ggtitle("Fugacium")+ 
-  theme(plot.title = element_text(size=20, face = "italic"));F1Full_plot_9000
+  theme(plot.title = element_text(size=20, face = "italic"));F1Fulla_plot_9000
 
 ```
 F1 single infection z-score plot
-```{r}
+```{r} 
 #use the log data to calc zscore
-scale(F1Full$cells.larvae_log, center=T, scale=T)
-F1Full$zscore<-(F1Full$cells.larvae_log - mean(F1Full$cells.larvae_log))/sd(F1Full$cells.larvae_log)
+scale(F1Fulla$cells.larvae_log, center=T, scale=T)
+F1Fulla$zscore<-(F1Fulla$cells.larvae_log - mean(F1Fulla$cells.larvae_log))/sd(F1Fulla$cells.larvae_log)
 
-F1Full_mean_z <- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts
+F1Fulla_mean_z <- ddply(F1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(zscore)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean((zscore), na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd((zscore), na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max((zscore), na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-F1Full_mean_z #display table 
+F1Fulla_mean_z #display table 
 
 #plot with yaxis log10, real data (not transformed)
-F1Full_plot_9000_z<-ggplot(data=F1Full_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+F1Fulla_plot_9000_z<-ggplot(data=F1Fulla_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
@@ -1748,22 +1765,21 @@ F1Full_plot_9000_z<-ggplot(data=F1Full_mean_z, aes(x=Day, y=mean, group = Temp, 
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("z-score cells/larvae"))) +
   ggtitle("Fugacium z-score")+
-  theme(plot.title = element_text(size=20, face = "italic"));F1Full_plot_9000_z
-
+  theme(plot.title = element_text(size=20, face = "italic"));F1Fulla_plot_9000_z
 ```
 
 G3 single infection plot
-```{r}
-G3Full_mean_9000 <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
+```{r} 
+G3Fulla_mean_9000 <- ddply(G3Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired 
 )
-G3Full_mean_9000 #display table 
+G3Fulla_mean_9000 #display table 
  
-G3Full_plot_9000<-ggplot(data=G3Full_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+G3Fulla_plot_9000<-ggplot(data=G3Fulla_mean_9000, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+
@@ -1782,29 +1798,26 @@ G3Full_plot_9000<-ggplot(data=G3Full_mean_9000, aes(x=Day, y=mean, group = Temp,
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
   ggtitle("Gerakladium")+
-  theme(plot.title = element_text(size=20, face = "italic"));G3Full_plot_9000
-
- 
- 
+  theme(plot.title = element_text(size=20, face = "italic"));G3Fulla_plot_9000
 ``` 
 
 G3 single infection z-score plot
 ```{r}
 #use the log data to calc zscore
-scale(G3Full$cells.larvae_log, center=T, scale=T)
-G3Full$zscore<-(G3Full$cells.larvae_log - mean(G3Full$cells.larvae_log))/sd(G3Full$cells.larvae_log)
+scale(G3Fulla$cells.larvae_log, center=T, scale=T)
+G3Fulla$zscore<-(G3Fulla$cells.larvae_log - mean(G3Fulla$cells.larvae_log))/sd(G3Fulla$cells.larvae_log)
 
-G3Full_mean_z <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
+G3Fulla_mean_z <- ddply(G3Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(zscore)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean((zscore), na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd((zscore), na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max((zscore), na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-G3Full_mean_z #display table 
+G3Fulla_mean_z #display table 
 
 #plot
-G3Full_plot_9000_z<-ggplot(data=G3Full_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
+G3Fulla_plot_9000_z<-ggplot(data=G3Fulla_mean_z, aes(x=Day, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
@@ -1822,67 +1835,67 @@ G3Full_plot_9000_z<-ggplot(data=G3Full_mean_z, aes(x=Day, y=mean, group = Temp, 
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("z-score cells/larvae"))) +
   ggtitle("Gerakladium z-score")+
-  theme(plot.title = element_text(size=20, face = "italic"));G3Full_plot_9000_z
+  theme(plot.title = element_text(size=20, face = "italic"));G3Fulla_plot_9000_z
 
 ```
 
 Plot all four SINGLE INFECTION together:
 ```{r}
-#log scale axis only
-C1Full_plot_9000<-C1Full_plot_9000+ theme(legend.position = "none") #remove legend
-D1Full_plot_9000<-D1Full_plot_9000+ theme(legend.position = "none") #remove legend
-F1Full_plot_9000<-F1Full_plot_9000+ theme(legend.position = "none") #remove legend
-G3Full_plot_9000<-G3Full_plot_9000+ theme(legend.position = "none") #remove legend
-grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000, nrow = 1)
+#log scale axis only 
+C1Fulla_plot_9000<-C1Fulla_plot_9000+ theme(legend.position = "none") #remove legend
+D1Fulla_plot_9000<-D1Fulla_plot_9000+ theme(legend.position = "none") #remove legend
+F1Fulla_plot_9000<-F1Fulla_plot_9000+ theme(legend.position = "none") #remove legend
+G3Fulla_plot_9000<-G3Fulla_plot_9000+ theme(legend.position = "none") #remove legend
+grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plot_9000, nrow = 1)
 
-C1Full_plot_9000_z<-C1Full_plot_9000_z+ theme(legend.position = "none") #remove legend
-D1Full_plot_9000_z<-D1Full_plot_9000_z+ theme(legend.position = "none") #remove legend
-F1Full_plot_9000_z<-F1Full_plot_9000_z+ theme(legend.position = "none") #remove legend
-G3Full_plot_9000_z<-G3Full_plot_9000_z+ theme(legend.position = "none") #remove legend
-grid.arrange(C1Full_plot_9000_z, D1Full_plot_9000_z, F1Full_plot_9000_z,G3Full_plot_9000_z, nrow = 1)
+C1Fulla_plot_9000_z<-C1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
+D1Fulla_plot_9000_z<-D1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
+F1Fulla_plot_9000_z<-F1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
+G3Fulla_plot_9000_z<-G3Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
+grid.arrange(C1Fulla_plot_9000_z, D1Fulla_plot_9000_z, F1Fulla_plot_9000_z,G3Fulla_plot_9000_z, nrow = 1)
 
 
 #all 8 together
-grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000,C1Full_plot_9000_z, D1Full_plot_9000_z, F1Full_plot_9000_z,G3Full_plot_9000_z, nrow = 2)
+grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plot_9000,C1Fulla_plot_9000_z, D1Fulla_plot_9000_z, F1Fulla_plot_9000_z,G3Fulla_plot_9000_z, nrow = 2)
 
 ```
 
-## single infection z-scores by TEMP
+single infection z-scores by TEMP
 Trying plotting comparative clades by temp
 ```{r}  
 # combine by temps
 #27C
-zscore_27C_C1<-subset(C1Full_mean_z,Temp==27)
+zscore_27C_C1<-subset(C1Fulla_mean_z,Temp==27)
 zscore_27C_C1$Symbiont<-"C1"
-zscore_27C_D1<-subset(D1Full_mean_z,Temp==27)
+zscore_27C_D1<-subset(D1Fulla_mean_z,Temp==27)
 zscore_27C_D1$Symbiont<-"D1"
-zscore_27C_F1<-subset(F1Full_mean_z,Temp==27)
+zscore_27C_F1<-subset(F1Fulla_mean_z,Temp==27)
 zscore_27C_F1$Symbiont<-"F1"
-zscore_27C_G3<-subset(G3Full_mean_z,Temp==27)
+zscore_27C_G3<-subset(G3Fulla_mean_z,Temp==27)
 zscore_27C_G3$Symbiont<-"G3"
 zscore_27C<-rbind(zscore_27C_C1,zscore_27C_D1,zscore_27C_F1,zscore_27C_G3)
 
 
 #30C
-zscore_30C_C1<-subset(C1Full_mean_z,Temp==30)
+zscore_30C_C1<-subset(C1Fulla_mean_z,Temp==30)
 zscore_30C_C1$Symbiont<-"C1"
-zscore_30C_D1<-subset(D1Full_mean_z,Temp==30)
+zscore_30C_D1<-subset(D1Fulla_mean_z,Temp==30)
 zscore_30C_D1$Symbiont<-"D1"
-zscore_30C_F1<-subset(F1Full_mean_z,Temp==30)
+zscore_30C_F1<-subset(F1Fulla_mean_z,Temp==30)
 zscore_30C_F1$Symbiont<-"F1"
-zscore_30C_G3<-subset(G3Full_mean_z,Temp==30)
+zscore_30C_G3<-subset(G3Fulla_mean_z,Temp==30)
 zscore_30C_G3$Symbiont<-"G3"
 zscore_30C<-rbind(zscore_30C_C1,zscore_30C_D1,zscore_30C_F1,zscore_30C_G3)
 
 
 #31C
-zscore_31C_C1<-subset(C1Full_mean_z,Temp==31)
+zscore_31C_C1<-subset(C1Fulla_mean_z,Temp==31)
 zscore_31C_C1$Symbiont<-"C1"
-zscore_31C_D1<-subset(D1Full_mean_z,Temp==31)
+zscore_31C_D1<-subset(D1Fulla_mean_z,Temp==31)
 zscore_31C_D1$Symbiont<-"D1"
-zscore_31C_F1<-subset(F1Full_mean_z,Temp==31)
+zscore_31C_F1<-subset(F1Fulla_mean_z,Temp==31)
 zscore_31C_F1$Symbiont<-"F1"
-zscore_31C_G3<-subset(G3Full_mean_z,Temp==31)
+zscore_31C_G3<-subset(G3Fulla_mean_z,Temp==31)
 zscore_31C_G3$Symbiont<-"G3"
 zscore_31C<-rbind(zscore_31C_C1,zscore_31C_D1,zscore_31C_F1,zscore_31C_G3)
 
