@@ -1906,7 +1906,7 @@ Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) +
 C1  
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected
-Raw counts, on long y-axis
+Raw counts, on log y-axis
 ```{r}
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
@@ -1941,7 +1941,7 @@ CountsCompare_mean <- ddply(CountsCompare, c("single.multi","Temp","Day","Symbio
 CountsCompare_mean #display table
 
 #make a code
-#CountsCompare_mean$code<-paste0(CountsCompare_mean$single.multi, "_",CountsCompare_mean$Day,"_", CountsCompare_mean$Temp) #code
+CountsCompare_mean$code<-paste0(CountsCompare_mean$single.multi, "_", CountsCompare_mean$Temp) #code
 
 CountsCompare_mean<-CountsCompare_mean[ , order(names(CountsCompare_mean))]
 
@@ -1951,61 +1951,27 @@ CountsCompare_mean_multi<-subset(CountsCompare_mean, single.multi=="multi")
 
 ```
 
-#subset by 27C PLOTS
+#subset by Symbiont plots
+C1: 27C
 ```{r}
-#individaul
-CountsCompare_indi_27<-subset(CountsCompare_mean_indi, Temp=="27")
+#subset C1
+CountsCompare_C1_indi<-subset(CountsCompare_mean_indi, Symbiont=="C1")
+CountsCompare_C1_multi<-subset(CountsCompare_mean_multi, Symbiont=="C1")
 
-CountsCompare_indi_27_plot<-ggplot(CountsCompare_indi_27, aes(y=mean, x=Day, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  #Label the X Axis 
-            #scale_fill_locuszoom()+
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
-                 position=position_dodge(.9)) +
-   xlab("Day")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("27C Single");CountsCompare_indi_27_plot   
+#Subset 27
+CountsCompare_indi_27<-subset(CountsCompare_C1_indi, Temp=="27")
+CountsCompare_multi_27<-subset(CountsCompare_C1_multi, Temp=="27")
 
-#multi
-CountsCompare_multi_27<-subset(CountsCompare_mean_multi, Temp=="27")
+CountsCompare_C1<-rbind(CountsCompare_indi_27,CountsCompare_multi_27)
 
-CountsCompare_multi_27_plot<-ggplot(CountsCompare_multi_27, aes(y=mean, x=Day, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  #Label the X Axis 
-            #scale_fill_locuszoom()+
-    geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
-                 position=position_dodge(.9)) +
-   xlab("Day")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("27C, Multi");CountsCompare_multi_27_plot   
-
-
-CountsCompare_indi_27_plot2<-ggplot(data=CountsCompare_indi_27, aes(x=Day, y=mean, color=Symbiont)) +
+CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
-  geom_line(aes(color=Symbiont))+
-  #scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
-#       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + #Label the X Axis 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2016,28 +1982,29 @@ CountsCompare_indi_27_plot2<-ggplot(data=CountsCompare_indi_27, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
-  ggtitle("27C indi")+
-  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_indi_27_plot2
-
-
-
+  ggtitle("27C C1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_C1_plot27
 
 ```
-
+C1: 30C
 ```{r}
-#30
-CountsCompare30<-subset(CountsCompare_mean, Temp=="30")
+#Subset 30
+CountsCompare_indi_30<-subset(CountsCompare_C1_indi, Temp=="30")
+CountsCompare_multi_30<-subset(CountsCompare_C1_multi, Temp=="30")
 
-CountsCompare30_plot<-ggplot(CountsCompare30, aes(y=mean, x=Day, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  
-            #scale_fill_locuszoom()+
-   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
-                 position=position_dodge(.9)) +
-   xlab("Day")+ 
- theme_bw() + #Set the background color
+CountsCompare_C1_30<-rbind(CountsCompare_indi_30,CountsCompare_multi_30)
+
+CountsCompare_C1_plot30<-ggplot(data=CountsCompare_C1_30, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        axis.title=element_text(size=14,face="bold"), #Set axis format
         panel.border = element_blank(), #Set the border
         panel.grid.major = element_blank(), #Set the major gridlines
         panel.grid.minor = element_blank(), #Set the minor gridlines
@@ -2045,44 +2012,356 @@ CountsCompare30_plot<-ggplot(CountsCompare30, aes(y=mean, x=Day, fill=Symbiont))
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
-  ggtitle("Counts compare 30C");CountsCompare30_plot   
-
-
-#31
-CountsCompare31<-subset(CountsCompare_mean, Temp=="31")
-
-CountsCompare31_plot<-ggplot(CountsCompare31, aes(y=mean, x=Day, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000,10000), limits=c(-100,100000))+  xlab("Days") +  #Label the X Axis 
-            #scale_fill_locuszoom()+
-   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=.2,
-                 position=position_dodge(.9)) +
-   xlab("Day")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("Counts compare 31C");CountsCompare31_plot  
-
-
-#plot together
-
-grid.arrange(CountsCompare27_plot, CountsCompare30_plot,CountsCompare31_plot, nrow=1)
-
-#stats run on logged data for normality
-
-#logged
-CountsCompare$cells.larvae_log<-log(CountsCompare$cells.larvae+1)
-
-
+  ggtitle("30C C1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_C1_plot30
 
 ```
+C1: 31C
+```{r}
+#Subset 31
+CountsCompare_indi_31<-subset(CountsCompare_C1_indi, Temp=="31")
+CountsCompare_multi_31<-subset(CountsCompare_C1_multi, Temp=="31")
+
+CountsCompare_C1_31<-rbind(CountsCompare_indi_31,CountsCompare_multi_31)
+
+CountsCompare_C1_plot31<-ggplot(data=CountsCompare_C1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+      # scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("31C C1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_C1_plot31
+
+```
+
+D1
+D1: 27C
+```{r}
+#subset D1
+CountsCompare_D1_indi<-subset(CountsCompare_mean_indi, Symbiont=="D1")
+CountsCompare_D1_multi<-subset(CountsCompare_mean_multi, Symbiont=="D1")
+
+#Subset 27
+CountsCompare_indi_27<-subset(CountsCompare_D1_indi, Temp=="27")
+CountsCompare_multi_27<-subset(CountsCompare_D1_multi, Temp=="27")
+
+CountsCompare_D1<-rbind(CountsCompare_indi_27,CountsCompare_multi_27)
+
+CountsCompare_D1_plot27<-ggplot(data=CountsCompare_D1, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("27C D1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_D1_plot27
+
+```
+D1: 30C
+```{r}
+#Subset 30
+CountsCompare_indi_30<-subset(CountsCompare_D1_indi, Temp=="30")
+CountsCompare_multi_30<-subset(CountsCompare_D1_multi, Temp=="30")
+
+CountsCompare_D1_30<-rbind(CountsCompare_indi_30,CountsCompare_multi_30)
+
+CountsCompare_D1_plot30<-ggplot(data=CountsCompare_D1_30, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("30C D1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_D1_plot30
+
+```
+D1: 31C
+```{r}
+#Subset 31
+CountsCompare_indi_31<-subset(CountsCompare_D1_indi, Temp=="31")
+CountsCompare_multi_31<-subset(CountsCompare_D1_multi, Temp=="31")
+
+CountsCompare_D1_31<-rbind(CountsCompare_indi_31,CountsCompare_multi_31)
+
+CountsCompare_D1_plot31<-ggplot(data=CountsCompare_D1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+      # scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("31C D1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_D1_plot31
+
+```
+
+F1
+F1: 27C
+```{r}
+#subset F1
+CountsCompare_F1_indi<-subset(CountsCompare_mean_indi, Symbiont=="F1")
+CountsCompare_F1_multi<-subset(CountsCompare_mean_multi, Symbiont=="F1")
+
+#Subset 27
+CountsCompare_indi_27<-subset(CountsCompare_F1_indi, Temp=="27")
+CountsCompare_multi_27<-subset(CountsCompare_F1_multi, Temp=="27")
+
+CountsCompare_F1<-rbind(CountsCompare_indi_27,CountsCompare_multi_27)
+
+CountsCompare_F1_plot27<-ggplot(data=CountsCompare_F1, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("27C F1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_F1_plot27
+
+```
+F1: 30C
+```{r}
+#Subset 30
+CountsCompare_indi_30<-subset(CountsCompare_F1_indi, Temp=="30")
+CountsCompare_multi_30<-subset(CountsCompare_F1_multi, Temp=="30")
+
+CountsCompare_F1_30<-rbind(CountsCompare_indi_30,CountsCompare_multi_30)
+
+CountsCompare_F1_plot30<-ggplot(data=CountsCompare_F1_30, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("30C F1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_F1_plot30
+
+```
+F1: 31C
+```{r}
+#Subset 31
+CountsCompare_indi_31<-subset(CountsCompare_F1_indi, Temp=="31")
+CountsCompare_multi_31<-subset(CountsCompare_F1_multi, Temp=="31")
+
+CountsCompare_F1_31<-rbind(CountsCompare_indi_31,CountsCompare_multi_31)
+
+CountsCompare_F1_plot31<-ggplot(data=CountsCompare_F1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+      # scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("31C F1 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_F1_plot31
+
+```
+
+G3
+G3: 27C
+```{r}
+#subset G3
+CountsCompare_G3_indi<-subset(CountsCompare_mean_indi, Symbiont=="G3")
+CountsCompare_G3_multi<-subset(CountsCompare_mean_multi, Symbiont=="G3")
+
+#Subset 27
+CountsCompare_indi_27<-subset(CountsCompare_G3_indi, Temp=="27")
+CountsCompare_multi_27<-subset(CountsCompare_G3_multi, Temp=="27")
+
+CountsCompare_G3<-rbind(CountsCompare_indi_27,CountsCompare_multi_27)
+
+CountsCompare_G3_plot27<-ggplot(data=CountsCompare_G3, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("27C G3 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_G3_plot27
+
+```
+G3: 30C
+```{r}
+#Subset 30
+CountsCompare_indi_30<-subset(CountsCompare_G3_indi, Temp=="30")
+CountsCompare_multi_30<-subset(CountsCompare_G3_multi, Temp=="30")
+
+CountsCompare_G3_30<-rbind(CountsCompare_indi_30,CountsCompare_multi_30)
+
+CountsCompare_G3_plot30<-ggplot(data=CountsCompare_G3_30, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("30C G3 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_G3_plot30
+
+```
+G3: 31C
+```{r}
+#Subset 31
+CountsCompare_indi_31<-subset(CountsCompare_G3_indi, Temp=="31")
+CountsCompare_multi_31<-subset(CountsCompare_G3_multi, Temp=="31")
+
+CountsCompare_G3_31<-rbind(CountsCompare_indi_31,CountsCompare_multi_31)
+
+CountsCompare_G3_plot31<-ggplot(data=CountsCompare_G3_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point(aes(color=single.multi), size=4, show.legend = T)+
+  geom_line(aes(color=single.multi, linetype=single.multi))+
+  scale_color_manual(values=c("deeppink3", "turquoise3"))+
+  xlab("Days") + #Label the X Axis
+      # scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("31C G3 single vs competition")+
+  theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_G3_plot31
+
+```
+
+Plot 3x4:
+```{r}
+#line plot 
+
+
+
+CountsCompare_G3_plot27<-CountsCompare_G3_plot27+ theme(legend.position = "none")
+CountsCompare_G3_plot30<-CountsCompare_G3_plot30+ theme(legend.position = "none")
+CountsCompare_G3_plot31<-CountsCompare_G3_plot31+ theme(legend.position = "none")
+
+CountsCompare_F1_plot27<-CountsCompare_F1_plot27+ theme(legend.position = "none")
+CountsCompare_F1_plot30<-CountsCompare_F1_plot30+ theme(legend.position = "none")
+CountsCompare_F1_plot31<-CountsCompare_F1_plot31+ theme(legend.position = "none")
+
+CountsCompare_D1_plot27<-CountsCompare_D1_plot27+ theme(legend.position = "none")
+CountsCompare_D1_plot30<-CountsCompare_D1_plot30+ theme(legend.position = "none")
+CountsCompare_D1_plot31<-CountsCompare_D1_plot31+ theme(legend.position = "none")
+
+CountsCompare_C1_plot27<-CountsCompare_C1_plot27+ theme(legend.position = "none")
+CountsCompare_C1_plot30<-CountsCompare_C1_plot30+ theme(legend.position = "none")
+CountsCompare_C1_plot31<-CountsCompare_C1_plot31+ theme(legend.position = "none")
+
+
+grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, nrow = 4)
+```
+
+
 
 
 
