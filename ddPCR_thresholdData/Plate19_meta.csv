@@ -5,7 +5,7 @@ Plate,Well,Sample,Day,Temp,Symbiont,Pot,Replicate,Box,Number,Primer,Info,ALL.num
 19,A04,25,14,27,D1,3,C,F,28,F1,F1,,4,
 19,A05,33,7,27,F1,2,C,H,15,F1,F1,,4,
 19,A06,41,3,27,G3,3,C,D,32,G3,G3,,4,
-19,A07,49,7,27,G3,,D,H,22,G3,G3,,4,
+19,A07,49,7,27,G3,2,D,H,22,G3,G3,,4,
 19,A08,57,7,30,F1,2,D,L,4,F1,F1,,4,
 19,A09,65,3,27,ALL,1,J,K,40,C1,ALL,214,4,B
 19,A10,73,3,27,ALL,1,J,K,40,D1,ALL,214,4,B
