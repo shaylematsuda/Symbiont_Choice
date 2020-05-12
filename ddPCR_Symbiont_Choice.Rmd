@@ -75,7 +75,7 @@ library(flextable)
 
 #Setup data:   
 Hemocytometer and scope counts
-```{r} 
+```{r}  
 ####Load in hemocytometer counts and fluorescent scope counts:  
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
 Day7Counts<-read.csv("SC18_cellcounts_day7.csv")
@@ -101,7 +101,7 @@ Countdat<-rbind(Day3Counts, Day7Counts, Day14Counts)
 Countdat1<-Countdat[!(Countdat$Symbiont=="ALL"),] #remove ALLs
 Countdat1<-Countdat1[!(Countdat1$Symbiont=="CONTROL"),] #remove controls
 Countdat1$Temp<-as.factor(Countdat1$Temp)
-Countdat1$cells.larvae<-as.numeric(Countdat1$cells.larvae)
+Countdat1$cells.larvae<-as.numeric(Countdat1$cells.larvae) 
 ```
 Load in ddPCR data with Threshold set in QuantaSoft Analysis
 ```{r} 
@@ -342,7 +342,7 @@ sum(FP_G3$Positives) # 60 positives per 70 wells
 Sample droplet cutoff, false pos rate, copy number, cells/larvae calc
 ```{r}  
  
-# 9000 cutoff - if total droplets are below 9000 remove samples 
+# 9000 cutoff - if total droplets are below 9000 remove samples  
 dData1<-subset(dData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
 
 #subset by primer to then account for false positives by primer
@@ -462,16 +462,111 @@ Countdat_D714$count.type<-"hemo"
 Countdat_2<-rbind(Countdat_D3,Countdat_D714) #bind together for non-ddPCR dataset 
 ```
 
+Scope/hemo Calc means for clade/temp/time/pot VS ddPCR
+```{r}
+#scope hemo prep
+
+#Raw means
+scopehemoFull_mean<- ddply(Countdat_2, c("Day", "Temp","Symbiont","Pot","count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);scopehemoFull_mean #display table
+scopehemoFull_mean$mean<-round(scopehemoFull_mean$mean)
+#write.csv(scopehemoFull_mean,"scopehemoFull_mean.csv")
+scopehemoFull_meanVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
+scopehemoFull_mean2<-scopehemoFull_mean[scopehemoFull_meanVars]
+colnames(scopehemoFull_mean2)[colnames(scopehemoFull_mean2)=="mean"] <- "Countmean"
+
+
+
+# ddPCR
+ddPCRcompare<-rbind(C1_9000b,D1_9000b,F1_9000b,G3_9000b)
+#Raw means
+ddPCRcompare_mean<- ddply(ddPCRcompare, c("Day", "Temp","Symbiont","Pot", "count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);ddPCRcompare_mean #display table
+ddPCRcompare_mean$mean<-round(ddPCRcompare_mean$mean)
+
+ddPCRcompareVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
+ddPCRcompare_mean2<-ddPCRcompare_mean[ddPCRcompareVars]
+colnames(ddPCRcompare_mean2)[colnames(ddPCRcompare_mean2)=="mean"] <- "ddPCRmean"
+
+#write.csv(ddPCRcompare_mean,"ddPCRcompare_mean.csv")
+# combine Scope and ddPCR
+scopehemo_ddPCRCompare<-merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
+
+# Basic scatter plot
+
+## the elipse plot, you don't need but good to know how
+ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean, y=ddPCRmean, colour=Symbiont)) +
+   geom_point(aes(colour=factor(Symbiont), shape=count.type.x)) +
+   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
+   scale_colour_manual(name="condition",
+       values=c("red","blue","green","orange"))+
+  scale_x_continuous(trans = "log10")+
+    scale_y_continuous(trans = "log10")+
+  stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
+theme_classic()
+  #stat_smooth(method=lm, )
+   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
+
+
+## the elipse plot, you don't need but good to know how
+ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean, y=ddPCRmean)) +
+   geom_point(aes(colour=factor(count.type.x))) +
+   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
+   scale_colour_manual(name="condition",
+       values=c("darkgray","orange"))+
+  scale_x_continuous(trans = "log10")+
+    scale_y_continuous(trans = "log10")+
+  #stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
+theme_classic()+
+  geom_smooth(method=lm,se = FALSE, color="black")+ #lm
+    geom_smooth(method=lm,se = FALSE, color="black")+ #lm forced through 0
+
+   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
+
+
+#Model_II_linear_regression    https://rpubs.com/jasonvenkiteswaran/22815 
+library(lmodel2) 
+
+#everything
+scopehemo_ddPCRCompare$Countmean_log<-log(scopehemo_ddPCRCompare$Countmean+1)
+scopehemo_ddPCRCompare$ddPCRmean_log<-log(scopehemo_ddPCRCompare$ddPCRmean+1)
+
+lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+#ScopeHemo ddPCR 
+lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+#Scope ddPCR 
+scopeddPCR<- subset(scopehemo_ddPCRCompare, Day=="3")
+lmodel2(ddPCRmean_log~Countmean_log, data = scopeddPCR)
+
+#Hemo ddPCR 
+hemoddPCR<- subset(scopehemo_ddPCRCompare, Day=="7"|Day=="14")
+lmodel2(ddPCRmean_log~Countmean_log, data = hemoddPCR)
+
+
+```
+
+
+
+
 #Stats and plots: ddPCR vs hemo + scope, prove not different 
 (figure out how to get an R2 from model, and beta estimate (near 1 ideally) )
 1.	Question: Can we combine hemo/scope counts with ddPCR for analysis?
-Hypothesis: 
--	There is no difference in cell counts from hemocytometer/scope vs ddPCR for any symbiont.
 Model: lmer(cells.larvae_log~count.type*Symbiont+(1|Temp/Pot))   
-
-C1
+C1, df and means tables
 ```{r}  
-#C1 
+#C1  
 
 #check the accuracy of this data both binary (did it infect or not) and if it did, what do the counts look like (0s removed).
 
@@ -482,7 +577,7 @@ colnames(C1_9000b)[colnames(C1_9000b)=="Info"] <- "Symbiont"
 C1_9000b$count.type<-"ddPCR"
 summary(C1_9000b$cells.larvae)
 hist(C1_9000b$cells.larvae) #not normal
-  
+
 #organize hemo data
 C1countdat<-subset(Countdat_2, Symbiont=="C1")
 hist(C1countdat$cells.larvae)
@@ -515,7 +610,7 @@ C1Full_mean<-C1Full_mean[!(C1Full_mean$N==1),]
 
 C1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 C1Full_means2<-C1Full_mean[C1vars2]
-
+write.csv(C1Full_means2,"C1Full_means2.csv")
 #Day 3 scope vs ddpcr
 C1Full_D3<-subset(C1Full, Day=="3")
 #C1Full_means3<-dcast(C1Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
@@ -529,8 +624,8 @@ C1Full_D14<-subset(C1Full,Day=="14")
 
 ```
 
-D1 -logged - both log and cube root give sig
-```{r} 
+D1, df and means tables
+```{r}  
  
 #organize the ddPCR data 
 D1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
@@ -540,12 +635,13 @@ D1_9000b$count.type<-"ddPCR"
 hist(D1_9000b$cells.larvae) 
 #D1_9000b$cells.larvae_log<-log(D1_9000b$cells.larvae+1)
   #hist(D1_9000b$cells.larvae_log, w=.01, breaks = 10) 
+#write.csv(G3_9000b,"G3_9000b.csv")
 
 #organize hemo data
+
 D1countdat<-subset(Countdat_2, Symbiont=="D1")
 
 D1Full<-rbind(D1_9000b,D1countdat) #combine hemo and ddPCR
-
 D1Full$cells.larvae_log<-log(D1Full$cells.larvae+1)
 hist(D1Full$cells.larvae_log)
 
@@ -564,6 +660,33 @@ D1Full_mean$mean<-round(D1Full_mean$mean)
 D1vars2<-c("Day", "Temp","count.type", "mean","Symbiont","Pot")
 D1Full_means2<-D1Full_mean[D1vars2]
 
+testplot<-ggplot(data=D1Full_means2, aes(x=Day, y=mean, group = count.type, color=count.type)) +
+  #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                #width=0.1, show.legend = T)+
+  geom_point(aes(color=count.type), size=4, show.legend = T)+ 
+  geom_line(aes(color=count.type))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("% larvae"))) +
+  ggtitle("ddpcr vs hemo")+
+  theme(plot.title = element_text(size=20));testplot
+
+
+
+
+
+
+
 #Day 3 scope vs ddpcr
 D1Full_D3<-subset(D1Full, Day=="3")
 #D1Full_means3<-dcast(D1Full_means3, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
@@ -577,7 +700,7 @@ D1Full_D14<-subset(D1Full,Day=="14")
 #D1Full_means4<-dcast(D1Full_means4, Temp+Day+Symbiont+Pot~count.type, value.var = "mean") # cast()
 ```
 
-F1
+F1, df and means tables
 ```{r}
 #organize the ddPCR data 
 F1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
@@ -621,7 +744,7 @@ F1Full_D7<-subset(F1Full, Day=="7")
 F1Full_D14<-subset(F1Full, Day=="14")
 
 ```
-G3
+G3, df and means tables
 ```{r} 
 #organize the ddPCR data 
 G3_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
@@ -669,33 +792,84 @@ G3Full_D14<-subset(G3Full, Day=="14")
 
 Run stats on the counts themselves:   THIS IS GOOD
 Day 3 scope vs ddCPR- logged data
-```{r}  
+```{r}   
 ScopeddPCR1<-rbind(C1Full_D3,D1Full_D3,F1Full_D3,G3Full_D3)
 hist(ScopeddPCR1$cells.larvae_log)
 ScopeddPCR1$cells.larvae_log<-log(ScopeddPCR1$cells.larvae_log+1)
 hist(ScopeddPCR1$cells.larvae_log)
 
-ScopeddPCR_mod<-lmer(cells.larvae_log~count.type+(1|Symbiont)+(1|Temp/Pot), ScopeddPCR1)   
-anova(ScopeddPCR_mod, type=2)  
-    #count.type  0.1618
+ScopeddPCR1$PotCode<-paste0(ScopeddPCR1$Temp, ScopeddPCR1$Pot,ScopeddPCR1$Symbiont ) #make pot code
+ ScopeddPCR1$PotCode<-as.factor(ScopeddPCR1$PotCode) #make factor
 
-ScopeddPCR_mod2<-lmer(cells.larvae_log~count.type*Symbiont+(1|Temp/Pot), ScopeddPCR1)   
+ScopeddPCR_mod2<-lmer(cells.larvae_log~count.type*Symbiont+(1|PotCode), ScopeddPCR1)   
 anova(ScopeddPCR_mod2, type=2)  
     #count.type            0.1597    
     #Symbiont            2 <2e-16 ***
-    #count.type:Symbiont   0.1012    
+    #count.type:Symbiont   0.1012 
+
+
+#by clade
+ScopeddPCR1_C1<-subset(ScopeddPCR1, Symbiont=="C1")
+ScopeddPCR1_C1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), ScopeddPCR1_C1)   
+anova(ScopeddPCR1_C1Mod, type=2)  #not sig
+qqPlot(residuals(ScopeddPCR1_C1Mod)) #ok
+
+ScopeddPCR1_D1<-subset(ScopeddPCR1, Symbiont=="D1")
+ScopeddPCR1_D1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), ScopeddPCR1_D1)   
+anova(ScopeddPCR1_D1Mod, type=2)  #SIG
+qqPlot(residuals(ScopeddPCR1_D1Mod)) #medium
+
+ScopeddPCR1_F1<-subset(ScopeddPCR1, Symbiont=="F1")
+ScopeddPCR1_F1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), ScopeddPCR1_F1)   
+anova(ScopeddPCR1_F1Mod, type=2)  #not sig
+qqPlot(residuals(ScopeddPCR1_F1Mod)) #5 outside
+
+ScopeddPCR1_G3<-subset(ScopeddPCR1, Symbiont=="G3")
+ScopeddPCR1_G3Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), ScopeddPCR1_G3)   
+anova(ScopeddPCR1_G3Mod, type=2)  #not sig
+qqPlot(residuals(ScopeddPCR1_G3Mod)) #good, 2 outside
+
+
 ```
 Day 7 and 14 hemo vs ddCPR - logged data
 ```{r}
-
-#day 7
+#day 7 
 hemoPCR_D7<-rbind(C1Full_D7,D1Full_D7,F1Full_D7,G3Full_D7)
 hist(hemoPCR_D7$cells.larvae)
 hemoPCR_D7$cells.larvae_log<-log(hemoPCR_D7$cells.larvae+1)
 hist(hemoPCR_D7$cells.larvae_log)
+  hemoPCR_D7$PotCode<-paste0(hemoPCR_D7$Temp, hemoPCR_D7$Pot,hemoPCR_D7$Symbiont ) #make pot code
+  hemoPCR_D7$PotCode<-as.factor(hemoPCR_D7$PotCode) #make factor
+  hemoPCR_D7$count.type<-as.factor(hemoPCR_D7$count.type) #make factor
 
-hemoPCR_D7_mod<-lmer(cells.larvae_log~count.type+(1|Symbiont)+(1|Temp/Pot), hemoPCR_D7)   
-anova(hemoPCR_D7_mod, type=2)  #not sig
+#FULL
+
+hemoPCR_D7_mod2<-lmer(cells.larvae_log~count.type:Symbiont+(1|PotCode), hemoPCR_D7)   
+anova(hemoPCR_D7_mod2, type=2)  # sig diff
+qqPlot(residuals(hemoPCR_D7_mod2)) #good
+
+#by clade
+hemoPCR_D7_C1<-subset(hemoPCR_D7, Symbiont=="C1")
+hemoPCR_D7_C1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D7_C1)   
+anova(hemoPCR_D7_C1Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D7_C1Mod)) #good
+
+hemoPCR_D7_D1<-subset(hemoPCR_D7, Symbiont=="D1")
+hemoPCR_D7_D1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D7_D1)   
+anova(hemoPCR_D7_D1Mod, type=2)  #SIG
+hist(hemoPCR_D7_D1$cells.larvae_log)
+qqPlot(residuals(hemoPCR_D7_D1Mod)) #good
+
+hemoPCR_D7_F1<-subset(hemoPCR_D7, Symbiont=="F1")
+hemoPCR_D7_F1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D7_F1)   
+anova(hemoPCR_D7_F1Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D7_F1Mod)) #5 outside
+
+hemoPCR_D7_G3<-subset(hemoPCR_D7, Symbiont=="G3")
+hemoPCR_D7_G3Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D7_G3)   
+anova(hemoPCR_D7_G3Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D7_G3Mod)) #good, 2 outside
+
 
 #day 14
 hemoPCR_D14<-rbind(C1Full_D14,D1Full_D14,F1Full_D14,G3Full_D14)
@@ -703,8 +877,35 @@ hist(hemoPCR_D14$cells.larvae)
 hemoPCR_D14$cells.larvae_log<-log(hemoPCR_D14$cells.larvae+1)
 hist(hemoPCR_D14$cells.larvae_log)
 
-hemoPCR_D14_mod<-lmer(cells.larvae_log~count.type+(1|Symbiont)+(1|Temp/Pot), hemoPCR_D14)   
-anova(hemoPCR_D14_mod, type=2) #not sig
+hemoPCR_D14$PotCode<-paste0(hemoPCR_D14$Temp, hemoPCR_D14$Pot,hemoPCR_D14$Symbiont ) #make pot code
+hemoPCR_D14$PotCode<-as.factor(hemoPCR_D14$PotCode) #make factor
+
+hemoPCR_D14_mod<-lmer(cells.larvae_log~count.type*Symbiont+(1|PotCode), hemoPCR_D14)   
+anova(hemoPCR_D14_mod, type=2) # sig
+
+
+#by clade
+hemoPCR_D14_C1<-subset(hemoPCR_D14, Symbiont=="C1")
+hemoPCR_D14_C1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D14_C1)   
+anova(hemoPCR_D14_C1Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D14_C1Mod)) #good
+
+hemoPCR_D14_D1<-subset(hemoPCR_D14, Symbiont=="D1")
+hemoPCR_D14_D1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D14_D1)   
+anova(hemoPCR_D14_D1Mod, type=2)  #SIG
+hist(hemoPCR_D14_D1$cells.larvae_log)
+qqPlot(residuals(hemoPCR_D14_D1Mod)) #good
+
+hemoPCR_D14_F1<-subset(hemoPCR_D14, Symbiont=="F1")
+hemoPCR_D14_F1Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D14_F1)   
+anova(hemoPCR_D14_F1Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D14_F1Mod)) #good
+
+hemoPCR_D14_G3<-subset(hemoPCR_D14, Symbiont=="G3")
+hemoPCR_D14_G3Mod<-lmer(cells.larvae_log~count.type+(1|PotCode), hemoPCR_D14_G3)   
+anova(hemoPCR_D14_G3Mod, type=2)  #not sig
+qqPlot(residuals(hemoPCR_D14_G3Mod)) #good
+
 
 ```
 
@@ -748,7 +949,7 @@ dispersion_glmer(Binary_mod) # no overdispersion
 #by Clade, If I do glmer i get a crazy warning.... is that ok>>>>>
 #C1
   Binary_C1<-subset(BinaryInfect, Symbiont=="C1")
-  Binary_C1_mod<-glmer(Infect~Temp*Day+(1|Temp/Pot), family="binomial", Binary_C1)   ##THIS Seems to work
+Binary_C1_mod<-glmer(Infect~Temp*Day+(1|Temp/Pot), family="binomial", Binary_C1)   ##THIS Seems to work
   Anova(Binary_C1_mod)
   ###BUt if i use "potcode" i get warnings, but the same values...
   Binary_C1_moda<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_C1)
@@ -1396,8 +1597,10 @@ grid.arrange(zscore_27C_plot, zscore_30C_plot, zscore_31C_plot, nrow = 1)
 #Multi-infection
 **Use only Relabundance for within larvae comparisons, use Raw for comparision with Single infections **
 
-#df: ALL_9000b (has larvae removed where not all clades amped in each individual)
-Binomial - A. did the larvae infect at all? with anything, or B. did each individual clade infect
+df: ALL_9000b (has larvae removed where not all clades amped in each individual)
+Binomial - A. did the larvae infect at all? with anything, or B. did each individual clade infect  
+  
+#A. Binomial. Did larvae infect or not, by clade and overall  
 ```{r}
 #df ALL_9000b, only 5 larvae have 0 infection (but enough dropletes)
 
@@ -1427,6 +1630,8 @@ RelA_binary$numclade<-RelA_binary$C1+RelA_binary$D1+RelA_binary$F1+RelA_binary$G
 RelA_binary$Infect[RelA_binary$numclade>0]<-1  
 RelA_binary$Infect[RelA_binary$numclade==0]<-0
    RelA_binary$Infect<-as.factor(RelA_binary$binary) #make factor
+
+RelA_CladeComp<-RelA_binary #make a copy for the nextsection
 
 #rename Pot interaction as a code: Pot_Temp
  RelA_binary$PotCode<-paste0(RelA_binary$Temp, RelA_binary$Pot)
@@ -1493,7 +1698,7 @@ C1_binary_SinMul$Symbiont<-as.factor(C1_binary_SinMul$Symbiont)
 C1_binary_SinMul$infectType<-as.factor(C1_binary_SinMul$infectType)
 
 #model
-C1_binary_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="quasibinomial", C1_binary_SinMul) 
+C1_binary_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", C1_binary_SinMul) 
 Anova(C1_binary_SinMul_mod)
 dispersion_glmer(C1_binary_SinMul_mod) # no overdispersion 
 
@@ -1558,7 +1763,7 @@ C1_binary_SinMul_plot_30<-ggplot(data=C1_binary_SinMul_mean_30, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("30C C1 single vs competition binomial")+
+  ggtitle("30C C1")+
   theme(plot.title = element_text(size=20, face = "italic"));C1_binary_SinMul_plot_30
 
 #31
@@ -1580,17 +1785,18 @@ C1_binary_SinMul_plot_31<-ggplot(data=C1_binary_SinMul_mean_31, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("31C C1 single vs competition binomial")+
+  ggtitle("31C C1")+
   theme(plot.title = element_text(size=20, face = "italic"));C1_binary_SinMul_plot_31
 
 #plot together
 C1_binary_SinMul_plot_27<-C1_binary_SinMul_plot_27+ theme(legend.position = "none") #remove legend
 C1_binary_SinMul_plot_30<-C1_binary_SinMul_plot_30+ theme(legend.position = "none") #remove legend
+C1_binary_SinMul_plot_31<-C1_binary_SinMul_plot_31+ theme(legend.position = "none") #remove legend
 
 grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMul_plot_31, nrow = 1)
 ```
 
-#D1
+D1
 ```{r}
 D1_binary_SinMul<-rbind(RelA_binary_D1, Binary_D1_binary) 
 D1_binary_SinMul$Infect<-as.factor(D1_binary_SinMul$Infect)
@@ -1640,7 +1846,7 @@ D1_binary_SinMul_plot_27<-ggplot(data=D1_binary_SinMul_mean_27, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("27C D1 single vs competition binomial")+
+  ggtitle("27C D1")+
   theme(plot.title = element_text(size=20, face = "italic"));D1_binary_SinMul_plot_27
 
 #30
@@ -1661,7 +1867,7 @@ D1_binary_SinMul_plot_30<-ggplot(data=D1_binary_SinMul_mean_30, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("30C D1 single vs competition binomial")+
+  ggtitle("30C D1")+
   theme(plot.title = element_text(size=20, face = "italic"));D1_binary_SinMul_plot_30
 
 #31
@@ -1682,12 +1888,13 @@ D1_binary_SinMul_plot_31<-ggplot(data=D1_binary_SinMul_mean_31, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("31C D1 single vs competition binomial")+
+  ggtitle("31C D1")+
   theme(plot.title = element_text(size=20, face = "italic"));D1_binary_SinMul_plot_31
 
 #plot together
 D1_binary_SinMul_plot_27<-D1_binary_SinMul_plot_27+ theme(legend.position = "none") #remove legend
 D1_binary_SinMul_plot_30<-D1_binary_SinMul_plot_30+ theme(legend.position = "none") #remove legend
+D1_binary_SinMul_plot_31<-D1_binary_SinMul_plot_31+ theme(legend.position = "none") #remove legend
 
 grid.arrange(D1_binary_SinMul_plot_27, D1_binary_SinMul_plot_30, D1_binary_SinMul_plot_31, nrow = 1)
 ```
@@ -1742,7 +1949,7 @@ F1_binary_SinMul_plot_27<-ggplot(data=F1_binary_SinMul_mean_27, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("27C F1 single vs competition binomial")+
+  ggtitle("27C F1")+
   theme(plot.title = element_text(size=20, face = "italic"));F1_binary_SinMul_plot_27
 
 #30
@@ -1763,7 +1970,7 @@ F1_binary_SinMul_plot_30<-ggplot(data=F1_binary_SinMul_mean_30, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("230C F1 single vs competition binomial")+
+  ggtitle("230C F1")+
   theme(plot.title = element_text(size=20, face = "italic"));F1_binary_SinMul_plot_30
 
 #31
@@ -1784,12 +1991,13 @@ F1_binary_SinMul_plot_31<-ggplot(data=F1_binary_SinMul_mean_27, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("31C F1 single vs competition binomial")+
+  ggtitle("31C F1")+
   theme(plot.title = element_text(size=20, face = "italic"));F1_binary_SinMul_plot_31
 
 #plot together
 F1_binary_SinMul_plot_27<-F1_binary_SinMul_plot_27+ theme(legend.position = "none") #remove legend
 F1_binary_SinMul_plot_30<-F1_binary_SinMul_plot_30+ theme(legend.position = "none") #remove legend
+F1_binary_SinMul_plot_31<-F1_binary_SinMul_plot_31+ theme(legend.position = "none") #remove legend
 
 grid.arrange(F1_binary_SinMul_plot_27, F1_binary_SinMul_plot_30, F1_binary_SinMul_plot_31, nrow = 1)
 
@@ -1845,7 +2053,7 @@ G3_binary_SinMul_plot_27<-ggplot(data=G3_binary_SinMul_mean_27, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("27C G3 single vs competition binomial")+
+  ggtitle("27C G3")+
   theme(plot.title = element_text(size=20, face = "italic"));G3_binary_SinMul_plot_27
 
 #30
@@ -1866,7 +2074,7 @@ G3_binary_SinMul_plot_30<-ggplot(data=G3_binary_SinMul_mean_30, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("30C G3 single vs competition binomial")+
+  ggtitle("30C G3")+
   theme(plot.title = element_text(size=20, face = "italic"));G3_binary_SinMul_plot_30
 
 #31
@@ -1887,7 +2095,7 @@ G3_binary_SinMul_plot_31<-ggplot(data=G3_binary_SinMul_mean_31, aes(x=Day, y=mea
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("% larvae infected"))) +
-  ggtitle("31C G3 single vs competition binomial")+
+  ggtitle("31C G3")+
   theme(plot.title = element_text(size=20, face = "italic"));G3_binary_SinMul_plot_31
 
 #plot together
@@ -1904,13 +2112,256 @@ grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMu
 
 ```
 
+#B PLOT Multi infection, % larvae infected with 0,1, 2, 3, or 4 types (not by clade)
+```{r}   
+ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","PotCode","numclade")
+ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
+
+ALL_RelA_Infect$Infect<-as.factor(ALL_RelA_Infect$Infect)
+
+#write.csv(ALL_RelA_Infect,"ALL_RelA_Infect.csv")
+
+NumClades<-read.csv("NumbCladesInfect_20200405.csv") #you couldn't do this in R so you did in excel and are reuploading....ugh. 
+
+NumClades<-melt(NumClades,  id=c("Temp","Day"))
+NumClades$Temp<-as.factor(NumClades$Temp)
+NumClades$Day<-as.factor(NumClades$Day)
+
+#27C
+NumClades_27<-subset(NumClades, Temp==27)
+
+#plot
+Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
+           geom_bar(stat="identity")+
+            scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("# of types of symbionts"))) +
+  ggtitle("27C");Infect27_plot     
+
+#30C
+NumClades_30<-subset(NumClades, Temp==30)
+
+#plot
+Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
+           geom_bar(stat="identity")+
+            scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("# of types of symbionts"))) +
+  ggtitle("30C");Infect30_plot  
+
+#31C
+NumClades_31<-subset(NumClades, Temp==31)
+
+#plot
+Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
+           geom_bar(stat="identity")+
+            scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("# of types of symbionts"))) +
+  ggtitle("31C");Infect31_plot  
+
+#plot all together
+Infect27_plot<-Infect27_plot+ theme(legend.position = "none") #remove legend
+Infect30_plot<-Infect30_plot+ theme(legend.position = "none") #remove legend
+Infect31_plot<-Infect31_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
+      
+
+#stats
+hist(ALL_RelA_Infect$infectNum)
+ALL_RelA_Infect_mod<-lmer(infectNum~Temp*Day+(1|PotCode), ALL_RelA_Infect) 
+  anova(ALL_RelA_Infect_mod)
+dispersion_glmer(ALL_RelA_Infect_mod)
+
+emm<-emmeans(ALL_RelA_Infect_mod,  ~ Temp*Day)
+  pairs(emm)
+  cld(emm)  
+
+```
+
+#C Who was the most dominant clade in larvave - You need to figure out how to set up a df to run this correctly. I think you might need to change the 'winner' into a 1 and then find the 3 losers and change those to 0s. but not sure how to code that. 
+```{r}   
+#df ALL_RelA
+Dom<-ALL_RelA%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(1)
+#new col with 1 for winner
+Dom$Win.lose<-1
+
+#pull losers and give them 0
+DomL2<-ALL_RelA%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(2)
+DomL2$Win.lose<-0
+
+DomL3<-ALL_RelA%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(3)
+DomL3$Win.lose<-0
+
+DomL4<-ALL_RelA%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(4)
+DomL4$Win.lose<-0
+
+DomAll<-rbind(Dom,DomL2,DomL3,DomL4)
+
+
+DomAll_mean <- ddply(DomAll, c("Day", "Temp","clade"), summarise, #summarize cell counts
+                 N    = length(Win.lose[!is.na(Win.lose)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(Win.lose, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(Win.lose, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(Win.lose, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+
+DomAll_mean #display table 
+DomAll_mean<-na.omit(DomAll_mean)
+
+#27C
+Dom27mean<-subset(DomAll_mean, Temp==27)
+#plot
+domAll_27_plot<-ggplot(data=Dom27mean, aes(x=Day, y=mean, group = clade, color=clade)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=clade), size=4, show.legend = T)+ 
+  geom_line(aes(color=clade))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("% larvae"))) +
+  ggtitle("27C Dom Symbiont")+
+  theme(plot.title = element_text(size=20));domAll_27_plot
+
+#30C
+Dom30mean<-subset(DomAll_mean, Temp==30)
+#plot
+domAll_30_plot<-ggplot(data=Dom30mean, aes(x=Day, y=mean, group = clade, color=clade)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=clade), size=4, show.legend = T)+ 
+  geom_line(aes(color=clade))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("% larvae"))) +
+  ggtitle("30C Dom Symbiont")+
+  theme(plot.title = element_text(size=20));domAll_30_plot
+
+
+#31C
+Dom31mean<-subset(DomAll_mean, Temp==31)
+#plot
+domAll_31_plot<-ggplot(data=Dom31mean, aes(x=Day, y=mean, group = clade, color=clade)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=clade), size=4, show.legend = T)+ 
+  geom_line(aes(color=clade))+
+            scale_color_locuszoom()+
+  xlab("Days") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("% larvae"))) +
+  ggtitle("31C Dom Symbiont")+
+  theme(plot.title = element_text(size=20));domAll_31_plot
 
 
 
+#plot all together
+domAll_27_plot<-domAll_27_plot+ theme(legend.position = "none") #remove legend
+domAll_30_plot<-domAll_30_plot+ theme(legend.position = "none") #remove legend
+grid.arrange(domAll_27_plot, domAll_30_plot,domAll_31_plot, nrow = 1)
+```     
 
-
+stats
 ```{r}
-#calc relative abundance for each
+ #rename Pot interaction as a code: Pot_Temp
+ DomAll$PotCode<-paste0(DomAll$Temp, DomAll$Pot,DomAll$clade )
+ DomAll$PotCode<-as.factor(DomAll$PotCode) #make factor
+ 
+DomAll_mod<-glmer(Win.lose~clade*Temp*Day+(1|PotCode), family="binomial", DomAll)  #warnings...wtf IS THIS BC we lose treatments bc of death? Reason to do by clade? 
+
+  Anova(DomAll_mod)
+dispersion_glmer(DomAll_mod) # no overdispersion 
+
+  emm<-emmeans(DomAll_mod,  ~ clade*Temp)
+  pairs(emm)
+  cld(emm)  
+  
+#by Temp
+  
+#27
+Dom27<-subset(DomAll, Temp==27)
+  Dom27_mod<-glmer(Win.lose~clade*Day+(1|PotCode), family="binomial", Dom27) 
+  Anova(Dom27_mod)
+  dispersion_glmer(Dom27_mod)  #no overdispersion
+
+#30
+Dom30<-subset(DomAll, Temp==30)
+  Dom30_mod<-glmer(Win.lose~clade*Day+(1|PotCode), family="binomial", Dom30) 
+  Anova(Dom30_mod)
+  dispersion_glmer(Dom30_mod)  #no overdispersion
+  
+#31
+Dom31<-subset(DomAll, Temp==31)
+  Dom31_mod<-glmer(Win.lose~clade*Day+(1|PotCode), family="binomial", Dom31) 
+  Anova(Dom31_mod)
+  dispersion_glmer(Dom31_mod)  #no overdispersion
+```
+
+
+
+
+
+
+#Multi infection, relative abundance. What is the rel abund of each clade infected
+```{r}
+#calc relative abundance for each 
 ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
@@ -1927,12 +2378,12 @@ ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (d
 Plot RA as stacked bar plots by Day and then by temp 
 
 Everything
-```{r} 
+```{r}  
 relabund_27<-subset(ALL_RelA_b, Temp=="27")
 relabund_30<-subset(ALL_RelA_b, Temp=="30")
 relabund_31<-subset(ALL_RelA_b, Temp=="31")
 
-
+ 
 #27
 ALL_RelA_27_mean <- ddply(relabund_31, c("Day","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
@@ -2121,7 +2572,7 @@ ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
 grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 ``` 
 
-#Multi raw 
+#Multi raw - for how we can compare to individual infection
 This is the RAW data used for MULTI INFECTION - Individual comparison only!
 ```{r}      
 #use ALLcast_9000_cast2a THIS IS WITHOUT SAMPS REMOVED WHEN ALL NOT AMPED
@@ -2298,96 +2749,7 @@ grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plo
 ```
  
 
-# PLOT Multi infection, % larvae infected with 0,1, 2, 3, or 4 types
-Binomial
-```{r}   
-ALL_RelAvar<-c("Day", "Temp", "ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
-ALL_RelA_Infect<-ALL_RelA[ALL_RelAvar]
 
-  ALL_RelA_Infect$C1[ALL_RelA_Infect$Cladocopium>0]<-1  
-  ALL_RelA_Infect$C1[ALL_RelA_Infect$Cladocopium==0]<-0
- ALL_RelA_Infect$D1[ALL_RelA_Infect$Durusdinium>0]<-1  
-  ALL_RelA_Infect$D1[ALL_RelA_Infect$Durusdinium==0]<-0
-  ALL_RelA_Infect$F1[ALL_RelA_Infect$Fugacium>0]<-1  
-  ALL_RelA_Infect$F1[ALL_RelA_Infect$Fugacium==0]<-0
-  ALL_RelA_Infect$G3[ALL_RelA_Infect$Gerakladium>0]<-1  
-  ALL_RelA_Infect$G3[ALL_RelA_Infect$Gerakladium==0]<-0
-  
-  ALL_RelA_Infect$Infect<-as.factor(ALL_RelA_Infect$Infect)
-
-
-# add column with # of types of symbs
-ALL_RelA_Infect$infectNum<-ALL_RelA_Infect$C1+ALL_RelA_Infect$D1+ALL_RelA_Infect$F1+ALL_RelA_Infect$G3
-ALL_RelA_Infect<-na.omit(ALL_RelA_Infect)
-#write.csv(ALL_RelA_Infect,"ALL_RelA_Infect.csv")
-
-NumClades<-read.csv("NumbCladesInfect_20200405.csv") #you couldn't do this in R so you did in excel and are reuploading....ugh. 
-
-NumClades<-melt(NumClades,  id=c("Temp","Day"))
-
-#27C
-NumClades_27<-subset(NumClades, Temp==27)
-
-#plot
-Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
-           geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# of types of symbionts"))) +
-  ggtitle("27C");Infect27_plot     
-
-#30C
-NumClades_30<-subset(NumClades, Temp==30)
-
-#plot
-Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
-           geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# of types of symbionts"))) +
-  ggtitle("30C");Infect30_plot  
-
-#31C
-NumClades_31<-subset(NumClades, Temp==31)
-
-#plot
-Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
-           geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# of types of symbionts"))) +
-  ggtitle("31C");Infect31_plot  
-            
-```
-
-#### TODO: make these plots by symbiont over time and temp so a 3x3 grid
 
 # let's look at some plots of raw counts by single vs multi infection.
 
@@ -2401,10 +2763,10 @@ MultiCounts<-ALLcast_9000_cast2a
 MultiCounts2<-MultiCounts[-c(1,5:8)] #remove metadata
 MultiCounts2$single.multi<-"multi"
 names(MultiCounts2)[names(MultiCounts2) == "C1_round"] <- "C1"
-names(MultiCounts2)[names(MultiCounts2) == "D1_round"] <- "D1"
+names(MultiCounts2)[names(MultiCounts2) == "D1_round"] <- "D1" 
 names(MultiCounts2)[names(MultiCounts2) == "F1_round"] <- "F1"
 names(MultiCounts2)[names(MultiCounts2) == "G3_round"] <- "G3"
-
+ 
 
 #MultiCounts2$Symbiont<-"All"
 MultiCounts2<-melt(MultiCounts2, id=c("Temp","Day","single.multi","Pot"))
@@ -2441,7 +2803,7 @@ CountsCompare_mean_multi<-subset(CountsCompare_mean, single.multi=="multi")
 
 #subset by Symbiont plots
 C1: 27C
-```{r} 
+```{r}  
 #subset C1 
 CountsCompare_C1_indi<-subset(CountsCompare_mean_indi, Symbiont=="C1")
 CountsCompare_C1_multi<-subset(CountsCompare_mean_multi, Symbiont=="C1")
@@ -3440,9 +3802,10 @@ cld(test, Letters=c(LETTERS)) #letter display
 ```
 
 
-#Multi-infection data, ALL1 data (cutoff 9000)
+#Multi-infection data, ALL1 data (cutoff 9000) 
+Expected vs observed infections, all and by clade
 ```{r} 
-#ALL everything (this is way too big)
+#ALL everything (this is way too big) 
 Allmod<-lmer(log(cells.larvae+1)~Day*Temp*Primer+(1|Pot), ALL1)  #All.number is the larvae ID
 #summary(Allmod)
 anova(Allmod)
@@ -3490,7 +3853,7 @@ emmeans(AllmodDay14, pairwise ~ Temp |Primer)
 ```
 
 
-###Compare expected vs observed. Do this at each Time point (2-way easier to interpret)
+Compare expected vs observed. Do this at each Time point (2-way easier to interpret)
 C1
 ```{r}   
 #copy df 
