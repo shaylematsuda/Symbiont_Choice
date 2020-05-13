@@ -29,6 +29,7 @@ Symbiont choice experiment tests the uptake of cultured Symbiodiniaceae alone an
 #rm(list=ls()) # Clear workspace
 
 # Set up workspace 
+library(reshape) #for cast
 library(lattice)
 library(plyr)
 library(dplyr)
@@ -502,6 +503,10 @@ colnames(ddPCRcompare_mean2)[colnames(ddPCRcompare_mean2)=="mean"] <- "ddPCRmean
 # combine Scope and ddPCR
 scopehemo_ddPCRCompare<-merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
 
+
+
+
+
 # Basic scatter plot
 
 ## the elipse plot, you don't need but good to know how
@@ -518,21 +523,38 @@ theme_classic()
    # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
 
 
-## the elipse plot, you don't need but good to know how
-ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean, y=ddPCRmean)) +
+
+
+
+
+
+
+
+library(MASS)
+library(scales)
+
+
+##### THIS IS THE ONE YOU WANT
+p<-ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
    geom_point(aes(colour=factor(count.type.x))) +
    #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
    scale_colour_manual(name="condition",
        values=c("darkgray","orange"))+
-  scale_x_continuous(trans = "log10")+
-    scale_y_continuous(trans = "log10")+
-  #stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
+  #scale_x_continuous(trans = "log10")+
+  #scale_y_continuous(trans = "log10")+
 theme_classic()+
-  geom_smooth(method=lm,se = FALSE, color="black")+ #lm
-    geom_smooth(method=lm,se = FALSE, color="black")+ #lm forced through 0
+ geom_abline(intercept = .18, slope = .94)+ #add in lmodel2 slope/intercept
+  #geom_smooth(aes(ymin=.73, ymax=1.20))+
+  #geom_smooth(aes(ymin=.73, ymax=1.20, fill =count.type.x, colour=count.type.x,stat="identity"))
+geom_line(aes(y = .73), color = "red", linetype = "dashed")+
+    geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
+  
+
+
+
 
    # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
-
+#stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
 
 #Model_II_linear_regression    https://rpubs.com/jasonvenkiteswaran/22815 
 library(lmodel2) 
@@ -544,7 +566,15 @@ scopehemo_ddPCRCompare$ddPCRmean_log<-log(scopehemo_ddPCRCompare$ddPCRmean+1)
 lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
 
 #ScopeHemo ddPCR 
-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+scopehemo_mod<-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+predict(scopehemo_mod, newdata = new.speeds, interval = "confidence")
+
+
+
+
+
+
 
 #Scope ddPCR 
 scopeddPCR<- subset(scopehemo_ddPCRCompare, Day=="3")
@@ -553,6 +583,30 @@ lmodel2(ddPCRmean_log~Countmean_log, data = scopeddPCR)
 #Hemo ddPCR 
 hemoddPCR<- subset(scopehemo_ddPCRCompare, Day=="7"|Day=="14")
 lmodel2(ddPCRmean_log~Countmean_log, data = hemoddPCR)
+
+
+##### cn to dos testing adding prediction/confidence
+
+scopehemo_mod<-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+scopehemo_mod2<-lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+# 1. Add predictions 
+pred.int <- predict(scopehemo_mod2, interval = "prediction")
+mydata <- cbind(scopehemo_ddPCRCompare, pred.int)
+
+# 2. Regression line + confidence intervals
+p <- ggplot(mydata, aes(Countmean, ddPCRmean)) +
+  geom_point() +
+  stat_smooth(method = lm)
+# 3. Add prediction intervals
+p + geom_line(aes(y = lwr), color = "red", linetype = "dashed")+
+    geom_line(aes(y = upr), color = "red", linetype = "dashed")
+
+
+
+
+
+
 
 
 ```
@@ -920,7 +974,7 @@ Deciding if I want to compare between and within species or not. Likely too hard
 Model:  glmer(Infect~Symbiont*Day*Temp+(1|potCode), family=binomial)
 
 ```{r}  
-#round all cell counts
+#round all cell counts 
 C1Full$cells.larvae_round<-round(C1Full$cells.larvae) 
 D1Full$cells.larvae_round<-round(D1Full$cells.larvae) 
 F1Full$cells.larvae_round<-round(F1Full$cells.larvae)
@@ -929,14 +983,16 @@ G3Full$cells.larvae_round<-round(G3Full$cells.larvae)
 BinaryInfect<-rbind(C1Full,D1Full, F1Full, G3Full)  # make new DF for binary 
   BinaryInfect$Infect[BinaryInfect$cells.larvae_round>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_round==0]<-0
- BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
- 
+ BinaryInfect$Infect<-as.character(BinaryInfect$Infect)
+  BinaryInfect$Infect<-as.numeric(BinaryInfect$Infect)
+ BinaryInfect$count.type<-as.factor(BinaryInfect$count.type) #make factor
+
  #rename Pot interaction as a code: Pot_Temp
  BinaryInfect$PotCode<-paste0(BinaryInfect$Temp, BinaryInfect$Pot,BinaryInfect$Symbiont )
  BinaryInfect$PotCode<-as.factor(BinaryInfect$PotCode) #make factor
 
 #Full model including all clades:
- Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect) ### this one gives a lot of warings
+ Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect) #
   Anova(Binary_mod)
 dispersion_glmer(Binary_mod) # no overdispersion 
 
@@ -945,46 +1001,50 @@ dispersion_glmer(Binary_mod) # no overdispersion
   cld(emm)  
   
   
-  
-#by Clade, If I do glmer i get a crazy warning.... is that ok>>>>>
+#by clade
 #C1
   Binary_C1<-subset(BinaryInfect, Symbiont=="C1")
-Binary_C1_mod<-glmer(Infect~Temp*Day+(1|Temp/Pot), family="binomial", Binary_C1)   ##THIS Seems to work
+
+  Binary_C1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_C1)
   Anova(Binary_C1_mod)
-  ###BUt if i use "potcode" i get warnings, but the same values...
-  Binary_C1_moda<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_C1)
-  Anova(Binary_C1_moda)
-  
-  
   dispersion_glmer(Binary_C1_mod)  #no overdispersion 
   
+    Binary_C1_mod2<-glmer(Infect~Temp*Day+(1|PotCode)+(1|count.type), family="binomial", Binary_C1)
+  Anova(Binary_C1_mod2)
   
 #D1
-  Binary_D1<-subset(BinaryInfect, Symbiont=="D1")
+  Binary_D1<-subset(BinaryInfect, Symbiont=="D1") #we don't have day 14 31C, this throws errors
   Binary_D1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_D1) 
   Anova(Binary_D1_mod)
   dispersion_glmer(Binary_D1_mod)  #no overdispersion 
   
+  Binary_D1_mod2<-glmer(Infect~Temp*Day+(1|PotCode)+(1|count.type), family="binomial", Binary_D1) 
+  Anova(Binary_D1_mod2)
+  
 #F1
   Binary_F1<-subset(BinaryInfect, Symbiont=="F1")
-  Binary_F1_mod<-glmer(Infect~Temp*Day+(1|Temp/Pot), family="binomial", Binary_F1) 
+  Binary_F1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_F1) 
   Anova(Binary_F1_mod)
   dispersion_glmer(Binary_F1_mod)  #no overdispersion 
+  
+  Binary_F1_mod2<-glmer(Infect~Temp*Day+(1|PotCode)+(1|count.type), family="binomial", Binary_F1) 
+  Anova(Binary_F1_mod2)
 
 #G3
   Binary_G3<-subset(BinaryInfect, Symbiont=="G3")
   Binary_G3mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_G3) 
   Anova(Binary_G3mod)
   dispersion_glmer(Binary_G3mod)  #no overdispersion 
+   
+  Binary_G3mod2<-glmer(Infect~Temp*Day+(1|PotCode)+(1|count.type), family="binomial", Binary_G3) 
+  Anova(Binary_G3mod2)
+  
 ```
 
 means by Clade (change Infect back to numeric)
 C1
 ```{r} 
-#Setup Binary df 
-Binary_numb<-BinaryInfect
-Binary_numb$Infect_N<-as.character(Binary_numb$Infect)
-Binary_numb$Infect_N<-as.numeric(Binary_numb$Infect_N)
+
 
 #C1
 Binary_numb_C1<-subset(Binary_numb, Symbiont=="C1")
@@ -1144,6 +1204,16 @@ G3_Infect_plot<-ggplot(data=Infect_N_mean_G3, aes(x=Day, y=mean, group = Temp, c
   theme(plot.title = element_text(size=20, face = "italic"));G3_Infect_plot
 ```
 
+```{r}
+#log scale axis only 
+C1_Infect_plot<-C1_Infect_plot+ theme(legend.position = "none") #remove legend
+D1_Infect_plot<-D1_Infect_plot+ theme(legend.position = "none") #remove legend
+F1_Infect_plot<-F1_Infect_plot+ theme(legend.position = "none") #remove legend
+G3_Infect_plot<-G3_Infect_plot+ theme(legend.position = "none") #remove legend
+grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot, nrow = 1)
+
+```
+
 
 
 #PLOT SINGLE INFECTIONS, full dataset
@@ -1151,7 +1221,7 @@ Organize singles into df with 0s removed, so we can evaluate what happened once 
 
 3.	Question: Of the larvae that infected, what is the difference in the amount of infection per larvae by symbionts type? Does this change by temperature and/or time?
 
-Model: glmer(Infect~Symbiont*Temp*Day+(1|PotCode))
+Model: lmer(Infect~Symbiont*Temp*Day+(1|PotCode))
 
 ```{r}  
 C1Fulla<-subset(C1Full, cells.larvae_round>0)
@@ -1169,7 +1239,7 @@ C1Fulla_mean <- ddply(C1Fulla, c("Day", "Temp"), summarise, #summarize cell coun
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
-
+ 
 C1Fulla_mean #display table 
 
 #plot with yaxis log10, real data (not transformed)
@@ -1460,7 +1530,7 @@ D1Fulla_plot_9000<-D1Fulla_plot_9000+ theme(legend.position = "none") #remove le
 F1Fulla_plot_9000<-F1Fulla_plot_9000+ theme(legend.position = "none") #remove legend
 G3Fulla_plot_9000<-G3Fulla_plot_9000+ theme(legend.position = "none") #remove legend
 grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plot_9000, nrow = 1)
-
+ 
 C1Fulla_plot_9000_z<-C1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
 D1Fulla_plot_9000_z<-D1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
 F1Fulla_plot_9000_z<-F1Fulla_plot_9000_z+ theme(legend.position = "none") #remove legend
@@ -1587,8 +1657,405 @@ zscore_30C_plot<-zscore_30C_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(zscore_27C_plot, zscore_30C_plot, zscore_31C_plot, nrow = 1)
 ```
 
+STATS FOR SINGLE INFECTION
+Model 1: lmer(cell.counts~Day*Temp) using log transformed! Raw counts  
 
 
+Single infections: Only data where infection happened (we use binomial to test for infection success)
+```{r}   
+hist(C1Fulla$cells.larvae_log) # normal
+hist(D1Fulla$cells.larvae_log) # normal
+hist(F1Fulla$cells.larvae_log) # normal
+hist(G3Fulla$cells.larvae_log) #normal
+
+Singles<-rbind(C1Fulla,D1Fulla,F1Fulla,G3Fulla)
+hist(Singles$cells.larvae_log) # normal
+
+
+ #rename Pot interaction as a code: Pot_Temp
+ Singles$PotCode<-paste0(Singles$Temp, Singles$Pot,Singles$Symbiont )
+ Singles$PotCode<-as.factor(Singles$PotCode) #make factor
+
+#Full model  
+## lmer  symbionts*days*temp
+Single_all_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Singles)
+anova(Single_all_mod, type=2)
+qqPlot(residuals(Single_all_mod))   # good
+
+  emm<-emmeans(Single_all_mod,  ~ Symbiont*Temp *Day, adjust="Tukey")
+cld(emm)
+
+Single_all_mod2<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode)+(1|count.type), Singles)
+anova(Single_all_mod2, type=2)
+
+```
+ 
+C1 single  
+```{r}
+#C1  
+Singles_C1<-subset(Singles, Symbiont=="C1")
+C1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_C1)
+anova(C1mod, type=2)
+#summary(C1mod) #for std err df and t
+qqPlot(residuals(C1mod))   #  good
+  emm<-emmeans(C1mod,  ~ Temp *Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+
+  C1mod2<-lmer(cells.larvae_log~Day*Temp+(1|PotCode)+(1|count.type), Singles_C1)
+anova(C1mod2, type=2)
+```
+D1 singles    
+```{r}
+#D1  
+Singles_D1<-subset(Singles, Symbiont=="D1")
+D1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_D1)
+anova(D1mod, type=2)
+#summary(D1mod) #for std err df and t
+qqPlot(residuals(D1mod))   #  good
+  emm<-emmeans(D1mod,  ~ Temp *Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+
+  D1mod2<-lmer(cells.larvae_log~Day*Temp+(1|PotCode)+(1|count.type), Singles_D1)
+anova(D1mod2, type=2)
+```
+
+F1 singles  
+```{r}
+#F1  
+Singles_F1<-subset(Singles, Symbiont=="F1")
+F1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_F1)
+anova(F1mod, type=2)
+#summary(F1mod) #for std err df and t
+qqPlot(residuals(F1mod))   #  good
+  emm<-emmeans(F1mod,  ~ Temp *Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+
+  F1mod2<-lmer(cells.larvae_log~Day*Temp+(1|PotCode)+(1|count.type), Singles_F1)
+anova(F1mod2, type=2)
+```
+
+G3 singles  
+```{r}
+#G3  
+Singles_G3<-subset(Singles, Symbiont=="G3")
+G3mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_G3)
+anova(G3mod, type=2)
+#summary(G3mod) #for std err df and t
+qqPlot(residuals(G3mod))   #  good
+  emm<-emmeans(G3mod,  ~ Temp *Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+
+  G3mod2<-lmer(cells.larvae_log~Day*Temp+(1|PotCode)+(1|count.type), Singles_G3)
+anova(G3mod2, type=2)
+```
+
+
+
+Single comparision days between symbs, PLOTS
+```{r}
+#cool plot
+ggplot(Singles, aes(x = Temp, 
+                    y = cells.larvae_log, 
+                    color = Symbiont)) +
+  geom_boxplot(width = 0.5) +
+  geom_point(position = position_jitter(height = 0), 
+             size = 1, alpha = 0.5) +
+  labs(x = NULL, y = "Weight") +
+  guides(color = FALSE)
+
+```
+By day. prob delete
+```{r}
+#subset by day
+AllSing_D3<-subset(Singles, Day==3)
+AllSing_D3$Symbiont<-as.character(AllSing_D3$Symbiont) 
+AllSing_D7<-subset(Singles, Day==7)
+AllSing_D7$Symbiont<-as.character(AllSing_D7$Symbiont)
+AllSing_D14<-subset(Singles, Day==14)
+AllSing_D14$Symbiont<-as.character(AllSing_D14$Symbiont)
+ 
+#Day 3
+AllSing_D3_mean <- ddply(AllSing_D3, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D3_mean #display table
+
+AllSing_D3_mean_plot<-ggplot(AllSing_D3_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 3");AllSing_D3_mean_plot   
+
+
+
+
+
+
+
+
+
+#Day 7
+AllSing_D7_mean <- ddply(AllSing_D7, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D7_mean #display table
+
+AllSing_D7_mean_plot<-ggplot(AllSing_D7_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 7");AllSing_D7_mean_plot   
+
+
+#Day 14
+AllSing_D14_mean <- ddply(AllSing_D14, c("Temp","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+AllSing_D14_mean #display table
+
+AllSing_D14_mean_plot<-ggplot(AllSing_D14_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
+           geom_bar(stat="identity",position=position_dodge())+ 
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
+            scale_fill_locuszoom()+
+   xlab("Temp")+ 
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format 
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Single, Day 14");AllSing_D14_mean_plot   
+
+# plot all three together
+AllSing_D3_mean_plot<-AllSing_D3_mean_plot+ theme(legend.position = "none") #remove legend
+AllSing_D7_mean_plot<-AllSing_D7_mean_plot+ theme(legend.position = "none") #remove legend
+AllSing_D14_mean_plot<-AllSing_D14_mean_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
+
+grid.arrange(AllSing_D3_mean_plot, AllSing_D7_mean_plot, AllSing_D14_mean_plot, nrow = 1)
+
+
+```
+ 
+Heat maps, by clade (temp x time)
+https://sebastianraschka.com/Articles/heatmaps_in_r.html
+```{r}
+#C1
+#Singles_C1
+Singles_C1_mean <- ddply(Singles_C1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+Singles_C1_mean #display table
+Singles_C1_mean$mean<-round(Singles_C1_mean$mean, digits = 2) #round the means
+
+  Singles_C1_vars<-c("Temp","Day","mean")
+Singles_C1_mean2<-Singles_C1_mean[Singles_C1_vars] 
+Singles_C1_mean3<-cast(Singles_C1_mean2, Temp~Day, mean) #set updata for heatmap
+
+C1rnames <- Singles_C1_mean3[,1]                            # assign labels in column 1 to "rnames"
+C1mat_data <- data.matrix(Singles_C1_mean3[,2:ncol(Singles_C1_mean3)])  # transform column 2-5 into a matrix
+rownames(C1mat_data) <- C1rnames                  # assign row names
+
+# creates a own color palette from red to green
+cols <- brewer.pal(3, "YlGn")
+cols
+
+my_palette <- colorRampPalette(cols)
+#my_palette <- colorRampPalette(c("grey", "pear", "olive"))(n = 299)
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,3,length=100),  # for red
+  seq(3.1,6,length=100),           # for yellow
+  seq(6.1,9,length=100))             # for green
+
+
+C1heat<-heatmap.2(C1mat_data,
+  cellnote = C1mat_data,  # same data set for cell labels
+  main = "C1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+#D1
+#Singles_D1
+Singles_D1_mean <- ddply(Singles_D1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+Singles_D1_mean #display table
+Singles_D1_mean$mean<-round(Singles_D1_mean$mean, digits = 2) #round the means
+
+  Singles_D1_vars<-c("Temp","Day","mean")
+Singles_D1_mean2<-Singles_D1_mean[Singles_D1_vars] 
+Singles_D1_mean3<-cast(Singles_D1_mean2, Temp~Day, mean) #set updata for heatmap
+
+D1rnames <- Singles_D1_mean3[,1]                            # assign labels in column 1 to "rnames"
+D1mat_data <- data.matrix(Singles_D1_mean3[,2:ncol(Singles_D1_mean3)])  # transform column 2-5 into a matrix
+rownames(D1mat_data) <- D1rnames                  # assign row names
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,3,length=100),  # for red
+  seq(3.1,6,length=100),           # for yellow
+  seq(6.1,9,length=100))             # for green
+
+
+D1heat<-heatmap.2(D1mat_data,
+  cellnote = D1mat_data,  # same data set for cell labels
+  main = "D1 ", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA"    )        # turn off column clustering
+
+#F1
+#Singles_F1
+Singles_F1_mean <- ddply(Singles_F1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+Singles_F1_mean #display table
+Singles_F1_mean$mean<-round(Singles_F1_mean$mean, digits = 2) #round the means
+
+  Singles_F1_vars<-c("Temp","Day","mean")
+Singles_F1_mean2<-Singles_F1_mean[Singles_F1_vars] 
+Singles_F1_mean3<-cast(Singles_F1_mean2, Temp~Day, mean) #set updata for heatmap
+
+F1rnames <- Singles_F1_mean3[,1]                            # assign labels in column 1 to "rnames"
+F1mat_data <- data.matrix(Singles_F1_mean3[,2:ncol(Singles_F1_mean3)])  # transform column 2-5 into a matrix
+rownames(F1mat_data) <- F1rnames                  # assign row names
+
+
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,3,length=100),  # for red
+  seq(3.1,6,length=100),           # for yellow
+  seq(6.1,9,length=100))             # for green
+
+
+F1heat<-heatmap.2(F1mat_data,
+  cellnote = F1mat_data,  # same data set for cell labels
+  main = "F1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  Rowv=FALSE,
+  dendrogram="none")     # only draw a row dendrogram
+  #Colv="NA")            # turn off column clustering
+
+
+
+#G3
+#Singles_G3
+Singles_G3_mean <- ddply(Singles_G3, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+Singles_G3_mean #display table
+Singles_G3_mean$mean<-round(Singles_G3_mean$mean, digits = 2) #round the means
+
+  Singles_G3_vars<-c("Temp","Day","mean")
+Singles_G3_mean2<-Singles_G3_mean[Singles_G3_vars] 
+Singles_G3_mean3<-cast(Singles_G3_mean2, Temp~Day, mean) #set updata for heatmap
+
+G3rnames <- Singles_G3_mean3[,1]                            # assign labels in column 1 to "rnames"
+G3mat_data <- data.matrix(Singles_G3_mean3[,2:ncol(Singles_G3_mean3)])  # transform column 2-5 into a matrix
+rownames(G3mat_data) <- G3rnames                  # assign row names
+
+# creates a own color palette from red to green
+cols <- brewer.pal(3, "YlGn")
+cols
+
+my_palette <- colorRampPalette(cols)
+#my_palette <- colorRampPalette(c("grey", "pear", "olive"))(n = 299)
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,3,length=100),  # for red
+  seq(3.1,6,length=100),           # for yellow
+  seq(6.1,9,length=100))             # for green
+
+
+G3heat<-heatmap.2(G3mat_data,
+  cellnote = G3mat_data,  # same data set for cell labels
+  main = "G3", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  #dendrogram="row",     # only draw a row dendrogram
+  Rowv=FALSE,
+  dendrogram='none')     #turn off dentrogram
+
+  #Colv="NA")            # turn off column clustering
+
+
+
+```
 
 
 
@@ -1601,7 +2068,7 @@ df: ALL_9000b (has larvae removed where not all clades amped in each individual)
 Binomial - A. did the larvae infect at all? with anything, or B. did each individual clade infect  
   
 #A. Binomial. Did larvae infect or not, by clade and overall  
-```{r}
+```{r} 
 #df ALL_9000b, only 5 larvae have 0 infection (but enough dropletes)
 
 ALL_RelA<-ALL_9000b #copy
@@ -1629,7 +2096,7 @@ RelA_binary$numclade<-RelA_binary$C1+RelA_binary$D1+RelA_binary$F1+RelA_binary$G
 
 RelA_binary$Infect[RelA_binary$numclade>0]<-1  
 RelA_binary$Infect[RelA_binary$numclade==0]<-0
-   RelA_binary$Infect<-as.factor(RelA_binary$binary) #make factor
+   #RelA_binary$Infect<-as.factor(RelA_binary$binary) #make factor
 
 RelA_CladeComp<-RelA_binary #make a copy for the nextsection
 
@@ -1689,9 +2156,10 @@ Binary_G3_binary$infectType<-"Single"
 
 #combine with Each individual clade
 ```
+combine with Each individual clade
 
-C1
-```{r}
+C1 -singlge vs multi
+```{r} 
 C1_binary_SinMul<-rbind(RelA_binary_C1, Binary_C1_binary)
 C1_binary_SinMul$Infect<-as.factor(C1_binary_SinMul$Infect)
 C1_binary_SinMul$Symbiont<-as.factor(C1_binary_SinMul$Symbiont)
@@ -1803,7 +2271,7 @@ D1_binary_SinMul$Infect<-as.factor(D1_binary_SinMul$Infect)
 D1_binary_SinMul$Symbiont<-as.factor(D1_binary_SinMul$Symbiont)
 D1_binary_SinMul$infectType<-as.factor(D1_binary_SinMul$infectType)
 
-#model
+#model 
 D1_binary_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", D1_binary_SinMul) 
 Anova(D1_binary_SinMul_mod)
 dispersion_glmer(D1_binary_SinMul_mod) # no overdispersion
@@ -1901,7 +2369,7 @@ grid.arrange(D1_binary_SinMul_plot_27, D1_binary_SinMul_plot_30, D1_binary_SinMu
 
 F1
 ```{r}
-#F1
+#F1 
 F1_binary_SinMul<-rbind(RelA_binary_F1, Binary_F1_binary)
 F1_binary_SinMul$Infect<-as.factor(F1_binary_SinMul$Infect)
 F1_binary_SinMul$Symbiont<-as.factor(F1_binary_SinMul$Symbiont)
@@ -2002,10 +2470,10 @@ F1_binary_SinMul_plot_31<-F1_binary_SinMul_plot_31+ theme(legend.position = "non
 grid.arrange(F1_binary_SinMul_plot_27, F1_binary_SinMul_plot_30, F1_binary_SinMul_plot_31, nrow = 1)
 
 ```
-
+G3
 
 ```{r}
-#G3
+#G3 
 G3_binary_SinMul<-rbind(RelA_binary_G3, Binary_G3_binary)
 G3_binary_SinMul$Infect<-as.factor(G3_binary_SinMul$Infect)
 G3_binary_SinMul$Symbiont<-as.factor(G3_binary_SinMul$Symbiont)
@@ -2113,7 +2581,7 @@ grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMu
 ```
 
 #B PLOT Multi infection, % larvae infected with 0,1, 2, 3, or 4 types (not by clade)
-```{r}   
+```{r}    
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","PotCode","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 
@@ -2126,14 +2594,15 @@ NumClades<-read.csv("NumbCladesInfect_20200405.csv") #you couldn't do this in R 
 NumClades<-melt(NumClades,  id=c("Temp","Day"))
 NumClades$Temp<-as.factor(NumClades$Temp)
 NumClades$Day<-as.factor(NumClades$Day)
-
+NumClades<-melt(NumClades,id=c("Temp","Day"))
 #27C
 NumClades_27<-subset(NumClades, Temp==27)
 
 #plot
 Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+            #scale_fill_locuszoom()+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2153,7 +2622,7 @@ NumClades_30<-subset(NumClades, Temp==30)
 #plot
 Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2173,7 +2642,7 @@ NumClades_31<-subset(NumClades, Temp==31)
 #plot
 Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-            scale_fill_locuszoom()+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2193,10 +2662,22 @@ Infect30_plot<-Infect30_plot+ theme(legend.position = "none") #remove legend
 Infect31_plot<-Infect31_plot+ theme(legend.position = "none") #remove legend
 
 grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
-      
+ 
 
-#stats
+
+
+
+
+
+
+
+
+
+     
+
+#stats   CHECK THIS! you may need to transform data better!
 hist(ALL_RelA_Infect$infectNum)
+ALL_RelA_Infect$infectNum<-log(ALL_RelA_Infect$infectNum)
 ALL_RelA_Infect_mod<-lmer(infectNum~Temp*Day+(1|PotCode), ALL_RelA_Infect) 
   anova(ALL_RelA_Infect_mod)
 dispersion_glmer(ALL_RelA_Infect_mod)
@@ -2208,7 +2689,7 @@ emm<-emmeans(ALL_RelA_Infect_mod,  ~ Temp*Day)
 ```
 
 #C Who was the most dominant clade in larvave - You need to figure out how to set up a df to run this correctly. I think you might need to change the 'winner' into a 1 and then find the 3 losers and change those to 0s. but not sure how to code that. 
-```{r}   
+```{r}    
 #df ALL_RelA
 Dom<-ALL_RelA%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(1)
 #new col with 1 for winner
@@ -3214,580 +3695,7 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
 
 #Statistics
 
-Single infections: Only data where infection happened (we use binomial to test for infection success)
-```{r}  
-hist(C1Full$cells.larvae) #not normal
-hist(D1Full$cells.larvae) #not normal
-hist(F1Full$cells.larvae) #not normal
-hist(G3Full$cells.larvae) #not normal
 
-
-C1Full$cells.larvae_round<-round(C1Full$cells.larvae) 
-D1Full$cells.larvae_round<-round(D1Full$cells.larvae) 
-F1Full$cells.larvae_round<-round(F1Full$cells.larvae) 
-G3Full$cells.larvae_round<-round(G3Full$cells.larvae) 
-
-#log transform the rounded values
-C1Full$cells.larvae_log<-log(C1Full$cells.larvae_round+1)
-  hist(C1Full$cells.larvae_log) #more normal
-D1Full$cells.larvae_log<-log(D1Full$cells.larvae_round+1)
-  hist(D1Full$cells.larvae_log) #more normal
-F1Full$cells.larvae_log<-log(F1Full$cells.larvae_round+1)
-  hist(F1Full$cells.larvae_log) #more normal
-G3Full$cells.larvae_log<-log(G3Full$cells.larvae_round+1)
-  hist(G3Full$cells.larvae_log) #more normal, scewed right?
-  
-Singles<-rbind(C1Full,D1Full,F1Full,G3Full)
-hist(Singles$cells.larvae_log) # still large left tail
-```
- 
-
-Model 1: lmer(cell.counts~Day*Temp) using log transformed! Raw counts  
-
-C1 single  
-```{r}
-#C1  
-library(moments)
-
-## tests for assumptions (from CW git)
-  C1Full_test<-lmer(cells.larvae_log~Day*Temp+(1|Pot), data=C1Full, na.action=na.exclude)
-  R <- resid(C1Full_test) #save glm residuals
-  Y.shapiro <- shapiro.test(R) #runs a normality test on residuals
-  print(Y.shapiro) # null = normally distrubuted (P<0.05 = non-normal) p<0.05, data not normal...what are you going to do about it
-
-  hist(C1Full$cells.larvae)
-hist(C1Full$cells.larvae_log)
-hist(C1Full$zscore)
-skewness(C1Full$cells.larvae_log, na.rm=T) #.416 moderately skewed 
-skewness(C1Full$zscore, na.rm=T) #.416 moderately skewed 
-
-
-## lmer  All Days
-C1mod<-lmer(cells.larvae_log~Day*Temp+(1|Pot), C1Full)
-summary(C1mod) #for std err df and t
-qqPlot(residuals(C1mod))   #  not awful
-anova(C1mod)
-  emm<-emmeans(C1mod,  ~ Temp *Day, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-
-#Try single dates only
-#D3
-C1Full_D3<-subset(C1Full, Day==3)
-  C1_D3_mod<-lmer(cells.larvae_log~Temp+(1|Pot), C1Full_D3)
-  hist(C1Full_D3$cells.larvae_log)
-  qqPlot(residuals(C1_D3_mod))  #weird line but close enough?
-   # hist(C1Full_D3$zscore)
-  anova(C1_D3_mod)
- emm<-emmeans(C1_D3_mod,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-#D7
-C1Full_D7<-subset(C1Full, Day==7)
-  C1_D7_mod<-lmer(cells.larvae_log~Temp+(1|Pot), C1Full_D7)
-  hist(C1Full_D7$cells.larvae_log)
-    qqPlot(residuals(C1_D7_mod))  #good
-  anova(C1_D7_mod)
-emm<-emmeans(C1_D7_mod,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-#D14
-C1Full_D14<-subset(C1Full, Day==14)
-  C1_D14_mod<-lmer(cells.larvae_log~Temp+(1|Pot), C1Full_D14)
-  anova(C1_D14_mod)
-emm<-emmeans(C1_D14_mod,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")  
-  
-
-############## glmer() https://www.dataquest.io/blog/tutorial-poisson-regression-in-r/
-#also I'm assuming i should not transform data here and instead use raw. 
-
-## glmer  All Days
-C1mod_glmer<-glmer(cells.larvae_round~Day*Temp+(1|Pot), data=C1Full,family=poisson(link="log"))
-summary(C1mod_glmer) #for std err df and t
-qqPlot(residuals(C1mod_glmer))            #  bad 
-  emm<-emmeans(C1mod_glmer,  ~ Temp *Day, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-#D3
-  C1_D3_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=C1Full_D3, family=poisson(link="log"))
-  hist(C1Full_D3$cells.larvae_round)
-  qqPlot(residuals(C1_D3_mod_glmer))  #ok
-  summary(C1_D3_mod_glmer)
-emm<-emmeans(C1_D3_mod_glmer,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefgh")
-
-#D7
-C1_D7_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=C1Full_D7, family=poisson(link="log"))
-  hist(C1Full_D7$cells.larvae_round)
-  qqPlot(residuals(C1_D7_mod_glmer))  #ok
-  summary(C1_D7_mod_glmer)
- emm<-emmeans(C1_D7_mod_glmer,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-#D14
-C1_D14_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=C1Full_D14, family=poisson(link="log"))
-  hist(C1Full_D14$cells.larvae_round)
-  qqPlot(residuals(C1_D14_mod_glmer))  #ok
-  summary(C1_D14_mod_glmer)
- emm<-emmeans(C1_D14_mod_glmer,  ~ Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-```
-D1 singles    
-```{r}
-#D1 
-## tests for assumptions (from CW git)
-  D1Full_test<-lmer(cells.larvae_log~Day*Temp+(1|Pot), data=D1Full, na.action=na.exclude)
-  R <- resid(D1Full_test) #save glm residuals
-  Y.shapiro <- shapiro.test(R) #runs a normality test on residuals
-  print(Y.shapiro) # null = normally distrubuted (P<0.05 = non-normal) p<0.05, data not normal...what are you going to do about it
-
-  hist(D1Full$cells.larvae)
-hist(D1Full$cells.larvae_log)
-hist(D1Full$zscore)
-skewness(D1Full$cells.larvae_log, na.rm=T) #.416 moderately skewed 
-skewness(D1Full$zscore, na.rm=T) #.416 moderately skewed 
-
-
-## lmer()
-D1mod<-lmer(cells.larvae_log~Day*Temp+(1|Pot), D1Full)
-#summary(D1mod)
-qqPlot(residuals(D1mod))  # not amazing
-anova(D1mod)
-  emmeans(D1mod, pairwise ~ Temp |Day)
-  
-#Try single dates only
-#D3
-D1Full_D3<-subset(D1Full, Day==3)
-  D1_D3_mod<-lmer(cells.larvae_log~Temp+(1|Pot), D1Full_D3)
-  hist(D1Full_D3$cells.larvae_log)
-  qqPlot(residuals(D1_D3_mod))  #weird line but close enough?
-   # hist(D1Full_D3$zscore)
-  anova(D1_D3_mod)
-  emmeans(D1_D3_mod, pairwise ~ Temp)
-
-#D7
-D1Full_D7<-subset(D1Full, Day==7)
-  D1_D7_mod<-lmer(cells.larvae_log~Temp+(1|Pot), D1Full_D7)
-  hist(D1Full_D7$cells.larvae_log)
-    qqPlot(residuals(D1_D7_mod))  #ok
-  anova(D1_D7_mod)
-  emmeans(D1_D7_mod, pairwise ~ Temp)
-
-#D14
-D1Full_D14<-subset(D1Full, Day==14)
-  D1_D14_mod<-lmer(cells.larvae_log~Temp+(1|Pot), D1Full_D14)
-      qqPlot(residuals(D1_D14_mod))  #good
-  anova(D1_D14_mod)
-  emmeans(D1_D14_mod, pairwise ~ Temp)
-  
-  
-##glmer
-# use ROUNDED data and use log in the link
-D1_glmer<-glmer(cells.larvae_round~Temp*Day+(1|Pot), data=D1Full, family=poisson(link="log"))
-summary(D1_glmer)
-      qqPlot(residuals(D1_glm))  #ok
-      
-      
-#D3
-  D1_D3_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=D1Full_D3, family=poisson(link="log"))
-  hist(D1Full_D3$cells.larvae_round)
-  qqPlot(residuals(D1_D3_mod_glmer))  #ok
-  summary(D1_D3_mod_glmer)
-  emmeans(D1_D3_mod, pairwise ~ Temp)
-
-#D7
-D1_D7_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=D1Full_D7, family=poisson(link="log"))
-  hist(D1Full_D7$cells.larvae_round)
-  qqPlot(residuals(D1_D7_mod_glmer))  #good
-  summary(D1_D7_mod_glmer)
-  emmeans(D1_D7_mod, pairwise ~ Temp)
-
-#D14
-D1_D14_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=D1Full_D14, family=poisson(link="log"))
-  hist(D1Full_D14$cells.larvae_round)
-  qqPlot(residuals(D1_D14_mod_glmer))  #ok
-  summary(D1_D14_mod_glmer)
-  emmeans(D1_D14_mod, pairwise ~ Temp)
-
-```
-F1 singles  
-```{r}
-#F1  
- #let's try to deal with this. add an "ID" for each larvae individual
-  F1Full$ID<-seq.int(nrow(F1Full))
-
-
-
-
-## tests for assumptions (from CW git)
-  F1Full_test<-lmer(cells.larvae_log~Day*Temp+(1|Pot), data=F1Full, na.action=na.exclude)
-  R <- resid(F1Full_test) #save glm residuals
-  Y.shapiro <- shapiro.test(R) #runs a normality test on residuals
-  print(Y.shapiro) # null = normally distrubuted (P<0.05 = non-normal) p<0.05, data not normal...what are you going to do about it
-
-  hist(F1Full$cells.larvae)
-hist(F1Full$cells.larvae_log)
-hist(F1Full$zscore)
-skewness(F1Full$cells.larvae_log, na.rm=T) #.416 moderately skewed 
-skewness(F1Full$zscore, na.rm=T) #.416 moderately skewed 
-
-
-## lmer()
-F1mod<-lmer(cells.larvae_log~Day*Temp+(1|Pot), F1Full)
-summary(F1mod)
-qqPlot(residuals(F1mod))  # kinda ok
-anova(F1mod)
-
-  F1mod_em<- emmeans(F1mod, ~Temp, adjust="tukey")  #from AH code, use emmmeans this way?
-cld(F1mod_em, Letters=c(LETTERS)) #letter display  
-
-#anova(F1mod, ddf = "Kenward-Roger")  #does the interaction matter or can we just do additive, from Kyle's lecture. 
-
-
-
-  #Try single dates only
-#D3
-F1Full_D3<-subset(F1Full, Day==3)
-  F1_D3_mod<-lmer(cells.larvae_log~Temp+(1|Pot), F1Full_D3)
-  hist(F1Full_D3$cells.larvae_log)
-  qqPlot(residuals(F1_D3_mod))  #close
-   # hist(F1Full_D3$zscore)
-  anova(F1_D3_mod)
-  emmeans(F1_D3_mod, pairwise ~ Temp)
-
-#D7
-F1Full_D7<-subset(F1Full, Day==7)
-  F1_D7_mod<-lmer(cells.larvae_log~Temp+(1|Pot), F1Full_D7)
-  hist(F1Full_D7$cells.larvae_log)
-    qqPlot(residuals(F1_D7_mod))  #ok
-  anova(F1_D7_mod)
-  emmeans(F1_D7_mod, pairwise ~ Temp)
-
-#F14
-F1Full_F14<-subset(F1Full, Day==14)
-  F1_F14_mod<-lmer(cells.larvae_log~Temp+(1|Pot), F1Full_F14)
-      qqPlot(residuals(F1_F14_mod))  #good
-  anova(F1_F14_mod)
-  emmeans(F1_F14_mod, pairwise ~ Temp)
-  
-  
-##glmer
-# use ROUNDED data and use log in the link
-F1_glmer<-glmer(cells.larvae_round~Temp*Day+(1|Pot), data=F1Full, family=poisson(link="log"))
-summary(F1_glmer)
-      qqPlot(residuals(F1_glmer))  #not great, top not good at all. 
-      
-   plot(allEffects(F1_glmer))
-   library(RVAideMemoire)
-overdisp.glmer(F1_glmer) #Residual deviance: 20927.305 on 137 degrees of freedom (ratio: 152.754) dude that is awful. 
-
-
-
-#D3
-  F1_D3_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=F1Full_D3, family=poisson(link="log"))
-  hist(F1Full_D3$cells.larvae_round)
-  qqPlot(residuals(F1_D3_mod_glmer))  #ok
-  summary(F1_D3_mod_glmer)
-  emmeans(F1_D3_mod, pairwise ~ Temp)
-  
-  #let's see if we can deal with overdispersion
-  overdisp.glmer(F1_D3_mod_glmer) #ration 22.104, still high
-    F1_D3_mod_glmer2<-glmer(cells.larvae_round~Temp+(1|Pot)+(1|ID), data=F1Full_D3, family=poisson(link="log"))
-  overdisp.glmer(F1_D3_mod_glmer2) #ratio: 0.253 <-- damn ok what!? adding in the ID as random effect took care of overdispersion, but shit it should be ~1. kyle says better to keep it in.
-  
-  ###Kyle stuff not running right below
-    mod.id.notreat<-glmer(cells.larvae_round~1+(1|Pot)+(1|ID), data=F1Full_D3, family=poisson(link="log"))
-    mod.id<-glmer(cells.larvae_round~Temp+(1|Pot)+(1|ID), data=F1Full_D3, family=poisson(link="log"))
-  sim.pollen=simulate(mod.id.notreat, nsim=1000)
-  LR=vector()
-  for(i in 1:1000) { +
-  mod.full=glmer(sim.pollen[[i]]~Temp +(1|Pot)+(1|ID), data=F1Full_D3, family=poisson(link = "log"))+
-  mod.res=glmer(sim.pollen[[i]]~1+(1|Pot)+(1|ID), data=F1Full_D3, family = poisson(link = "log"))
-  LR[i]=2*(logLik(mod.full)-logLik(mod.res))}
-
-  
-#D7
-F1_D7_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=F1Full_D7, family=poisson(link="log"))
-  hist(F1Full_D7$cells.larvae_round)
-  qqPlot(residuals(F1_D7_mod_glmer))  #not great
-  summary(F1_D7_mod_glmer)
-  emmeans(F1_D7_mod, pairwise ~ Temp)
-dispersion_glmer(F1_D7_mod_glmer)
-
-#F14
-F1_F14_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=F1Full_F14, family=poisson(link="log"))
-  hist(F1Full_F14$cells.larvae_round)
-  qqPlot(residuals(F1_F14_mod_glmer))  #good
-  summary(F1_F14_mod_glmer)
-  emmeans(F1_F14_mod, pairwise ~ Temp)
-
-```
-G3 singles  
-```{r}
-#G3 
-## tests for assumptions (from CW git)
-  G3Full_test<-lmer(cells.larvae_log~Day*Temp+(1|Pot), data=G3Full, na.action=na.exclude)
-  R <- resid(G3Full_test) #save glm residuals
-  Y.shapiro <- shapiro.test(R) #runs a normality test on residuals
-  print(Y.shapiro) # null = normally distrubuted (P<0.05 = non-normal) p<0.05, data not normal...what are you going to do about it
-
-  hist(G3Full$cells.larvae)
-hist(G3Full$cells.larvae_log)
-hist(G3Full$zscore)
-skewness(G3Full$cells.larvae_log, na.rm=T)
-skewness(G3Full$zscore, na.rm=T) #-0.6625293
-
-
-## lmer()
-G3mod<-lmer(cells.larvae_log~Day*Temp+(1|Pot), G3Full)
-#summary(G3mod)
-qqPlot(residuals(G3mod))  # good except points at base
-anova(G3mod)
-emmeans(G3mod, pairwise ~ Temp |Day,adjust="tukey")    #the anova says that day is significant, but 
-  #cld(emm, Letters=c(LETTERS)) This is throwing an error
-  
-#Try single dates only
-#D3
-G3Full_D3<-subset(G3Full, Day==3)
-  G3_D3_mod<-lmer(cells.larvae_log~Temp+(1|Pot), G3Full_D3)
-  hist(G3Full_D3$cells.larvae_log) #normal!
-  qqPlot(residuals(G3_D3_mod))  #good
-   # hist(G3Full_D3$zscore)
-  anova(G3_D3_mod)
-  emm=emmeans(G3_D3_mod, pairwise ~ Temp)
-
-#D7
-G3Full_D7<-subset(G3Full, Day==7)
-  G3_D7_mod<-lmer(cells.larvae_log~Temp+(1|Pot), G3Full_D7)
-  hist(G3Full_D7$cells.larvae_log) # skew negative
-    qqPlot(residuals(G3_D7_mod))  #good
-  anova(G3_D7_mod)
-  emmeans(G3_D7_mod, pairwise ~ Temp)
-
-#G34
-G3Full_G34<-subset(G3Full, Day==14)
-  hist(G3Full_D14$cells.larvae_log) # skew negative
-  G3_G34_mod<-lmer(cells.larvae_log~Temp+(1|Pot), G3Full_G34)
-      qqPlot(residuals(G3_G34_mod))  #good
-  anova(G3_G34_mod)
-  emmeans(G3_G34_mod, pairwise ~ Temp)
-  
-  
-##glmer
-# use ROUNDED data and use log in the link
-G3_glmer<-glmer(cells.larvae_round~Temp*Day+(1|Pot), data=G3Full, family=poisson(link="log"))
-summary(G3_glmer)
-hist(G3Full$cells.larvae_round) #poisson
-      qqPlot(residuals(G3_glmer))  #top off
-        emmeans(G3_glmer, pairwise ~ Temp|Day) #not sure if this is the right way to do posthoc
-
-      
-#D3
-  G3_D3_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=G3Full_D3, family=poisson(link="log"))
-  hist(G3Full_D3$cells.larvae_round) #poisson
-  qqPlot(residuals(G3_D3_mod_glmer))  #good up until top
-  summary(G3_D3_mod_glmer)
-  emmeans(G3_D3_mod, pairwise ~ Temp)
-
-#D7
-G3_D7_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=G3Full_D7, family=poisson(link="log"))
-  hist(G3Full_D7$cells.larvae_round)
-  qqPlot(residuals(G3_D7_mod_glmer))  #good
-  summary(G3_D7_mod_glmer)
-  emmeans(G3_D7_mod, pairwise ~ Temp)
-
-#G34
-G3_G34_mod_glmer<-glmer(cells.larvae_round~Temp+(1|Pot), data=G3Full_G34, family=poisson(link="log"))
-  hist(G3Full_G34$cells.larvae_round)
-  qqPlot(residuals(G3_G34_mod_glmer))  #ok except top
-  summary(G3_G34_mod_glmer)
-  emmeans(G3_G34_mod, pairwise ~ Temp)
-
-```
-All singles  
-```{r} 
-#subset by temp
-AllSing_27<-subset(Singles, Temp==27)
-AllSing_30<-subset(Singles, Temp==30)
-AllSing_31<-subset(Singles, Temp==31) 
-
-# subset by day 
-AllSing_27_D3<-subset(AllSing_27, Day==3)
-AllSing_27_D7<-subset(AllSing_27, Day==7)
-AllSing_27_D14<-subset(AllSing_27, Day==14)
-
-AllSing_30_D3<-subset(AllSing_30, Day==3)
-AllSing_30_D7<-subset(AllSing_30, Day==7)
-AllSing_30_D14<-subset(AllSing_30, Day==14)
-
-AllSing_31_D3<-subset(AllSing_31, Day==3)
-AllSing_31_D7<-subset(AllSing_31, Day==7)
-AllSing_31_D14<-subset(AllSing_31, Day==14)
-
-
-#### 27C
-## Day 3
-AllSing_27_D3_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_27_D3)
-anova(AllSing_27_D3_mod) 
-emm_AllSing_27_D3_mod = emmeans(AllSing_27_D3_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_27_D3_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 7
-AllSing_27_D7_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_27_D7)
-anova(AllSing_27_D7_mod) 
-emm_AllSing_27_D7_mod = emmeans(AllSing_27_D7_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_27_D7_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 14
-AllSing_27_D14_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_27_D14)
-anova(AllSing_27_D14_mod) 
-emm_AllSing_27_D14_mod = emmeans(AllSing_27_D14_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_27_D14_mod, Letters=c(LETTERS)) #letter display 
-
-#### 30C
-## Day 3
-AllSing_30_D3_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_30_D3)
-anova(AllSing_30_D3_mod) 
-emm_AllSing_30_D3_mod = emmeans(AllSing_30_D3_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_30_D3_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 7
-AllSing_30_D7_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_30_D7)
-anova(AllSing_30_D7_mod) 
-emm_AllSing_30_D7_mod = emmeans(AllSing_30_D7_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_30_D7_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 14
-AllSing_30_D14_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_30_D14)
-anova(AllSing_30_D14_mod) 
-emm_AllSing_30_D14_mod = emmeans(AllSing_30_D14_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_30_D14_mod, Letters=c(LETTERS)) #letter display 
-
-
-#### 30C
-## Day 3
-AllSing_31_D3_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_31_D3)
-anova(AllSing_31_D3_mod) 
-emm_AllSing_31_D3_mod = emmeans(AllSing_31_D3_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_31_D3_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 7S
-AllSing_31_D7_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_31_D7)
-anova(AllSing_31_D7_mod) 
-emm_AllSing_31_D7_mod = emmeans(AllSing_31_D7_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_31_D7_mod, Letters=c(LETTERS)) #letter display 
-
-## Day 14 
-AllSing_31_D14_mod<-lmer(cells.larvae_log~Symbiont+(1|Pot), AllSing_31_D14)
-anova(AllSing_31_D14_mod) 
-emm_AllSing_31_D14_mod = emmeans(AllSing_31_D14_mod, ~  Symbiont, adjust="tukey")
-cld(emm_AllSing_31_D14_mod, Letters=c(LETTERS)) #letter display 
-```
-
-Single comparision at days between symbs, PLOTS
-```{r}
- 
-#subset by day
-AllSing_D3<-subset(Singles, Day==3)
-AllSing_D3$Symbiont<-as.character(AllSing_D3$Symbiont) 
-AllSing_D7<-subset(Singles, Day==7)
-AllSing_D7$Symbiont<-as.character(AllSing_D7$Symbiont)
-AllSing_D14<-subset(Singles, Day==14)
-AllSing_D14$Symbiont<-as.character(AllSing_D14$Symbiont)
- 
-#Day 3
-AllSing_D3_mean <- ddply(AllSing_D3, c("Temp","Symbiont"), summarise, #summarize cell count
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-AllSing_D3_mean #display table
-
-AllSing_D3_mean_plot<-ggplot(AllSing_D3_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
-            scale_fill_locuszoom()+
-   xlab("Temp")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("Single, Day 3");AllSing_D3_mean_plot   
-
-#Day 7
-AllSing_D7_mean <- ddply(AllSing_D7, c("Temp","Symbiont"), summarise, #summarize cell count
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-AllSing_D7_mean #display table
-
-AllSing_D7_mean_plot<-ggplot(AllSing_D7_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
-            scale_fill_locuszoom()+
-   xlab("Temp")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("Single, Day 7");AllSing_D7_mean_plot   
-
-
-#Day 14
-AllSing_D14_mean <- ddply(AllSing_D14, c("Temp","Symbiont"), summarise, #summarize cell count
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-AllSing_D14_mean #display table
-
-AllSing_D14_mean_plot<-ggplot(AllSing_D14_mean, aes(y=mean, x=Temp, fill=Symbiont)) + 
-           geom_bar(stat="identity",position=position_dodge())+ 
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") +  #Label the X Axis 
-            scale_fill_locuszoom()+
-   xlab("Temp")+ 
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format 
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("Single, Day 14");AllSing_D14_mean_plot   
-
-# plot all three together
-AllSing_D3_mean_plot<-AllSing_D3_mean_plot+ theme(legend.position = "none") #remove legend
-AllSing_D7_mean_plot<-AllSing_D7_mean_plot+ theme(legend.position = "none") #remove legend
-AllSing_D14_mean_plot<-AllSing_D14_mean_plot+ theme(legend.position = "none") #remove legend  Note that at 31 most larvae are dead.
-
-grid.arrange(AllSing_D3_mean_plot, AllSing_D7_mean_plot, AllSing_D14_mean_plot, nrow = 1)
-
-
-```
- 
 
  wtf
 ```{r} 
