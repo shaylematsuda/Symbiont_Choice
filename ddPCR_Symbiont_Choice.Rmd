@@ -463,164 +463,18 @@ Countdat_D714$count.type<-"hemo"
 Countdat_2<-rbind(Countdat_D3,Countdat_D714) #bind together for non-ddPCR dataset 
 ```
 
-Scope/hemo Calc means for clade/temp/time/pot VS ddPCR
-```{r}
-#scope hemo prep
-
-#Raw means
-scopehemoFull_mean<- ddply(Countdat_2, c("Day", "Temp","Symbiont","Pot","count.type"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);scopehemoFull_mean #display table
-scopehemoFull_mean$mean<-round(scopehemoFull_mean$mean)
-#write.csv(scopehemoFull_mean,"scopehemoFull_mean.csv")
-scopehemoFull_meanVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
-scopehemoFull_mean2<-scopehemoFull_mean[scopehemoFull_meanVars]
-colnames(scopehemoFull_mean2)[colnames(scopehemoFull_mean2)=="mean"] <- "Countmean"
-
-
-
-# ddPCR
-ddPCRcompare<-rbind(C1_9000b,D1_9000b,F1_9000b,G3_9000b)
-#Raw means
-ddPCRcompare_mean<- ddply(ddPCRcompare, c("Day", "Temp","Symbiont","Pot", "count.type"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);ddPCRcompare_mean #display table
-ddPCRcompare_mean$mean<-round(ddPCRcompare_mean$mean)
-
-ddPCRcompareVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
-ddPCRcompare_mean2<-ddPCRcompare_mean[ddPCRcompareVars]
-colnames(ddPCRcompare_mean2)[colnames(ddPCRcompare_mean2)=="mean"] <- "ddPCRmean"
-
-#write.csv(ddPCRcompare_mean,"ddPCRcompare_mean.csv")
-# combine Scope and ddPCR
-scopehemo_ddPCRCompare<-merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
-
-
-
-
-
-# Basic scatter plot
-
-## the elipse plot, you don't need but good to know how
-ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean, y=ddPCRmean, colour=Symbiont)) +
-   geom_point(aes(colour=factor(Symbiont), shape=count.type.x)) +
-   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
-   scale_colour_manual(name="condition",
-       values=c("red","blue","green","orange"))+
-  scale_x_continuous(trans = "log10")+
-    scale_y_continuous(trans = "log10")+
-  stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
-theme_classic()
-  #stat_smooth(method=lm, )
-   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
-
-
-
-
-
-
-
-
-
-library(MASS)
-library(scales)
-
-
-##### THIS IS THE ONE YOU WANT
-p<-ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
-   geom_point(aes(colour=factor(count.type.x))) +
-   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
-   scale_colour_manual(name="condition",
-       values=c("darkgray","orange"))+
-  #scale_x_continuous(trans = "log10")+
-  #scale_y_continuous(trans = "log10")+
-theme_classic()+
- geom_abline(intercept = .18, slope = .94)+ #add in lmodel2 slope/intercept
-  #geom_smooth(aes(ymin=.73, ymax=1.20))+
-  #geom_smooth(aes(ymin=.73, ymax=1.20, fill =count.type.x, colour=count.type.x,stat="identity"))
-geom_line(aes(y = .73), color = "red", linetype = "dashed")+
-    geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
-  
-
-
-
-
-   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
-#stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
-
-#Model_II_linear_regression    https://rpubs.com/jasonvenkiteswaran/22815 
-library(lmodel2) 
-
-#everything
-scopehemo_ddPCRCompare$Countmean_log<-log(scopehemo_ddPCRCompare$Countmean+1)
-scopehemo_ddPCRCompare$ddPCRmean_log<-log(scopehemo_ddPCRCompare$ddPCRmean+1)
-
-lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-
-#ScopeHemo ddPCR 
-scopehemo_mod<-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-
-predict(scopehemo_mod, newdata = new.speeds, interval = "confidence")
-
-
-
-
-
-
-
-#Scope ddPCR 
-scopeddPCR<- subset(scopehemo_ddPCRCompare, Day=="3")
-lmodel2(ddPCRmean_log~Countmean_log, data = scopeddPCR)
-
-#Hemo ddPCR 
-hemoddPCR<- subset(scopehemo_ddPCRCompare, Day=="7"|Day=="14")
-lmodel2(ddPCRmean_log~Countmean_log, data = hemoddPCR)
-
-
-##### cn to dos testing adding prediction/confidence
-
-scopehemo_mod<-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-scopehemo_mod2<-lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-
-# 1. Add predictions 
-pred.int <- predict(scopehemo_mod2, interval = "prediction")
-mydata <- cbind(scopehemo_ddPCRCompare, pred.int)
-
-# 2. Regression line + confidence intervals
-p <- ggplot(mydata, aes(Countmean, ddPCRmean)) +
-  geom_point() +
-  stat_smooth(method = lm)
-# 3. Add prediction intervals
-p + geom_line(aes(y = lwr), color = "red", linetype = "dashed")+
-    geom_line(aes(y = upr), color = "red", linetype = "dashed")
-
-
-
-
-
-
-
-
-```
 
 
 
 
 #Stats and plots: ddPCR vs hemo + scope, prove not different 
+YOU DID THIS INSTEAD WITH A REGRESSION TABLE!
+DELETE 
 (figure out how to get an R2 from model, and beta estimate (near 1 ideally) )
 1.	Question: Can we combine hemo/scope counts with ddPCR for analysis?
-Model: lmer(cells.larvae_log~count.type*Symbiont+(1|Temp/Pot))   
-C1, df and means tables
-```{r}  
-#C1  
+Setup Df
+```{r}   
+#C1   
 
 #check the accuracy of this data both binary (did it infect or not) and if it did, what do the counts look like (0s removed).
 
@@ -756,7 +610,7 @@ D1Full_D14<-subset(D1Full,Day=="14")
 
 F1, df and means tables
 ```{r}
-#organize the ddPCR data 
+#organize the ddPCR data  
 F1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
 F1_9000b<-F1_9000[F1_vars]
 colnames(F1_9000b)[colnames(F1_9000b)=="Info"] <- "Symbiont"
@@ -963,6 +817,145 @@ qqPlot(residuals(hemoPCR_D14_G3Mod)) #good
 
 ```
 
+THIS IS WHAT YOU WANT - Regression 
+Scope/hemo Calc means for clade/temp/time/pot VS ddPCR
+```{r} 
+#scope hemo prep
+
+#Raw means
+scopehemoFull_mean<- ddply(Countdat_2, c("Day", "Temp","Symbiont","Pot","count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);scopehemoFull_mean #display table
+scopehemoFull_mean$mean<-round(scopehemoFull_mean$mean)
+#write.csv(scopehemoFull_mean,"scopehemoFull_mean.csv")
+scopehemoFull_meanVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
+scopehemoFull_mean2<-scopehemoFull_mean[scopehemoFull_meanVars]
+colnames(scopehemoFull_mean2)[colnames(scopehemoFull_mean2)=="mean"] <- "Countmean"
+
+
+
+# ddPCR
+ddPCRcompare<-rbind(C1_9000b,D1_9000b,F1_9000b,G3_9000b)
+#Raw means
+ddPCRcompare_mean<- ddply(ddPCRcompare, c("Day", "Temp","Symbiont","Pot", "count.type"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);ddPCRcompare_mean #display table
+ddPCRcompare_mean$mean<-round(ddPCRcompare_mean$mean)
+
+ddPCRcompareVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
+ddPCRcompare_mean2<-ddPCRcompare_mean[ddPCRcompareVars]
+colnames(ddPCRcompare_mean2)[colnames(ddPCRcompare_mean2)=="mean"] <- "ddPCRmean"
+
+#write.csv(ddPCRcompare_mean,"ddPCRcompare_mean.csv")
+# combine Scope and ddPCR
+scopehemo_ddPCRCompare<-merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
+
+# Basic scatter plot
+
+## the elipse plot, you don't need but good to know how
+ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean, y=ddPCRmean, colour=Symbiont)) +
+   geom_point(aes(colour=factor(Symbiont), shape=count.type.x)) +
+   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
+   scale_colour_manual(name="condition",
+       values=c("red","blue","green","orange"))+
+  scale_x_continuous(trans = "log10")+
+    scale_y_continuous(trans = "log10")+
+  stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
+theme_classic()
+  #stat_smooth(method=lm, )
+   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
+
+
+library(MASS)
+library(scales)
+
+
+##### THIS IS THE ONE YOU WANT
+p<-ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
+   geom_point(aes(colour=factor(count.type.x))) +
+   #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
+   scale_colour_manual(name="condition",
+       values=c("darkgray","orange"))+
+  #scale_x_continuous(trans = "log10")+
+  #scale_y_continuous(trans = "log10")+
+theme_classic()+
+ geom_abline(intercept = 0, slope = .94)+ #add in lmodel2 slope/intercept
+  #geom_smooth(aes(ymin=.73, ymax=1.20))+
+  #geom_smooth(aes(ymin=.73, ymax=1.20, fill =count.type.x, colour=count.type.x,stat="identity"))
+geom_line(aes(y = .73), color = "red", linetype = "dashed")+
+    geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
+  
+
+
+
+
+   # stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm")  #, linetype = 2
+#stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont))+ # alpha lets you choose confidence interval
+
+#Model_II_linear_regression    https://rpubs.com/jasonvenkiteswaran/22815 
+library(lmodel2) 
+
+#everything
+scopehemo_ddPCRCompare$Countmean_log<-log(scopehemo_ddPCRCompare$Countmean+1)
+scopehemo_ddPCRCompare$ddPCRmean_log<-log(scopehemo_ddPCRCompare$ddPCRmean+1)
+
+lm(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+#ScopeHemo ddPCR 
+scopehemo_mod<-lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
+
+# y =0.94x + 0.18 to convert scope/hemo to ddPCR
+
+
+#Convert Scope/hemo data, remake df with ddPCR data.
+#C1
+C1FullddPCR<-subset(C1Full, count.type=="ddPCR")
+C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
+C1Fullscopehemo$cells.larvae_log_Old<-C1Fullscopehemo$cells.larvae_log #save old
+#C1Fullscopehemo$cells.larvae_unlog<-(C1Fullscopehemo$cells.larvae_log^10)-1
+C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*0.94)+0.18 #convert and check
+
+C1Full<-rbind(C1FullddPCR,C1Fullscopehemo) #rebind
+
+#D1
+D1FullddPCR<-subset(D1Full, count.type=="ddPCR")
+D1Fullscopehemo<-subset(D1Full, count.type=="hemo"|count.type=="scope")
+#D1Fullscopehemo$cells.larvae_log_Old<-D1Fullscopehemo$cells.larvae_log #save old
+D1Fullscopehemo$cells.larvae_log<-(D1Fullscopehemo$cells.larvae_log*0.94)+0.18 #convert and check
+
+D1Full<-rbind(D1FullddPCR,D1Fullscopehemo) #rebind
+
+#F1
+F1FullddPCR<-subset(F1Full, count.type=="ddPCR")
+F1Fullscopehemo<-subset(F1Full, count.type=="hemo"|count.type=="scope")
+#F1Fullscopehemo$cells.larvae_log_Old<-F1Fullscopehemo$cells.larvae_log #save old
+F1Fullscopehemo$cells.larvae_log<-(F1Fullscopehemo$cells.larvae_log*0.94)+0.18 #convert and check
+
+F1Full<-rbind(F1FullddPCR,F1Fullscopehemo) #rebind
+
+
+#G3
+G3FullddPCR<-subset(G3Full, count.type=="ddPCR")
+G3Fullscopehemo<-subset(G3Full, count.type=="hemo"|count.type=="scope")
+#G3Fullscopehemo$cells.larvae_log_Old<-G3Fullscopehemo$cells.larvae_log #save old
+G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*0.94)+0.18 #convert and check
+
+G3Full<-rbind(G3FullddPCR,G3Fullscopehemo) #rebind
+
+
+
+
+
+```
+
 
 
 #Single Infection or not after 3 days - binary yes or no- INDIVIDUAL INFECTIONS
@@ -973,8 +966,10 @@ Deciding if I want to compare between and within species or not. Likely too hard
 
 Model:  glmer(Infect~Symbiont*Day*Temp+(1|potCode), family=binomial)
 
-```{r}  
+CAN YOU STILL DO THIS WITH THE CORRECTION
+```{r}   
 #round all cell counts 
+
 C1Full$cells.larvae_round<-round(C1Full$cells.larvae) 
 D1Full$cells.larvae_round<-round(D1Full$cells.larvae) 
 F1Full$cells.larvae_round<-round(F1Full$cells.larvae)
@@ -1224,7 +1219,7 @@ Organize singles into df with 0s removed, so we can evaluate what happened once 
 Model: lmer(Infect~Symbiont*Temp*Day+(1|PotCode))
 
 ```{r}  
-C1Fulla<-subset(C1Full, cells.larvae_round>0)
+C1Fulla<-subset(C1Full, cells.larvae_round>0) 
 D1Fulla<-subset(D1Full, cells.larvae_round>0)
 F1Fulla<-subset(F1Full, cells.larvae_round>0)
 G3Fulla<-subset(G3Full, cells.larvae_round>0)
@@ -1232,7 +1227,7 @@ G3Fulla<-subset(G3Full, cells.larvae_round>0)
 
 
 C1 single infection plot 
-```{r}  
+```{r}   
 C1Fulla_mean <- ddply(C1Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
