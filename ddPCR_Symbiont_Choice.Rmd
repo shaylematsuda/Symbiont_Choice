@@ -2406,7 +2406,6 @@ Everything - line chart good
 relabund_27<-subset(ALL_RelA_b, Temp=="27")
 relabund_30<-subset(ALL_RelA_b, Temp=="30")
 relabund_31<-subset(ALL_RelA_b, Temp=="31")
-
  
 #27
 ALL_RelA_27_mean <- ddply(relabund_27, c("Day","Symbiont"), summarise, #summarize cell counts
@@ -2466,7 +2465,7 @@ ALL_RelA_27_mean$mean100r<-round(ALL_RelA_27_mean$mean100, digits = 0)
 
 30C - ALL relative abundance stacked bar
 ```{r}  
-#30C means 
+#30C means  
 ALL_RelA_30_mean <- ddply(relabund_30, c("Day", "Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -2596,10 +2595,58 @@ ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
 grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 ``` 
 
+Let's try to make a PCA
+
+THis looks like crap 
+ALL_RelA
+```{r}
+library(devtools)
+library(ggbiplot)
+library(ggfortify)
+
+
+RelA_PCA<-ALL_RelA[,c(1:4,9:12)] #keep only cols you need
+
+#arcsine transform
+RelA_PCA$Cladocopium<-asin(sqrt(RelA_PCA$Cladocopium))
+RelA_PCA$Durusdinium<-asin(sqrt(RelA_PCA$Durusdinium))
+RelA_PCA$Fugacium<-asin(sqrt(RelA_PCA$Fugacium))
+RelA_PCA$Gerakladium<-asin(sqrt(RelA_PCA$Gerakladium))
+RelA_PCA<-na.omit(RelA_PCA)
+
+
+multi.pca <- prcomp(ALL_RelA[,5:8], scale=F)
+multi.pca
+summary(multi.pca)
+#ggbiplot(multi.pca)
+
+pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'blue',loadings.label = TRUE, loadings.label.size = 5)
+pca.plot
 
 
 
+#try zscoring: for all df, do score - mean/sd for everything, save as new column
+RelA_PCA<-RelA_PCA %>% 
+  mutate(C1zscore = (Cladocopium - mean(Cladocopium))/sd(Cladocopium))
 
+RelA_PCA<-RelA_PCA %>% 
+  mutate(D1zscore = (Durusdinium - mean(Durusdinium))/sd(Durusdinium))
+
+RelA_PCA<-RelA_PCA %>% 
+  mutate(F1zscore = (Fugacium - mean(Fugacium))/sd(Fugacium))
+
+RelA_PCA<-RelA_PCA %>% 
+  mutate(G3zscore = (Gerakladium - mean(Gerakladium))/sd(Gerakladium))
+
+
+multi.pca2 <- prcomp(RelA_PCA[,1:13])
+multi.pca2
+summary(multi.pca)
+#ggbiplot(multi.pca)
+
+pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'blue',loadings.label = TRUE, loadings.label.size = 5)
+pca.plot
+```
 
 
 
@@ -2613,7 +2660,7 @@ This is the RAW data used for MULTI INFECTION - Individual comparison only!
 MultiInfect_Raw<-ALLcast_9000_cast2a
 
 # melt
-MultiInfect_Raw_2<-melt(MultiInfect_Raw, id=c("ALL.number","Temp","Day"), measure.vars = c("C1_round","D1_round","F1_round","G3_round"))
+MultiInfect_Raw_2<-melt(MultiInfect_Raw, id=c("ALL.number","Temp","Day","Pot"), measure.vars = c("C1_round","D1_round","F1_round","G3_round"))
 colnames(MultiInfect_Raw_2)[colnames(MultiInfect_Raw_2)=="value"]<-"cells.larvae" #rename value col
 colnames(MultiInfect_Raw_2)[colnames(MultiInfect_Raw_2)=="variable"]<-"Symbiont" #rename value col
  
@@ -2662,8 +2709,8 @@ C1_MULTI_plot<-ggplot(data=C1_MULTI_mean, aes(x=Day, y=mean, group = Temp, color
 ``` 
 
 PLOT D1 Multi infection Raw
-```{r} 
-D1_MULTI_mean <- ddply(D1_MULTI, c("Day", "Temp"), summarise, #summarize cell counts
+```{r}  
+D1_MULTI_mean <- ddply(MultiInfect_Raw_D1, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -2697,7 +2744,7 @@ D1_MULTI_plot<-ggplot(data=D1_MULTI_mean, aes(x=Day, y=mean, group = Temp, color
  
 PLOT F1 Multi infection Raw
 ```{r}
-F1_MULTI_mean <- ddply(F1_MULTI, c("Day", "Temp"), summarise, #summarize cell counts
+F1_MULTI_mean <- ddply(MultiInfect_Raw_F1, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -2730,8 +2777,8 @@ F1_MULTI_plot<-ggplot(data=F1_MULTI_mean, aes(x=Day, y=mean, group = Temp, color
 ```  
  
 PLOT G3 Multi infection Raw
-```{r}
-G3_MULTI_mean <- ddply(G3_MULTI, c("Day", "Temp"), summarise, #summarize cell counts
+```{r} 
+G3_MULTI_mean <- ddply(MultiInfect_Raw_G3, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -2764,7 +2811,7 @@ G3_MULTI_plot<-ggplot(data=G3_MULTI_mean, aes(x=Day, y=mean, group = Temp, color
 ``` 
  
 Plot all Symbiont multi ALL  together:
-```{r}
+```{r} 
 #line plot 
 C1_MULTI_plot<-C1_MULTI_plot+ theme(legend.position = "none") #remove legend
 D1_MULTI_plot<-D1_MULTI_plot+ theme(legend.position = "none") #remove legend
@@ -2775,16 +2822,12 @@ grid.arrange(C1_MULTI_plot, D1_MULTI_plot, F1_MULTI_plot, G3_MULTI_plot, nrow = 
 ```
 
 Plot single Raw plots over Multi clade plots
-```{r}
+```{r} 
 grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plot_9000,
   C1_MULTI_plot, D1_MULTI_plot, F1_MULTI_plot, G3_MULTI_plot, nrow = 2)
 ```
  
-
-
-
 # let's look at some plots of raw counts by single vs multi infection.
-
 C1  
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected
@@ -2806,7 +2849,7 @@ colnames(MultiCounts2)[colnames(MultiCounts2)=="value"]<-"cells.larvae_round" #r
 colnames(MultiCounts2)[colnames(MultiCounts2)=="variable"]<-"Symbiont" #rename value col
 
 SingleCounts<-rbind(C1Fulla,D1Fulla,F1Fulla,G3Fulla)
-SingleCounts<-SingleCounts[-c(5,6:8,10)] #remove metadata
+SingleCounts<-SingleCounts[-c(5:10)] #remove metadata
 SingleCounts$single.multi<-"single"
 
 CountsCompare<-rbind(SingleCounts, MultiCounts2) # combine
@@ -2826,27 +2869,27 @@ CountsCompare_mean #display table
 CountsCompare_mean$code<-paste0(CountsCompare_mean$single.multi, "_", CountsCompare_mean$Temp) #code
 
 CountsCompare_mean<-CountsCompare_mean[ , order(names(CountsCompare_mean))]
-
+CountsCompare_mean<-na.omit(CountsCompare_mean)
 #subset by infection
-CountsCompare_mean_indi<-subset(CountsCompare_mean, single.multi=="single")
-CountsCompare_mean_multi<-subset(CountsCompare_mean, single.multi=="multi")
+#CountsCompare_mean_indi<-subset(CountsCompare_mean, single.multi=="single")
+#CountsCompare_mean_multi<-subset(CountsCompare_mean, single.multi=="multi")
+
+
+#subset by temp
+CountsCompare_mean_27<-subset(CountsCompare_mean, Temp=="27")
+CountsCompare_mean_30<-subset(CountsCompare_mean, Temp=="30")
+CountsCompare_mean_31<-subset(CountsCompare_mean, Temp=="31")
+
 
 ```
 
 #subset by Symbiont plots
 C1: 27C
-```{r}  
+```{r}   
 #subset C1 
-CountsCompare_C1_indi<-subset(CountsCompare_mean_indi, Symbiont=="C1")
-CountsCompare_C1_multi<-subset(CountsCompare_mean_multi, Symbiont=="C1")
+CountsCompare_C1_27<-subset(CountsCompare_mean_27, Symbiont=="C1")
 
-#Subset 27
-CountsCompare_indi_27<-subset(CountsCompare_C1_indi, Temp=="27")
-CountsCompare_multi_27<-subset(CountsCompare_C1_multi, Temp=="27")
-
-CountsCompare_C1<-rbind(CountsCompare_indi_27,CountsCompare_multi_27)
-
-CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
+CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1_27, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=single.multi), size=4, show.legend = T)+
@@ -2869,12 +2912,11 @@ CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1, aes(x=Day, y=mean, group=
 
 ```
 C1: 30C
-```{r}
-#Subset 30
-CountsCompare_indi_30<-subset(CountsCompare_C1_indi, Temp=="30")
-CountsCompare_multi_30<-subset(CountsCompare_C1_multi, Temp=="30")
 
-CountsCompare_C1_30<-rbind(CountsCompare_indi_30,CountsCompare_multi_30)
+```{r}
+
+#Subset 30 
+CountsCompare_C1_30<-subset(CountsCompare_mean_30, Symbiont=="C1")
 
 CountsCompare_C1_plot30<-ggplot(data=CountsCompare_C1_30, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -2898,13 +2940,12 @@ CountsCompare_C1_plot30<-ggplot(data=CountsCompare_C1_30, aes(x=Day, y=mean, gro
   theme(plot.title = element_text(size=20, face = "italic"));CountsCompare_C1_plot30
 
 ```
-C1: 31C
-```{r}
-#Subset 31
-CountsCompare_indi_31<-subset(CountsCompare_C1_indi, Temp=="31")
-CountsCompare_multi_31<-subset(CountsCompare_C1_multi, Temp=="31")
 
-CountsCompare_C1_31<-rbind(CountsCompare_indi_31,CountsCompare_multi_31)
+C1: 31C
+```{r} 
+#Subset 31
+CountsCompare_C1_31<-subset(CountsCompare_mean_31, Symbiont=="C1")
+
 
 CountsCompare_C1_plot31<-ggplot(data=CountsCompare_C1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -2913,7 +2954,7 @@ CountsCompare_C1_plot31<-ggplot(data=CountsCompare_C1_31, aes(x=Day, y=mean, gro
   geom_line(aes(color=single.multi, linetype=single.multi))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
-      # scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("Days") + 
+       #scale_y_log10(breaks = c(-1000,1,100,1000), limits=c(1,1000))+  xlab("Days") + 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3246,10 +3287,15 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
 
 #Statistics
 
+You haven't done stats on the comparision above. start there 20200525
+
+
+
+
 
 
  wtf
-```{r} 
+```{r}  
 ##  
 MULTImod<-lmer(cells.larvae_log~Day*Temp*Symbiont+(1|Pot), Singles)
 #summary(MULTImod)
