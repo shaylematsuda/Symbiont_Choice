@@ -79,7 +79,7 @@ library(flextable)
 
 #Setup data:   
 AH - feel free to look at this section but no need to check it. It's loading in data and QC to make the dfs.  
-Hemocytometer and scope counts: For the single infection only, we did hemocytometer (hemo) and scope (larvae placed bewteen coverslip and slide) 3 reps/treatment pot. 
+Hemocytometer and scope counts: For the single infection only, we did hemocytometer (hemo) and scope (larvae placed bewteen coverslip and slide) 3 reps/treatment pot. - Sounds good! - AH
 ```{r}   
 ####Load in hemocytometer counts and fluorescent scope counts:  
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
@@ -610,6 +610,8 @@ lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
 
 Right plot: logged10 plot   
 AH- Ideally, I want to plot the 95% confidence intervales on the regression line. But since I tell am manually entering the info, the confidence intervales are showing up wrong. Ideas? 
+
+See what I did with adding two more geom_abline's. Since you want it to be sloped, geom_line wont work. Now you can go an edit the "intercept" to match your confidence intervals. I just set them to +- 1 for visualization. - AH  
 ```{r}
 ##### THIS IS THE ONE YOU WANT
 
@@ -625,8 +627,11 @@ theme_classic()+
  geom_abline(intercept = 0, slope = .94)+ #add in lmodel2 slope/intercept
   #geom_smooth(aes(ymin=.73, ymax=1.20))+     # when I run these lines it make a new line and plots conf int on those
   #geom_smooth(aes(ymin=.73, ymax=1.20, fill =count.type.x, colour=count.type.x,stat="identity"))
-geom_line(aes(y = .73), color = "red", linetype = "dashed")+
-    geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
+   geom_abline(intercept = 1.2, slope = .94, color = "red", linetype = "dashed")+
+   geom_abline(intercept = -1.2, slope = .94, color = "red", linetype = "dashed")
+
+#geom_line(aes(y = .73), color = "red", linetype = "dashed")+
+    #geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
   
  #stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm"), linetype = 2)+
 #stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont)) # alpha lets you choose confidence interval for ellipse
@@ -681,7 +686,7 @@ G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
 Df: C1Full, D1Full, F1Full, G3Full
 Deciding if I want to compare between and within species or not. Likely too hard between with interactions? 
 
-2.	Question: Does time or temperature effect the rate of how many larvae are infected by clade?
+2.	Question: Does time or temperature affect the rate of how many larvae are infected by clade?
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
 ```{r}
@@ -2633,6 +2638,78 @@ summary(multi.pca)
 pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'blue',loadings.label = TRUE, loadings.label.size = 5)
 pca.plot
 ```
+
+Here is the PCA script from AH: 
+
+Generate results of (1) eigen values,  (2) coordinates, (3) contributions to the PCA, (4) and quality of representation.    
+```{r, results=TRUE}
+library(vegan)
+library("factoextra")
+
+eig.val <- get_eigenvalue(multi.pca)
+eig.val
+
+res.var <- get_pca_var(multi.pca)
+res.var$coord          # Coordinates
+res.var$contrib        # Contributions to the PCs
+res.var$cos2           # Quality of representation 
+```
+
+
+Conduct PERMANOVA with vegan package.  
+
+```{r, results=FALSE}
+# PCA
+data_vegan <- RelA_PCA[c(5:8)]
+vegan_model <- scale(data_vegan)
+```
+
+```{r, results=TRUE}
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis1<-adonis2(vegan_model ~ Day * Temp, data = RelA_PCA, method='eu', perm=999)
+summary(adonis1)
+adonis1
+```
+
+Plotting with elipses by temperature. 
+```{r, results=FALSE}
+pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+  scale_colour_manual(values=c("blue", "orange", "red")) +
+  scale_fill_manual(values=c("blue", "orange", "red"))+
+  xlim(-0.25,0.5) +
+  ylim(-0.25, 0.5) +
+  geom_text(x=0, y=-0.34, label="PERMANOVA p(Day)<0.01", size=5)+
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
+  theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plot
+
+#pca.plot$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/PCA.pdf", plot=pca.plot, height=8, width=12, units = c("in"), dpi=300) #output figure
+```
+
+Plotting with elipses by day. 
+```{r, results=FALSE}
+pca.plot2 <- autoplot(multi.pca, data = ALL_RelA, colour = 'Day', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm")+
+  scale_colour_manual(values=c("black", "maroon", "darkgreen")) +
+  scale_fill_manual(values=c("black", "purple", "darkgreen"))+
+  xlim(-0.4,0.5) +
+  ylim(-0.4, 0.5) +
+  geom_text(x=0, y=-0.34, label="PERMANOVA p(Day)<0.01", size=5)+
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
+   theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plot2
+
+#pca.plot2$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/PCA.pdf", plot=pca.plot2, height=8, width=12, units = c("in"), dpi=300) #output figure
+```
+
+
 
 ##Multi raw - for how we can compare to individual infection
 This is the Count data used for MULTI INFECTION! Not Relabund
