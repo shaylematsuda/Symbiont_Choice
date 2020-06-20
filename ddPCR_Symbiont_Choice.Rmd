@@ -28,6 +28,9 @@ require("knitr")
 #rm(list=ls()) # Clear workspace
 
 # Set up workspace: I def do not use all these
+library(devtools) 
+library(ggbiplot)
+library(ggfortify)
 library(vegan)
 library("factoextra")
 library(lmodel2) 
@@ -699,6 +702,8 @@ BinaryInfect<-rbind(C1Full,D1Full, F1Full, G3Full)  # make new DF for binary
   BinaryInfect$Infect<-as.numeric(BinaryInfect$Infect)
  BinaryInfect$count.type<-as.factor(BinaryInfect$count.type) #make factor
 
+ #write.csv(BinaryInfect,"BinaryInfect.csv")
+ 
  #rename Pot interaction as a code: Pot_Temp
  BinaryInfect$PotCode<-paste0(BinaryInfect$Temp, BinaryInfect$Pot,BinaryInfect$Symbiont )
  BinaryInfect$PotCode<-as.factor(BinaryInfect$PotCode) #make factor
@@ -932,10 +937,10 @@ Organize singles into df with 0s removed, so we can evaluate what happened once 
 
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
 ```{r}   
-C1Fulla<-subset(C1Full, cells.larvae_round>0) #remove 0s
-D1Fulla<-subset(D1Full, cells.larvae_round>0)
-F1Fulla<-subset(F1Full, cells.larvae_round>0)
-G3Fulla<-subset(G3Full, cells.larvae_round>0)
+#C1Fulla<-subset(C1Full, cells.larvae_round>0) #remove 0s
+#D1Fulla<-subset(D1Full, cells.larvae_round>0)
+##F1Fulla<-subset(F1Full, cells.larvae_round>0)
+#G3Fulla<-subset(G3Full, cells.larvae_round>0)
 ```
 
 C1 single infection plot 
@@ -1068,7 +1073,8 @@ F1Fulla_plot_9000<-ggplot(data=F1Fulla_mean, aes(x=Day.num, y=mean, group = Temp
 ``` 
 
 G3 single infection plot
-```{r}     
+
+```{r}         
 G3Fulla_mean <- ddply(G3Fulla, c("Day", "Temp"), summarise, #summarize cell counts
                  N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -1106,7 +1112,7 @@ G3Fulla_plot_9000<-ggplot(data=G3Fulla_mean, aes(x=Day.num, y=mean, group = Temp
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("Cladocopium")+
+  ggtitle("Gerakladium")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));G3Fulla_plot_9000
 ``` 
 
@@ -1241,12 +1247,356 @@ ggplot(AllSing_D14, aes(x = Temp,
 
 ```
   
+  
+#PLOT SINGLE INFECTIONS (count data) With 0s included!!!!!! 
+
+Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
+
+C1 single infection plot 
+```{r}     
+C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+C1Full_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+C1Full_mean$Day.num<-as.numeric(C1Full_mean$Day)
+C1Full_mean$Day.num[C1Full_mean$Day.num == 2] =7
+C1Full_mean$Day.num[C1Full_mean$Day.num == 3] =14
+C1Full_mean$Day.num[C1Full_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0,2000) + #set Y limits
+   #scale_y_log10()+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+    scale_x_continuous(breaks=seq(0, 14, 2))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Cladocopium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));C1Full_plot_9000
+``` 
+
+D1 single infection plot
+```{r}     
+D1Full_mean <- ddply(D1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+D1Full_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+D1Full_mean$Day.num<-as.numeric(D1Full_mean$Day)
+D1Full_mean$Day.num[D1Full_mean$Day.num == 2] =7
+D1Full_mean$Day.num[D1Full_mean$Day.num == 3] =14
+D1Full_mean$Day.num[D1Full_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+D1Full_plot_9000<-ggplot(data=D1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0,2000) + #set Y limits
+   #scale_y_log10()+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+    scale_x_continuous(breaks=seq(0, 14, 2))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Durusdinium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));D1Full_plot_9000
+``` 
+
+F1 single infection  plot
+```{r}     
+F1Full_mean <- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+F1Full_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+F1Full_mean$Day.num<-as.numeric(F1Full_mean$Day)
+F1Full_mean$Day.num[F1Full_mean$Day.num == 2] =7
+F1Full_mean$Day.num[F1Full_mean$Day.num == 3] =14
+F1Full_mean$Day.num[F1Full_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+F1Full_plot_9000<-ggplot(data=F1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0,2000) + #set Y limits
+   #scale_y_log10()+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+    scale_x_continuous(breaks=seq(0, 14, 2))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Fugacium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));F1Full_plot_9000
+``` 
+
+G3 single infection plot
+```{r}     
+G3Full_mean <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+G3Full_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+G3Full_mean$Day.num<-as.numeric(G3Full_mean$Day)
+G3Full_mean$Day.num[G3Full_mean$Day.num == 2] =7
+G3Full_mean$Day.num[G3Full_mean$Day.num == 3] =14
+G3Full_mean$Day.num[G3Full_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+G3Full_plot_9000<-ggplot(data=G3Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
+  geom_line(aes(color=Temp))+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+  xlab("") + #Label the X Axis
+  #ylim(0,2000) + #set Y limits
+   #scale_y_log10()+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+    scale_x_continuous(breaks=seq(0, 14, 2))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Gerakladium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));G3Full_plot_9000
+``` 
+
+Plot all four SINGLE INFECTION together: Figure x
+```{r} 
+#log scale axis only 
+C1Full_plot_9000<-C1Full_plot_9000+ theme(legend.position = "none") #remove legend
+D1Full_plot_9000<-D1Full_plot_9000+ theme(legend.position = "none") #remove legend
+F1Full_plot_9000<-F1Full_plot_9000+ theme(legend.position = "none") #remove legend
+G3Full_plot_9000<-G3Full_plot_9000+ theme(legend.position = "none") #remove legend
+grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000, nrow = 1)
+```
+
+STATS FOR SINGLE INFECTION with 0s
+Model 1: `lmer(cell.counts~Day*Temp)` using log transformed! (Cells.larvae_log)  
+Single infections: Only data where infection happened
+```{r}   
+hist(C1Full$cells.larvae_log) # normal
+hist(D1Full$cells.larvae_log) # normal
+hist(F1Full$cells.larvae_log) # normal
+hist(G3Full$cells.larvae_log) #normal
+
+Singles<-rbind(C1Full,D1Full,F1Full,G3Full)
+hist(Singles$cells.larvae_log) # normal 
+
+#rename Pot interaction as a code: Pot_Temp
+ Singles$PotCode<-paste0(Singles$Temp, Singles$Pot,Singles$Symbiont )
+ Singles$PotCode<-as.factor(Singles$PotCode) #make factor
+
+#Full model  
+## lmer  symbionts*days*temp
+Single_all_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Singles)
+anova(Single_all_mod)
+qqPlot(residuals(Single_all_mod))   # good
+
+  emm<-emmeans(Single_all_mod,  ~ Symbiont*Temp *Day, adjust="Tukey")
+cld(emm)
+```
+ 
+C1 single  
+```{r}
+#C1    
+Singles_C1<-subset(Singles, Symbiont=="C1")
+C1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_C1)
+anova(C1mod)
+#summary(C1mod) #for std err df and t
+qqPlot(residuals(C1mod))   #  good
+
+#post hoc diff at each day
+ emm<-emmeans(C1mod,  ~ Temp |Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+#post hoc within temp
+ emm<-emmeans(C1mod,  ~ Day |Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+```
+D1 singles    
+```{r}
+#D1   
+Singles_D1<-subset(Singles, Symbiont=="D1")
+D1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_D1)
+anova(D1mod)
+#summary(D1mod) #for std err df and t
+qqPlot(residuals(D1mod))   #  low end
+  emm<-emmeans(D1mod,  ~ Day |Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+emm<-emmeans(D1mod,  ~ Temp |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+```
+F1 singles  
+```{r} 
+#F1   
+Singles_F1<-subset(Singles, Symbiont=="F1")
+F1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_F1)
+anova(F1mod)
+#summary(F1mod) #for std err df and t
+qqPlot(residuals(F1mod))   #  good
+  emm<-emmeans(F1mod,  ~ Temp |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+emm<-emmeans(F1mod,  ~ Day |Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+```
+G3 singles  
+```{r} 
+#G3   
+Singles_G3<-subset(Singles, Symbiont=="G3")
+G3mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_G3)
+anova(G3mod)
+#summary(G3mod) #for std err df and t
+qqPlot(residuals(G3mod))   #  good
+  emm<-emmeans(G3mod,  ~ Temp|Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+  emm<-emmeans(G3mod,  ~ Day|Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+```
+
+Testing diff wanys to plot: Single comparision days between symbs, boxplots. I kinda like this, but also, think line is more straight forward.
+```{r} 
+#cool plot
+ggplot(Singles, aes(x = Temp, 
+                    y = cells.larvae_log, 
+                    color = Symbiont)) +
+  geom_boxplot(width = 0.5) +
+  geom_point(position = position_jitter(height = 0), 
+             size = 1, alpha = 0.5) +
+  labs(x = NULL, y = "Weight") +
+  guides(color = FALSE)
+
+#cool plot day 3 only
+AllSing_D3<-subset(Singles, Day==3)
+ggplot(AllSing_D3, aes(x = Temp, 
+                    y = cells.larvae_log, 
+                    color = Symbiont)) +
+  geom_boxplot(width = 0.5) +
+  geom_point(position = position_jitter(height = 0), 
+             size = 1, alpha = 0.5) +
+  labs(x = NULL, y = "Cell counts (log10)") +
+  guides(color = FALSE)
+
+#cool plot day 7 only
+AllSing_D7<-subset(Singles, Day==7)
+ggplot(AllSing_D7, aes(x = Temp, 
+                    y = cells.larvae_log, 
+                    color = Symbiont)) +
+  geom_boxplot(width = 0.5) +
+  geom_point(position = position_jitter(height = 0), 
+             size = 1, alpha = 0.5) +
+  labs(x = "Temp", y = "Cell counts (log10)") +
+  guides(color = FALSE)
+
+#cool plot day 14 only
+AllSing_D14<-subset(Singles, Day==14)
+ggplot(AllSing_D14, aes(x = Temp, 
+                    y = cells.larvae_log, 
+                    color = Symbiont)) +
+  geom_boxplot(width = 0.5) +
+  geom_point(position = position_jitter(height = 0), 
+             size = 1, alpha = 0.5) +
+  labs(x = "Temp", y = "Cell counts (log10)") +
+  guides(color = FALSE)
+
+
+
+```
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
 #Heat maps, by clade (temp x time) I think this works and could work for a paper figure? 
 https://sebastianraschka.com/Articles/heatmaps_in_r.html
 
- Individual clade heatmaps SINGLE INFECTION
-```{r}
-#C1
+ Individual clade heatmaps SINGLE INFECTION,  0s REMOVED
+```{r} 
+hist(Singles_C1$cells.larvae_log)
+hist(Singles_D1$cells.larvae_log)
+hist(Singles_F1$cells.larvae_log)
+hist(Singles_G3$cells.larvae_log)
+
+#C1 
 #Singles_C1
 Singles_C1_mean <- ddply(Singles_C1, c("Temp","Day"), summarise, #summarize cell count
                  N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
@@ -1299,7 +1649,7 @@ Singles_D1_mean <- ddply(Singles_D1, c("Temp","Day"), summarise, #summarize cell
                  N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
                  mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
                   sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
+                  se   = sd / sqrt(N), #calculate standard error
                   max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
 ) 
 Singles_D1_mean #display table
@@ -1399,6 +1749,169 @@ G3heat<-heatmap.2(G3mat_data,
 
 
 ```
+Individual clades heatmaps SINGLE, C1Full 0s NOT REMOVED C1Full, D1Full, F1Full, G3Full
+```{r} 
+Hist1<-hist(C1Full$cells.larvae_log)
+Hist2<-hist(D1Full$cells.larvae_log)
+Hist3<-hist(F1Full$cells.larvae_log)
+Hist4<-hist(G3Full$cells.larvae_log)
+
+
+#C1
+
+C1Full_mean <- ddply(C1Full, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+C1Full_mean #display table
+C1Full_mean$mean<-round(C1Full_mean$mean, digits = 2) #round the means
+
+  C1Full_vars<-c("Temp","Day","mean")
+C1Full_mean2<-C1Full_mean[C1Full_vars] 
+C1Full_mean3<-cast(C1Full_mean2, Temp~Day, mean) #set updata for heatmap
+
+C1rnames <- C1Full_mean3[,1]                            # assign labels in column 1 to "rnames"
+C1mat_data <- data.matrix(C1Full_mean3[,2:ncol(C1Full_mean3)])  # transform column 2-5 into a matrix
+rownames(C1mat_data) <- C1rnames                  # assign row names
+
+# creates a own color palette from red to green
+cols <- brewer.pal(3, "YlGn")
+cols
+
+my_palette <- colorRampPalette(cols)
+#my_palette <- colorRampPalette(c("grey", "pear", "olive"))(n = 299)
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # Start
+  seq(1.1,2,length=100),          
+  seq(2.1,3,length=100),
+  seq(3.1,4,length=100))             # END
+
+
+C1heat<-heatmap.2(C1mat_data,
+  cellnote = C1mat_data,  # same data set for cell labels
+  main = "C1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+#D1
+#D1Full
+D1Full_mean <- ddply(D1Full, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+D1Full_mean #display table
+D1Full_mean$mean<-round(D1Full_mean$mean, digits = 2) #round the means
+
+  D1Full_vars<-c("Temp","Day","mean")
+D1Full_mean2<-D1Full_mean[D1Full_vars] 
+D1Full_mean3<-cast(D1Full_mean2, Temp~Day, mean) #set updata for heatmap
+
+D1rnames <- D1Full_mean3[,1]                            # assign labels in column 1 to "rnames"
+D1mat_data <- data.matrix(D1Full_mean3[,2:ncol(D1Full_mean3)])  # transform column 2-5 into a matrix
+rownames(D1mat_data) <- D1rnames                  # assign row names
+
+D1heat<-heatmap.2(D1mat_data,
+  cellnote = D1mat_data,  # same data set for cell labels
+  main = "D1 ", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA"    )        # turn off column clustering
+
+#F1
+#F1Full
+F1Full_mean <- ddply(F1Full, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+F1Full_mean #display table
+F1Full_mean$mean<-round(F1Full_mean$mean, digits = 2) #round the means
+
+  F1Full_vars<-c("Temp","Day","mean")
+F1Full_mean2<-F1Full_mean[F1Full_vars] 
+F1Full_mean3<-cast(F1Full_mean2, Temp~Day, mean) #set updata for heatmap
+
+F1rnames2 <- F1Full_mean3[,1]                            # assign labels in column 1 to "rnames"
+F1mat_data2 <- data.matrix(F1Full_mean3[,2:ncol(F1Full_mean3)])  # transform column 2-5 into a matrix
+rownames(F1mat_data2) <- F1rnames2                  # assign row names
+
+
+F1heat2<-heatmap.2(F1mat_data2,
+  cellnote = F1mat_data2,  # same data set for cell labels
+  main = "F1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+#G3
+#G3Full
+G3Full_mean <- ddply(G3Full, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+G3Full_mean #display table
+G3Full_mean$mean<-round(G3Full_mean$mean, digits = 2) #round the means
+
+  G3Full_vars<-c("Temp","Day","mean")
+G3Full_mean2<-G3Full_mean[G3Full_vars] 
+G3Full_mean3<-cast(G3Full_mean2, Temp~Day, mean) #set updata for heatmap
+
+G3rnames2 <- G3Full_mean3[,1]                            # assign labels in column 1 to "rnames"
+G3mat_data2 <- data.matrix(G3Full_mean3[,2:ncol(G3Full_mean3)])  # transform column 2-5 into a matrix
+rownames(G3mat_data2) <- G3rnames2                  # assign row names
+
+
+G3heat<-heatmap.2(G3mat_data2,
+  cellnote = G3mat_data2,  # same data set for cell labels
+  main = "G3", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  #dendrogram="row",     # only draw a row dendrogram
+  Rowv=FALSE,
+  dendrogram='none')     #turn off dentrogram
+
+  #Colv="NA")            # turn off column clustering
+
+
+
+```
+
+
 
 
 
@@ -1429,7 +1942,7 @@ RelA_binary$F1[RelA_binary$F1>0]<-1
 RelA_binary$F1[RelA_binary$F1==0]<-0
 RelA_binary$G3[RelA_binary$G3>0]<-1  
 RelA_binary$G3[RelA_binary$G3==0]<-0
-
+#write.csv(RelA_binary,"RelA_binary.csv")
 #new col sum of each clade in a larvae
 RelA_binary$numclade<-RelA_binary$C1+RelA_binary$D1+RelA_binary$F1+RelA_binary$G3
 
@@ -1444,7 +1957,7 @@ RelA_CladeComp<-RelA_binary #make a copy for the nextsection
  RelA_binary$PotCode<-as.factor(RelA_binary$PotCode) #make factor
  
 ```
-
+ 
 A did larvae with single clades infect more or less than larvae offered multiple clades: stats
 ```{r} 
 #stats
@@ -1748,7 +2261,7 @@ Counts_compare_singmult<-grid.arrange(arrangeGrob(Counts_compare_singmult, left 
 #save
 #ggsave(filename="Figures/BinomialSIFig2.png", plot=BinomialSIFig2, dpi=300, width=12, height=10, units="in")
 ```
-
+  
 
 
 ###Single v Multi infection by clade (pink and blue)
@@ -2694,33 +3207,29 @@ ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
 ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
 grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 ``` 
+#NMDS
+```{r}
+set.seed(2)
+community_matrix=matrix(
+   sample(1:100,300,replace=T),nrow=10,
+   dimnames=list(paste("community",1:10,sep=""),paste("sp",1:30,sep="")))
+
+example_NMDS=metaMDS(community_matrix, # Our community-by-species matrix
+                     k=2) # The number of reduced dimensions
+```
 
 #PCA: Let's try to make a PCA  
-THis looks like crap    
-ALL_RelA_a df 
-
-
-
-
-
-
-
-OK you are figuring out if you can make PCA with raw rel abund or should use the transformed rel ablund. 
-
-
-
 ```{r}
-library(devtools)
-library(ggbiplot)
-library(ggfortify)
+
 
 #hist ALL_RelA_b df is right format to check
 hist(ALL_RelA_b$cells.larvae) #transform
 ALL_RelA_b$cells.larvae_arc<-asin(sqrt(ALL_RelA_b$cells.larvae))
 hist(ALL_RelA_b$cells.larvae_arc) #beter (check to see if that is ok)
+ALL_RelA_b$cells.larvae_log<-log10(ALL_RelA_b$cells.larvae+1)
+hist(ALL_RelA_b$cells.larvae_log) #not as good
 
-
-RelA_PCA<-ALL_RelA_a #keep only cols you need
+RelA_PCA<-ALL_RelA_a #keep only cols you need USE _a for the right shape of data (_b is melted, _a cast)
 RelA_PCA<-na.omit(RelA_PCA)# remove NA
 
 #arcsine transform
@@ -2728,20 +3237,17 @@ RelA_PCA$Cladocopium<-asin(sqrt(RelA_PCA$Cladocopium))
 RelA_PCA$Durusdinium<-asin(sqrt(RelA_PCA$Durusdinium))
 RelA_PCA$Fugacium<-asin(sqrt(RelA_PCA$Fugacium))
 RelA_PCA$Gerakladium<-asin(sqrt(RelA_PCA$Gerakladium))
-
 ```
 
 Here is the PCA script from AH: 
  
 Generate results of (1) eigen values,  (2) coordinates, (3) contributions to the PCA, (4) and quality of representation.    
 ```{r, results=TRUE} 
-
-
 # Everything 
 multi.pca <- prcomp(RelA_PCA[,5:8], scale=F)
 multi.pca
 summary(multi.pca)
-
+ 
 eig.val <- get_eigenvalue(multi.pca)
 eig.val
 
@@ -2749,26 +3255,22 @@ res.var <- get_pca_var(multi.pca)
 res.var$coord          # Coordinates
 res.var$contrib        # Contributions to the PCs
 res.var$cos2           # Quality of representation 
-```
 
-Conduct PERMANOVA with vegan package.  
-All the data by Temp/Day
-```{r, results=FALSE}
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
 # PCA
 data_vegan <- RelA_PCA[c(5:8)]
 vegan_model <- scale(data_vegan) 
-``` 
 
-```{r, results=TRUE}
 # PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
 adonis1<-adonis2(vegan_model ~ Day * Temp, data = RelA_PCA, method='eu', perm=999)
 summary(adonis1)
 adonis1 
-```
 
-Plotting with elipses by temperature. 
-```{r, results=FALSE} 
-pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+#Plotting with elipses by temperature.  
+ 
+pca.plot <- autoplot(multi.pca, data = RelA_PCA, colour = 'Temp', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
   scale_colour_manual(values=c("blue", "orange", "red")) +
   scale_fill_manual(values=c("blue", "orange", "red"))+
   xlim(-0.25,0.5) +
@@ -2783,15 +3285,15 @@ pca.plot <- autoplot(multi.pca, data = ALL_RelA, colour = 'Temp', shape="Day",lo
 
 #spca.plot$layers[[2]]$aes_params$size <- 1
 #ggsave("Figures/PCA.pdf", plot=pca.plot, height=8, width=12, units = c("in"), dpi=300) #output figure 
-```
 
-Plotting with elipses by day. 
-```{r, results=FALSE}
-pca.plot2 <- autoplot(multi.pca, data = ALL_RelA, colour = 'Day', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm")+
+
+#Plotting with elipses by day. 
+
+pca.plot2 <- autoplot(multi.pca, data = RelA_PCA, colour = 'Day', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm")+
   scale_colour_manual(values=c("black", "maroon", "darkgreen")) +
   scale_fill_manual(values=c("black", "purple", "darkgreen"))+
-  xlim(-0.4,0.5) +
-  ylim(-0.4, 0.5) +
+  xlim(-0.4,0.25) +
+  ylim(-0.4, 0.25) +
   geom_text(x=0, y=-0.34, label="PERMANOVA p(Day)<0.01", size=5)+
   geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
    theme(legend.text = element_text(size=18), 
@@ -2806,91 +3308,316 @@ pca.plot2 <- autoplot(multi.pca, data = ALL_RelA, colour = 'Day', shape="Temp",l
 
 ###PCA by Day   
 Day 3
-```{r, results=FALSE}
+```{r, results=TRUE} 
 
-# D3 
-ALL_RelA_D3<-subset(ALL_RelA, Day=="3")
-ALL_RelA_D3<-na.omit(ALL_RelA_D3)
-multi.pcaD3 <- prcomp(ALL_RelA_D3[,9:12], scale=F)
+RelA_PCA_D3<-subset(RelA_PCA, Day==3)  #subset day 3
+
+multi.pcaD3 <- prcomp(RelA_PCA_D3[,5:8], scale=F)
 multi.pcaD3
 summary(multi.pcaD3)
 
 eig.valD3 <- get_eigenvalue(multi.pcaD3)
 eig.valD3
-
+ 
 res.varD3 <- get_pca_var(multi.pcaD3)
 res.varD3$coord          # Coordinates
 res.varD3$contrib        # Contributions to the PCs
 res.varD3$cos2           # Quality of representation 
 
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
 # PCA
-data_veganDay3 <- RelA_PCA_D3[c(9:12)]
-vegan_model_D3 <- scale(data_veganDay3) 
+data_veganD3 <- RelA_PCA_D3[c(5:8)]
+vegan_modelD3 <- scale(data_veganD3) 
 
- # PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
-adonisD3<-adonis2(vegan_model_D3 ~ Temp, data = RelA_PCA_D3, method='eu', perm=999)
-summary(adonisD3)
-adonisD3
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis1D3<-adonis2(vegan_modelD3 ~   Temp, data = RelA_PCA_D3, method='eu', perm=999)
+summary(adonis1D3)
+adonis1D3
 
+#Plotting with elipses by temperature.  
+ 
 pca.plotD3 <- autoplot(multi.pcaD3, data = RelA_PCA_D3, colour = 'Temp', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
-  scale_colour_manual(values=c("blue", "orange", "red")) + 
+  scale_colour_manual(values=c("blue", "orange", "red")) +
   scale_fill_manual(values=c("blue", "orange", "red"))+
-  xlim(-0.3,0.5) +
-  ylim(-0.3, 0.4) +
-  geom_text(x=0.1, y=0.3, label="PERMANOVA p(Temp)<0.01", size=5)+
+  xlim(-0.4,0.4) +
+  ylim(-0.4, 0.5) +
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
   theme(legend.text = element_text(size=18), 
         plot.background = element_blank(),
         legend.title = element_text(size=18, face="bold"), 
         axis.text = element_text(size=18), 
         axis.title = element_text(size=18,  face="bold"));pca.plotD3
 
-#spca.plot$layers[[2]]$aes_params$size <- 1
-#ggsave("Figures/PCA_D3_20200618.pdf", plot=pca.plotD3, height=8, width=12, units = c("in"), dpi=300) #output figure 
+pca.plotD3$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plotD3.pdf", plot=pca.plotD3, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+
+
 ```
-
 Day 7
-```{r, results=FALSE}
+```{r, results=TRUE} 
 
-# D7 
-ALL_RelA_D7<-subset(ALL_RelA, Day=="7")
-ALL_RelA_D7<-na.omit(ALL_RelA_D7)
-multi.pcaD7 <- prcomp(ALL_RelA_D7[,9:12], scale=F)
+RelA_PCA_D7<-subset(RelA_PCA, Day==7)  #subset day 3
+
+multi.pcaD7 <- prcomp(RelA_PCA_D7[,5:8], scale=F)
 multi.pcaD7
 summary(multi.pcaD7)
 
 eig.valD7 <- get_eigenvalue(multi.pcaD7)
 eig.valD7
-
+ 
 res.varD7 <- get_pca_var(multi.pcaD7)
 res.varD7$coord          # Coordinates
 res.varD7$contrib        # Contributions to the PCs
 res.varD7$cos2           # Quality of representation 
 
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
 # PCA
-data_veganDay7 <- ALL_RelA_D7[c(9:12)]
-vegan_model_D7 <- scale(data_veganDay7) 
+data_veganD7 <- RelA_PCA_D7[c(5:8)]
+vegan_modelD7 <- scale(data_veganD7) 
 
- # PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
-adonisD7<-adonis2(vegan_model_D7 ~ Temp, data = RelA_PCA_D7, method='eu', perm=999)
-summary(adonisD7)
-adonisD7
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis1D7<-adonis2(vegan_modelD7 ~   Temp, data = RelA_PCA_D7, method='eu', perm=999)
+summary(adonis1D7)
+adonis1D7
 
+#Plotting with elipses by temperature.  
+ 
 pca.plotD7 <- autoplot(multi.pcaD7, data = RelA_PCA_D7, colour = 'Temp', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
-  scale_colour_manual(values=c("blue", "orange", "red")) + 
+  scale_colour_manual(values=c("blue", "orange", "red")) +
   scale_fill_manual(values=c("blue", "orange", "red"))+
-  xlim(-0.3,0.5) +
-  ylim(-0.3, 0.5) +
-  geom_text(x=0.1, y=0.3, label="PERMANOVA p(Temp)<0.01", size=5)+
+  xlim(-0.5,0.5) +
+  ylim(-0.5, 0.5) +
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
   theme(legend.text = element_text(size=18), 
         plot.background = element_blank(),
         legend.title = element_text(size=18, face="bold"), 
         axis.text = element_text(size=18), 
         axis.title = element_text(size=18,  face="bold"));pca.plotD7
 
-#spca.plot$layers[[2]]$aes_params$size <- 1
-#ggsave("Figures/PCA_D3.pdf", plot=pca.plot, height=8, width=12, units = c("in"), dpi=300) #output figure 
+pca.plotD7$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plotD7.pdf", plot=pca.plotD7, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+
+
+```
+Day 14
+```{r, results=TRUE} 
+
+RelA_PCA_D14<-subset(RelA_PCA, Day==14)  #subset day 14
+
+multi.pcaD14 <- prcomp(RelA_PCA_D14[,5:8], scale=F)
+multi.pcaD14
+summary(multi.pcaD14)
+
+eig.valD14 <- get_eigenvalue(multi.pcaD14)
+eig.valD14
+ 
+res.varD14 <- get_pca_var(multi.pcaD14)
+res.varD14$coord          # Coordinates
+res.varD14$contrib        # Contributions to the PCs
+res.varD14$cos2           # Quality of representation 
+
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
+# PCA
+data_veganD14 <- RelA_PCA_D14[c(5:8)]
+vegan_modelD14 <- scale(data_veganD14) 
+
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis1D14<-adonis2(vegan_modelD14 ~   Temp, data = RelA_PCA_D14, method='eu', perm=999)
+summary(adonis1D14)
+adonis1D14
+
+#Plotting with elipses by temperature.  
+ 
+pca.plotD14 <- autoplot(multi.pcaD14, data = RelA_PCA_D14, colour = 'Temp', shape="Temp",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+  scale_colour_manual(values=c("blue", "orange", "red")) +
+  scale_fill_manual(values=c("blue", "orange", "red"))+
+  xlim(-0.6,0.6) +
+  ylim(-0.5, 0.5) +
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)=0.04", size=5)+
+  theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plotD14
+
+pca.plotD14$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plotD14.pdf", plot=pca.plotD14, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+```
+Plot all three days (ugly for now)
+```{r}
+PCA_Days_Figx<-plot_grid(pca.plotD3, pca.plotD7, pca.plotD14, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);PCA_Days_Figx
+
+#save
+ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
+```
+###PCA by TEMP   
+27C
+```{r, results=TRUE} 
+
+RelA_PCA_27C<-subset(RelA_PCA, Temp=="27")  #subset day 3
+
+multi.pca27C <- prcomp(RelA_PCA_27C[,5:8], scale=F)
+multi.pca27C
+summary(multi.pca27C)
+
+eig.val27C <- get_eigenvalue(multi.pca27C)
+eig.val27C
+ 
+res.var27C <- get_pca_var(multi.pca27C)
+res.var27C$coord          # Coordinates
+res.var27C$contrib        # Contributions to the PCs
+res.var27C$cos2           # Quality of representation 
+
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
+# PCA
+data_vegan27C <- RelA_PCA_27C[c(5:8)]
+vegan_model27C <- scale(data_vegan27C) 
+
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis127C<-adonis2(vegan_model27C ~   Day, data = RelA_PCA_27C, method='eu', perm=999)
+summary(adonis127C)
+adonis127C
+
+#Plotting with elipses by temperature.  
+ 
+pca.plot27C <- autoplot(multi.pca27C, data = RelA_PCA_27C, colour = 'Day', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+  scale_colour_manual(values=c("blue", "orange", "red")) +
+  scale_fill_manual(values=c("blue", "orange", "red"))+
+  xlim(-0.4,0.4) +
+  ylim(-0.4, 0.5) +
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)<0.01", size=5)+
+  theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plot27C
+
+pca.plot27C$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plot27C.pdf", plot=pca.plot27C, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+
+
+```
+30C
+```{r, results=TRUE} 
+
+RelA_PCA_30C<-subset(RelA_PCA, Temp==30)  #subset day 3
+
+multi.pca30C <- prcomp(RelA_PCA_30C[,5:8], scale=F)
+multi.pca30C
+summary(multi.pca30C)
+
+eig.val30C <- get_eigenvalue(multi.pca30C)
+eig.val30C
+ 
+res.var30C <- get_pca_var(multi.pca30C)
+res.var30C$coord          # Coordinates
+res.var30C$contrib        # Contributions to the PCs
+res.var30C$cos2           # Quality of representation 
+
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
+# PCA
+data_vegan30C <- RelA_PCA_30C[c(5:8)]
+vegan_model30C <- scale(data_vegan30C) 
+
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis130C<-adonis2(vegan_model30C ~   Day, data = RelA_PCA_30C, method='eu', perm=999)
+summary(adonis130C)
+adonis130C
+
+#Plotting with elipses by temperature.  
+ 
+pca.plot30C <- autoplot(multi.pca30C, data = RelA_PCA_30C, colour = 'Day', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+  scale_colour_manual(values=c("blue", "orange", "red")) +
+  scale_fill_manual(values=c("blue", "orange", "red"))+
+  xlim(-0.5,0.5) +
+  ylim(-0.5, 0.5) +
+  geom_text(x=0, y=-0.38, label="PERMANOVA p(Temp)=.11", size=5)+
+  theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plot30C
+
+pca.plot30C$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plot30C.pdf", plot=pca.plot30C, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+```
+31C
+```{r, results=TRUE} 
+
+RelA_PCA_31C<-subset(RelA_PCA, Temp==31)  #subset day 14
+
+multi.pca31C <- prcomp(RelA_PCA_31C[,5:8], scale=F)
+multi.pca31C
+summary(multi.pca31C)
+
+eig.val31C <- get_eigenvalue(multi.pca31C)
+eig.val31C
+ 
+res.var31C <- get_pca_var(multi.pca31C)
+res.var31C$coord          # Coordinates
+res.var31C$contrib        # Contributions to the PCs
+res.var31C$cos2           # Quality of representation 
+
+#Conduct PERMANOVA with vegan package.  
+#All the data by Temp/Day
+
+# PCA
+data_vegan31C <- RelA_PCA_31C[c(5:8)]
+vegan_model31C <- scale(data_vegan31C) 
+
+# PerMANOVA - partitioning the euclidean distance matrix by nutrition & temp
+adonis131C<-adonis2(vegan_model31C ~   Day, data = RelA_PCA_31C, method='eu', perm=999)
+summary(adonis131C)
+adonis131C
+
+#Plotting with elipses by temperature.  
+ 
+pca.plot31C <- autoplot(multi.pca31C, data = RelA_PCA_31C, colour = 'Day', shape="Day",loadings = TRUE, loadings.colour = 'black',loadings.label = TRUE, loadings.label.colour="black", loadings.label.size = 5, loadings.label.vjust=-1, frame.type="norm", frame=TRUE)+
+  scale_colour_manual(values=c("blue", "orange", "red")) +
+  scale_fill_manual(values=c("blue", "orange", "red"))+
+  xlim(-0.7,0.6) +
+  ylim(-0.6, 0.7) +
+  geom_text(x=0, y=-0.43, label="PERMANOVA p(Temp)=0.96", size=5)+
+  theme(legend.text = element_text(size=18), 
+        plot.background = element_blank(),
+        legend.title = element_text(size=18, face="bold"), 
+        axis.text = element_text(size=18), 
+        axis.title = element_text(size=18,  face="bold"));pca.plot31C
+
+pca.plot31C$layers[[2]]$aes_params$size <- 1
+#ggsave("Figures/pca.plot31C.pdf", plot=pca.plot31C, height=8, width=12, units = c("in"), dpi=300) #output figure 
+
+```
+Plot all three days (ugly for now)
+```{r}
+PCA_Temp_Figx<-plot_grid(pca.plot27C, pca.plot30C, pca.plot31C, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);PCA_Temp_Figx
+
+#save
+ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
 ```
 
+Plot  3x2 days and temps
+```{r}
+PCA_TempDay_Figx<-plot_grid(pca.plotD3, pca.plotD7, pca.plotD14, pca.plot27C, pca.plot30C, pca.plot31C, labels = "AUTO", ncol=3, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);PCA_TempDay_Figx
+
+#save
+ggsave(filename="Figures/PCA_TempDay_Figx.pdf", plot=PCA_TempDay_Figx, dpi=300, width=12, height=12, units="in")
+```
 
 ##Multi raw - for how we can compare to individual infection
 This is the Count data used for MULTI INFECTION! Not Relabund
@@ -3553,10 +4280,10 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
 
 ```
 
-Plot Single and Multi raw counts infection plots 4x2
+Plot Single and Multi raw counts infection plots 4x2 
 ```{r}
-
-InfectRaw_Fig1<-plot_grid(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);InfectRaw_Fig1
+ 
+InfectRaw_Fig1<-plot_grid(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);InfectRaw_Fig1 
 
 #add common x and y axis labels
 y.grob <- textGrob("cells/larvae", 
@@ -3569,10 +4296,18 @@ InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom =
 #save
 ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
 ```
-## Individual clade heatmaps MUTLI INFECTION counts not relabund
+ 
+
+## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades)
 MultiCounts2=df (multi including all samples that amped (not trimmed))
-C1
+C1 
 ```{r}
+hist(MultiCounts2_C1$cells.larvae_log)
+hist(MultiCounts2_D1$cells.larvae_log)
+hist(MultiCounts2_F1$cells.larvae_log)
+hist(MultiCounts2_G3$cells.larvae_log)
+
+
 #C1
 #Singles_C1
 MultiCounts2_C1<-subset(MultiCounts2, Symbiont=="C1")
@@ -3790,6 +4525,224 @@ G3heatMult<-heatmap.2(G3mat_data2,
   Colv="NA")            # turn off column clustering
 
 ```
+
+
+
+
+
+## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades REMOVED!!!)
+MultiCounts2=df (multi including all samples that amped (not trimmed))
+```{r}
+MultiCounts3<-subset(MultiCounts2, cells.larvae_round>0)   #subset only infected
+```
+
+C1
+```{r}
+#C1
+#Singles_C1
+MultiCounts3_C1<-subset(MultiCounts3, Symbiont=="C1")
+MultiCounts3_C1<-na.omit(MultiCounts3_C1)
+hist(MultiCounts3_C1$cells.larvae_round)
+MultiCounts3_C1$cells.larvae_log<-log10(MultiCounts3_C1$cells.larvae_round+1)
+hist(MultiCounts3_C1$cells.larvae_log)
+
+
+MultiCounts3_C1_mean <- ddply(MultiCounts3_C1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+MultiCounts3_C1_mean #display table
+MultiCounts3_C1_mean$mean<-round(MultiCounts3_C1_mean$mean, digits = 2) #round the means
+
+  MultiCounts3_C1_vars<-c("Temp","Day","mean")
+MultiCounts3_C1_mean2<-MultiCounts3_C1_mean[MultiCounts3_C1_vars] 
+MultiCounts3_C1_mean3<-cast(MultiCounts3_C1_mean2, Temp~Day, mean) #set updata for heatmap
+
+C1rnames3 <- MultiCounts3_C1_mean3[,1]                            # assign labels in column 1 to "rnames"
+C1mat_data3 <- data.matrix(MultiCounts3_C1_mean3[,2:ncol(MultiCounts3_C1_mean3)])  # transform column 2-5 into a matrix
+rownames(C1mat_data3) <- C1rnames3                  # assign row names
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # Start
+  seq(1.1,2,length=100),          
+  seq(2.1,3,length=100),
+  seq(3.1,4,length=100))             # END
+
+
+C1heatMult_No0<-heatmap.2(C1mat_data3,
+  cellnote = C1mat_data3,  # same data set for cell labels
+  main = "C1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+
+
+
+
+```
+D1
+```{r}
+#D1
+#Singles_D1
+MultiCounts3_D1<-subset(MultiCounts3, Symbiont=="D1")
+MultiCounts3_D1<-na.omit(MultiCounts3_D1)
+hist(MultiCounts3_D1$cells.larvae_round)
+MultiCounts3_D1$cells.larvae_log<-log10(MultiCounts3_D1$cells.larvae_round+1)
+hist(MultiCounts3_D1$cells.larvae_log)
+
+
+MultiCounts3_D1_mean <- ddply(MultiCounts3_D1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+MultiCounts3_D1_mean #display table
+MultiCounts3_D1_mean$mean<-round(MultiCounts3_D1_mean$mean, digits = 2) #round the means
+
+  MultiCounts3_D1_vars<-c("Temp","Day","mean")
+MultiCounts3_D1_mean2<-MultiCounts3_D1_mean[MultiCounts3_D1_vars] 
+MultiCounts3_D1_mean3<-cast(MultiCounts3_D1_mean2, Temp~Day, mean) #set updata for heatmap
+
+D1rnames3 <- MultiCounts3_D1_mean3[,1]                            # assign labels in column 1 to "rnames"
+D1mat_data3 <- data.matrix(MultiCounts3_D1_mean3[,2:ncol(MultiCounts3_D1_mean3)])  # transform column 2-5 into a matrix
+rownames(D1mat_data3) <- D1rnames3                 # assign row names
+
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # Start
+  seq(1.1,2,length=100),          
+  seq(2.1,3,length=100),
+  seq(3.1,4,length=100))             # END
+
+
+D1heatMult_no0<-heatmap.2(D1mat_data3,
+  cellnote = D1mat_data3,  # same data set for cell labels
+  main = "D1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+```
+F1
+```{r}
+#F1
+#Singles_F1
+MultiCounts3_F1<-subset(MultiCounts3, Symbiont=="F1")
+MultiCounts3_F1<-na.omit(MultiCounts3_F1)
+hist(MultiCounts3_F1$cells.larvae_round)
+MultiCounts3_F1$cells.larvae_log<-log10(MultiCounts3_F1$cells.larvae_round+1)
+hist(MultiCounts3_F1$cells.larvae_log)
+
+
+MultiCounts3_F1_mean <- ddply(MultiCounts3_F1, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+MultiCounts3_F1_mean #display table
+MultiCounts3_F1_mean$mean<-round(MultiCounts3_F1_mean$mean, digits = 2) #round the means
+
+  MultiCounts3_F1_vars<-c("Temp","Day","mean")
+MultiCounts3_F1_mean2<-MultiCounts3_F1_mean[MultiCounts3_F1_vars] 
+MultiCounts3_F1_mean3<-cast(MultiCounts3_F1_mean2, Temp~Day, mean) #set updata for heatmap
+
+F1rnames3 <- MultiCounts3_F1_mean3[,1]                            # assign labels in column 1 to "rnames"
+F1mat_data3 <- data.matrix(MultiCounts3_F1_mean3[,2:ncol(MultiCounts3_F1_mean3)])  # transform column 2-5 into a matrix
+rownames(F1mat_data3) <- F1rnames3                 # assign row names
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # Start
+  seq(1.1,2,length=100),          
+  seq(2.1,3,length=100),
+  seq(3.1,4,length=100))             # END
+
+
+F1heatMult_no0<-heatmap.2(F1mat_data3,
+  cellnote = F1mat_data3,  # same data set for cell labels
+  main = "F1", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+```
+G3
+```{r}
+#G3
+#Singles_G3
+MultiCounts3_G3<-subset(MultiCounts3, Symbiont=="G3")
+MultiCounts3_G3<-na.omit(MultiCounts3_G3)
+hist(MultiCounts3_G3$cells.larvae_round)
+MultiCounts3_G3$cells.larvae_log<-log10(MultiCounts3_G3$cells.larvae_round+1)
+hist(MultiCounts3_G3$cells.larvae_log)
+
+
+MultiCounts3_G3_mean <- ddply(MultiCounts3_G3, c("Temp","Day"), summarise, #summarize cell count
+                 N    = length(cells.larvae_log[!is.na(cells.larvae_log)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+MultiCounts3_G3_mean #display table
+MultiCounts3_G3_mean$mean<-round(MultiCounts3_G3_mean$mean, digits = 2) #round the means
+
+  MultiCounts3_G3_vars<-c("Temp","Day","mean")
+MultiCounts3_G3_mean2<-MultiCounts3_G3_mean[MultiCounts3_G3_vars] 
+MultiCounts3_G3_mean3<-cast(MultiCounts3_G3_mean2, Temp~Day, mean) #set updata for heatmap
+
+G3rnames3 <- MultiCounts3_G3_mean3[,1]                            # assign labels in column 1 to "rnames"
+G3mat_data3 <- data.matrix(MultiCounts3_G3_mean3[,2:ncol(MultiCounts3_G3_mean3)])  # transform column 2-5 into a matrix
+rownames(G3mat_data3) <- G3rnames3                  # assign row names
+
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # Start
+  seq(1.1,2,length=100),          
+  seq(2.1,3,length=100),
+  seq(3.1,4,length=100))             # END
+
+
+G3heatMult_no0<-heatmap.2(G3mat_data3,
+  cellnote = G3mat_data,  # same data set for cell labels
+  main = "G3", # heat map title
+  notecol="black",      # change font color of cell labels to black
+  density.info="none",  # turns off density plot inside color legend
+  trace="none",         # turns off trace lines inside the heat map
+  margins =c(12,9),     # widens margins around plot
+  col=my_palette,       # use on color palette defined earlier
+  breaks=col_breaks,    # enable color transition at specified limits
+  dendrogram="none",     # only draw a row dendrogram
+  Rowv=FALSE,
+  Colv="NA")            # turn off column clustering
+
+```
+
+
 
 
 
