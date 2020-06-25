@@ -608,8 +608,30 @@ hist(scopehemo_ddPCRCompare$ddPCRmean_log)
 
 #ScopeHemo ddPCR 
 lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-
 # y =0.94x + 0 to convert scope/hemo to ddPCR Use MA, force 0 intercept. CN said ok to 0.18 ->0
+
+#reshape this data into one long col. not straighforward to sorry you had to download and reupload
+#write.csv(scopehemo_ddPCRCompare,"scopehemo_ddPCRCompare.csv")
+scopehemo_ddPCRCompare_all<-read.csv("scopehemo_ddPCRCompare_all.csv")
+scopehemo_ddPCRCompare_all$code<-as.factor(scopehemo_ddPCRCompare_all$code)
+lmodel2(Countmean_log~coundition+(1|code), data = scopehemo_ddPCRCompare_all)
+
+
+
+#Scope vs ddPCR
+scope_ddPCRCompare<-subset(scopehemo_ddPCRCompare, count.type.x=="scope")
+lmodel2(ddPCRmean_log~Countmean_log, data = scope_ddPCRCompare)
+
+#Hemo vs ddPCR
+hemo_ddPCRCompare<-subset(scopehemo_ddPCRCompare, count.type.x=="hemo")
+lmodel2(ddPCRmean_log~Countmean_log, data = hemo_ddPCRCompare)
+
+#last test: ddpcrmean_log~countmean_log+countmean_log:count.type.x
+#nonsignificant effect of count.type.x on the relationship between ddpcrmean_log and countmean_log
+scopehemo_ddPCRCompare$count.type.x<-as.factor(scopehemo_ddPCRCompare$count.type.x)
+lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)
+
+
 
 ```
 
@@ -723,8 +745,14 @@ dispersion_glmer(Binary_mod) # no overdispersion
   Binary_C1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_C1)
   Anova(Binary_C1_mod)
   dispersion_glmer(Binary_C1_mod)  #no overdispersion 
+    emm<-emmeans(Binary_C1_mod,  ~ Temp|Day)
+  pairs(emm)
+  cld(emm)  
+   emm<-emmeans(Binary_C1_mod,  ~ Day|Temp)
+  pairs(emm)
+  cld(emm) 
   
-#D1
+#D1 
   Binary_D1<-subset(BinaryInfect, Symbiont=="D1") #we don't have day 14 31C, this throws errors
   Binary_D1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_D1) 
   Anova(Binary_D1_mod)
@@ -930,7 +958,7 @@ grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot, nrow
 ```
 
 
-#PLOT SINGLE INFECTIONS (count data)  
+#PLOT SINGLE INFECTIONS (count data) CUT THIS OUT  
 Organize singles into df with 0s removed, so we can evaluate what happened once infection was successful. Bins removed if <3 samples/treatment
 
 3.	Question: Of the larvae that infected, what is the difference in the amount of infection per larvae by symbionts type? Does this change by temperature and/or time?
@@ -1249,9 +1277,9 @@ ggplot(AllSing_D14, aes(x = Temp,
   
   
 #PLOT SINGLE INFECTIONS (count data) With 0s included!!!!!! 
-
+ 
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
-
+ 
 C1 single infection plot 
 ```{r}     
 C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
@@ -1434,7 +1462,7 @@ G3Full_plot_9000<-G3Full_plot_9000+ theme(legend.position = "none") #remove lege
 grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_9000, nrow = 1)
 ```
 
-STATS FOR SINGLE INFECTION with 0s
+#STATS FOR SINGLE INFECTION with 0s
 Model 1: `lmer(cell.counts~Day*Temp)` using log transformed! (Cells.larvae_log)  
 Single infections: Only data where infection happened
 ```{r}   
@@ -1453,7 +1481,7 @@ hist(Singles$cells.larvae_log) # normal
 #Full model  
 ## lmer  symbionts*days*temp
 Single_all_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Singles)
-anova(Single_all_mod)
+anova(Single_all_mod) 
 qqPlot(residuals(Single_all_mod))   # good
 
   emm<-emmeans(Single_all_mod,  ~ Symbiont*Temp *Day, adjust="Tukey")
@@ -1920,8 +1948,8 @@ G3heat<-heatmap.2(G3mat_data2,
 **Use only Relabundance for within larvae comparisons, use Raw for comparision with Single infections **  
 df: ALL_9000b (has larvae removed where not all clades amped in each individual)  
 Binomial - A. did the larvae infect at all? with anything, or B. did each individual clade infect    
-#A. Binomial. Did larvae infect or not, by clade and overall
-```{r}   
+#A. Binomial. Did larvae infect or not, by clade and overall. Plots and comparison models singe v multi
+```{r}    
 #df ALL_9000b, only 5 larvae have 0 infection (but enough dropletes)
 ALL_RelA<-ALL_9000b #copy
 ALL_RelA$cell.larvae_round<-round(ALL_RelA$cells.larvae) 
@@ -1957,7 +1985,7 @@ RelA_CladeComp<-RelA_binary #make a copy for the nextsection
  RelA_binary$PotCode<-as.factor(RelA_binary$PotCode) #make factor
  
 ```
- 
+  
 A did larvae with single clades infect more or less than larvae offered multiple clades: stats
 ```{r} 
 #stats
@@ -2018,9 +2046,9 @@ Binary_G3_binary<-Binary_G3[,c("Temp","Day","PotCode","Symbiont","Infect")]
 Binary_G3_binary$infectType<-"Single"
 ```
 
-####Individual Infections
-C1 -single alone 
-```{r}    
+####Individual Infections of MULTI larvae
+C1 -single alone  
+```{r}     
 C1_binary_SinMul<-rbind(RelA_binary_C1, Binary_C1_binary)
 C1_binary_SinMul$Infect<-as.factor(C1_binary_SinMul$Infect)
 C1_binary_SinMul$Symbiont<-as.factor(C1_binary_SinMul$Symbiont)
@@ -2264,7 +2292,107 @@ Counts_compare_singmult<-grid.arrange(arrangeGrob(Counts_compare_singmult, left 
   
 
 
-###Single v Multi infection by clade (pink and blue)
+### Binomial Single v Multi infection by clade (pink and blue)
+Models Singe vs Multi by clade
+```{r}
+
+#models
+#C1
+#27
+C1_binary_SinMul_27<-subset(C1_binary_SinMul, Temp==27)
+ C1_binary_SinMul_27_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", C1_binary_SinMul_27)
+  Anova(C1_binary_SinMul_27_mod)
+  dispersion_glmer(C1_binary_SinMul_27_mod)  #no overdispersion 
+  emm<-emmeans(C1_binary_SinMul_27_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+C1_binary_SinMul_30<-subset(C1_binary_SinMul, Temp==30)
+ C1_binary_SinMul_30_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", C1_binary_SinMul_30)
+  Anova(C1_binary_SinMul_30_mod)
+  dispersion_glmer(C1_binary_SinMul_30_mod)  #no overdispersion 
+  emm<-emmeans(C1_binary_SinMul_30_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+C1_binary_SinMul_31<-subset(C1_binary_SinMul, Temp==31)
+ C1_binary_SinMul_31_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", C1_binary_SinMul_31)
+  Anova(C1_binary_SinMul_31_mod)
+  dispersion_glmer(C1_binary_SinMul_31_mod)  #no overdispersion 
+  emm<-emmeans(C1_binary_SinMul_31_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+
+#D1
+#27
+D1_binary_SinMul_27<-subset(D1_binary_SinMul, Temp==27)
+ D1_binary_SinMul_27_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", D1_binary_SinMul_27)
+  Anova(D1_binary_SinMul_27_mod)
+  dispersion_glmer(D1_binary_SinMul_27_mod)  #no overdispersion 
+  emm<-emmeans(D1_binary_SinMul_27_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+D1_binary_SinMul_30<-subset(D1_binary_SinMul, Temp==30)
+ D1_binary_SinMul_30_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", D1_binary_SinMul_30)
+  Anova(D1_binary_SinMul_30_mod)
+  dispersion_glmer(D1_binary_SinMul_30_mod)  #no overdispersion 
+  emm<-emmeans(D1_binary_SinMul_30_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+D1_binary_SinMul_31<-subset(D1_binary_SinMul, Temp==31)
+D1_binary_SinMul_31<-subset(D1_binary_SinMul_31, Day==3|Day==7)
+ D1_binary_SinMul_31_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", D1_binary_SinMul_31)
+  Anova(D1_binary_SinMul_31_mod)
+  dispersion_glmer(D1_binary_SinMul_31_mod)  #no overdispersion 
+  emm<-emmeans(D1_binary_SinMul_31_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+#F1
+#27
+F1_binary_SinMul_27<-subset(F1_binary_SinMul, Temp==27)
+ F1_binary_SinMul_27_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", F1_binary_SinMul_27)
+  Anova(F1_binary_SinMul_27_mod)
+  dispersion_glmer(F1_binary_SinMul_27_mod)  #no overdispersion 
+  emm<-emmeans(F1_binary_SinMul_27_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+F1_binary_SinMul_30<-subset(F1_binary_SinMul, Temp==30)
+ F1_binary_SinMul_30_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", F1_binary_SinMul_30)
+  Anova(F1_binary_SinMul_30_mod)
+  dispersion_glmer(F1_binary_SinMul_30_mod)  #no overdispersion 
+  emm<-emmeans(F1_binary_SinMul_30_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+F1_binary_SinMul_31<-subset(F1_binary_SinMul, Temp==31)
+ F1_binary_SinMul_31_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", F1_binary_SinMul_31)
+  Anova(F1_binary_SinMul_31_mod)
+  dispersion_glmer(F1_binary_SinMul_31_mod)  #no overdispersion 
+  emm<-emmeans(F1_binary_SinMul_31_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+#G3
+#27
+G3_binary_SinMul_27<-subset(G3_binary_SinMul, Temp==27)
+ G3_binary_SinMul_27_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", G3_binary_SinMul_27)
+  Anova(G3_binary_SinMul_27_mod)
+  dispersion_glmer(G3_binary_SinMul_27_mod)  #no overdispersion 
+  emm<-emmeans(G3_binary_SinMul_27_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+G3_binary_SinMul_30<-subset(G3_binary_SinMul, Temp==30)
+ G3_binary_SinMul_30_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", G3_binary_SinMul_30)
+  Anova(G3_binary_SinMul_30_mod)
+  dispersion_glmer(G3_binary_SinMul_30_mod)  #no overdispersion 
+  emm<-emmeans(G3_binary_SinMul_30_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+G3_binary_SinMul_31<-subset(G3_binary_SinMul, Temp==31)
+ G3_binary_SinMul_31_mod<-glmer(Infect~Day*infectType+(1|PotCode), family="binomial", G3_binary_SinMul_31)
+  Anova(G3_binary_SinMul_31_mod)
+  dispersion_glmer(G3_binary_SinMul_31_mod)  #no overdispersion 
+  emm<-emmeans(G3_binary_SinMul_31_mod,  ~ infectType|Day, adjust="Tukey")
+cld(emm)
+
+```
+
 C1 Single v Multi
 ```{r} 
 #Singel vs Multi 
@@ -2370,6 +2498,11 @@ C1_binary_SinMul_plot_30<-C1_binary_SinMul_plot_30+ theme(legend.position = "non
 C1_binary_SinMul_plot_31<-C1_binary_SinMul_plot_31+ theme(legend.position = "none") #remove legend
 
 grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMul_plot_31, nrow = 1)
+
+
+
+
+
 ```
 D1 Single v Multi 
 ```{r}
@@ -2694,10 +2827,23 @@ Plot all 12
 ```{r}
 grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMul_plot_31,D1_binary_SinMul_plot_27, D1_binary_SinMul_plot_30, D1_binary_SinMul_plot_31,F1_binary_SinMul_plot_27, F1_binary_SinMul_plot_30, F1_binary_SinMul_plot_31,G3_binary_SinMul_plot_27, G3_binary_SinMul_plot_30, G3_binary_SinMul_plot_31, nrow = 4)
  #wil remove legend in final plot for scale
+
+BinaryInfect_Fig<-plot_grid(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMul_plot_31,D1_binary_SinMul_plot_27, D1_binary_SinMul_plot_30, D1_binary_SinMul_plot_31,F1_binary_SinMul_plot_27, F1_binary_SinMul_plot_30, F1_binary_SinMul_plot_31,G3_binary_SinMul_plot_27, G3_binary_SinMul_plot_30, G3_binary_SinMul_plot_31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);BinaryInfect_Fig 
+
+#add common x and y axis labels
+y.grob <- textGrob("% Larvae Infected", 
+                   gp=gpar(fontface="bold", col="Black", fontsize=15), rot=90)
+
+x.grob <- textGrob("Days Post Infection", 
+                   gp=gpar(fontface="bold", col="Black", fontsize=15))
+#add to plot
+BinaryInfect_Figb<-grid.arrange(arrangeGrob(BinaryInfect_Fig, left = y.grob, bottom = x.grob))
+#save
+ggsave(filename="Figures/BinaryInfect_Figb.png", plot=BinaryInfect_Figb, dpi=300, width=12, height=12, units="in")
 ```
 
-##B PLOT Multi infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,.. 
-```{r}     
+##B PLOT Multi infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
+```{r}      
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 #write.csv(ALL_RelA_Infect,"ALL_RelA_Infect.csv")
@@ -2712,7 +2858,7 @@ NumClades$Day<-as.factor(NumClades$Day)
 #27C
 NumClades_27<-subset(NumClades, Temp==27)
 
-#plot
+# barplot 
 Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
@@ -2728,7 +2874,10 @@ Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) +
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("# of types of symbionts"))) +
-  ggtitle("27C");Infect27_plot     
+  ggtitle("27C");Infect27_plot   
+
+
+
 
 #30C
 NumClades_30<-subset(NumClades, Temp==30)
@@ -2793,6 +2942,81 @@ emm<-emmeans(ALL_RelA_Infect_mod,  ~ Temp*Day)
   cld(emm)  
 
 ```
+
+Waffle chart test
+```{r}
+#library(waffle)
+library(RColorBrewer) #use YellowGreen: 
+brewer.pal(n = 9, name = "PuBu") # use "#FFFFE5",  "#F7FCB9", "#ADDD8E" ,"#41AB5D", "#005A32"
+
+
+#27 D3
+NumClades_27_D3<-subset(NumClades_27, Day==3)
+NumClades_27_D3_waffle <- c(One=5, Two=7, Three=39, Four=49)
+ NumClades_27_D3_wafflePLOT<-waffle(NumClades_27_D3_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_27_D3_wafflePLOT
+ 	
+ #27 D7
+NumClades_27_D7<-subset(NumClades_27, Day==7)
+NumClades_27_D7_waffle <- c(One=4, Two=4, Three=26, Four=66)
+ NumClades_27_D7_wafflePLOT<-waffle(NumClades_27_D7_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858")); NumClades_27_D7_wafflePLOT 
+ 
+ 
+  #27 D14
+NumClades_27_D14<-subset(NumClades_27, Day==14)
+NumClades_27_D14_waffle <- c(One=4, Two=4, Three=27, Four=65)
+ NumClades_27_D14_wafflePLOT<-waffle(NumClades_27_D14_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_27_D14_wafflePLOT
+ 
+NumClades_27_D3_wafflePLOT<-NumClades_27_D3_wafflePLOT+ theme(legend.position = "none") #remove legend
+NumClades_27_D7_wafflePLOT<-NumClades_27_D7_wafflePLOT+ theme(legend.position = "none") #remove legend
+NumClades_27_D14_wafflePLOT<-NumClades_27_D14_wafflePLOT+ theme(legend.position = "none") #remove legend
+grid.arrange(NumClades_27_D14_wafflePLOT,NumClades_27_D7_wafflePLOT,NumClades_27_D3_wafflePLOT,nrow =3 )
+
+
+#30 D3
+NumClades_30_D3<-subset(NumClades_30, Day==3)
+NumClades_30_D3_waffle <- c(One=5, Two=30, Three=46, Four=19)
+ NumClades_30_D3_wafflePLOT<-waffle(NumClades_30_D3_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_30_D3_wafflePLOT
+ 	
+ #30 D7
+NumClades_30_D7<-subset(NumClades_30, Day==7)
+NumClades_30_D7_waffle <- c(One=7, Two=7, Three=26, Four=60)
+ NumClades_30_D7_wafflePLOT<-waffle(NumClades_30_D7_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_30_D7_wafflePLOT
+ 
+  #30 D14
+NumClades_30_D14<-subset(NumClades_30, Day==14)
+NumClades_30_D14_waffle <- c(One=0, Two=7, Three=57, Four=36)
+ NumClades_30_D14_wafflePLOT<-waffle(NumClades_30_D14_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_30_D14_wafflePLOT
+ 
+NumClades_30_D3_wafflePLOT<-NumClades_30_D3_wafflePLOT+ theme(legend.position = "none") #remove legend
+NumClades_30_D7_wafflePLOT<-NumClades_30_D7_wafflePLOT+ theme(legend.position = "none") #remove legend
+NumClades_30_D14_wafflePLOT<-NumClades_30_D14_wafflePLOT+ theme(legend.position = "none") #remove legend
+grid.arrange(NumClades_30_D14_wafflePLOT,NumClades_30_D7_wafflePLOT,NumClades_30_D3_wafflePLOT,nrow =3 )
+
+
+#31 D3
+NumClades_31_D3<-subset(NumClades_31, Day==3)
+NumClades_31_D3_waffle <- c(One=11, Two=22, Three=42, Four=25)
+ NumClades_31_D3_wafflePLOT<-waffle(NumClades_31_D3_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_31_D3_wafflePLOT
+ 	
+ #31 D7
+NumClades_31_D7<-subset(NumClades_31, Day==7)
+NumClades_31_D7_waffle <- c(One=0, Two=29, Three=57, Four=14)
+ NumClades_31_D7_wafflePLOT<-waffle(NumClades_31_D7_waffle, rows=5, colors=c("#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"));NumClades_31_D7_wafflePLOT
+ 
+ 
+NumClades_31_D3_wafflePLOT<-NumClades_31_D3_wafflePLOT+ theme(legend.position = "none") #remove legend
+NumClades_31_D7_wafflePLOT<-NumClades_31_D7_wafflePLOT+ theme(legend.position = "none") #remove legend
+grid.arrange(NumClades_31_D7_wafflePLOT,NumClades_31_D3_wafflePLOT,nrow =3 )
+ 
+
+
+#all 8
+grid.arrange(NumClades_31_D7_wafflePLOT,NumClades_31_D3_wafflePLOT,NumClades_30_D14_wafflePLOT,NumClades_30_D7_wafflePLOT,NumClades_30_D3_wafflePLOT,NumClades_27_D14_wafflePLOT,NumClades_27_D7_wafflePLOT,NumClades_27_D3_wafflePLOT,nrow =8 )
+
+
+```
+
+
 
 ##C Who was the most dominant clade in larvave - You need to figure out how to set up a df to run this correctly. I think you might need to change the 'winner' into a 1 and then find the 3 losers and change those to 0s. but not sure how to code that. 
 I don't think i want to do this? This needs a lot of work, but not necessarily needed for story, just say with WORDS. What I'm trying to do here is show which clade is the dominant clade on average. Look at the plots...kinda ugly. 
@@ -3912,7 +4136,7 @@ C1: 27C
 ```{r}     
 #subset C1 
 CountsCompare_C1_27<-subset(CountsCompare_mean_27, Symbiont=="C1")
-
+ 
 CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1_27, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
@@ -3935,6 +4159,8 @@ CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1_27, aes(x=Day, y=mean, gro
   ylab(expression(paste(italic("Cladocopium")))) +
   ggtitle("27C")+
   theme(plot.title = element_text(size=20, hjust=0.5));CountsCompare_C1_plot27
+
+
 ```
 C1: 30C
 
@@ -4280,8 +4506,8 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
 
 ```
 
-Plot Single and Multi raw counts infection plots 4x2 
-```{r}
+Plot Single and Multi raw counts infection plots 4x2  
+```{r} 
  
 InfectRaw_Fig1<-plot_grid(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);InfectRaw_Fig1 
 
@@ -4296,7 +4522,7 @@ InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom =
 #save
 ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
 ```
- 
+
 
 ## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades)
 MultiCounts2=df (multi including all samples that amped (not trimmed))
