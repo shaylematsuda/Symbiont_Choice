@@ -632,7 +632,7 @@ lmodel2(ddPCRmean_log~Countmean_log, data = hemo_ddPCRCompare)
 
 
 
-## WORKING ON - how to do ANCOVA with model2
+## WORKING ON - how to do ANCOVA with model2  <- AH 
 
 
 
