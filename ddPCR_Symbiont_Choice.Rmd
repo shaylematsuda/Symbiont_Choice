@@ -7,6 +7,12 @@ editor_options:
   chunk_output_type: console
 ---
 
+Ariana's Notes from 6/25: 
+- I am not as familiar with this data, so it is pretty difficult for me to follow the script and understand what is happening in each part. It might be super helpful to add some headings and sections that break the script apart by hypotheses/analysis/question. Of course if you don't think this is necessary than no problem, its just a thought that might be helpful for others to follow the script and know where to look for certain analyses :) 
+- See line 656 for confidence intervals on model2. The short answer is you have to use the base R plot() rather than ggplot to get the confidence interval lines. If you want to use that plot (see my code starting at 656), let me know and I can try to get the colorations, etc. to work the way you want them. 
+- I'm wondering why you want to do an ANCOVA with model2? What would that tell you that is different from the model2? 
+
+
 This is the data analysis of the Symbiont Choice 2018 experiment conducted at AIMS in 2018 and 2019. 
 
 Authors: Matsuda, SB, Chakravarti, LC, Cunning, JR, Huffmyer, AH, Gates, RD, van Oppen, MJH
@@ -640,9 +646,6 @@ lmodel2(ddPCRmean_log~Countmean_log, data = hemo_ddPCRCompare)
 #nonsignificant effect of count.type.x on the relationship between ddpcrmean_log and countmean_log
 scopehemo_ddPCRCompare$count.type.x<-as.factor(scopehemo_ddPCRCompare$count.type.x)
 lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)
-
-
-
 ```
 
 Right plot: logged10 plot   
@@ -650,6 +653,14 @@ AH- Ideally, I want to plot the 95% confidence intervales on the regression line
 
 See what I did with adding two more geom_abline's. Since you want it to be sloped, geom_line wont work. Now you can go an edit the "intercept" to match your confidence intervals. I just set them to +- 1 for visualization. - AH  
 ```{r}
+
+#so in order to plot the confidence intervals, you have to use this: 
+test<-lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)
+plot(test)
+#since this is a base R function you would have to look up how to do the colaration, etc. that you want. The blue lines are your confidence intervals 
+
+
+
 ##### THIS IS THE ONE YOU WANT
 
 #figure out how to map 50% conf interval
