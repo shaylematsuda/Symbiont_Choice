@@ -626,6 +626,16 @@ lmodel2(ddPCRmean_log~Countmean_log, data = scope_ddPCRCompare)
 hemo_ddPCRCompare<-subset(scopehemo_ddPCRCompare, count.type.x=="hemo")
 lmodel2(ddPCRmean_log~Countmean_log, data = hemo_ddPCRCompare)
 
+
+
+
+
+
+
+## WORKING ON - how to do ANCOVA with model2
+
+
+
 #last test: ddpcrmean_log~countmean_log+countmean_log:count.type.x
 #nonsignificant effect of count.type.x on the relationship between ddpcrmean_log and countmean_log
 scopehemo_ddPCRCompare$count.type.x<-as.factor(scopehemo_ddPCRCompare$count.type.x)
@@ -657,7 +667,7 @@ theme_classic()+
    geom_abline(intercept = 1.2, slope = .94, color = "red", linetype = "dashed")+
    geom_abline(intercept = -1.2, slope = .94, color = "red", linetype = "dashed")
 
-#geom_line(aes(y = .73), color = "red", linetype = "dashed")+
+#geom_line(aes(y = .73), color = "red", linetype = "dashed")+ 
     #geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
   
  #stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm"), linetype = 2)+
@@ -705,7 +715,7 @@ G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*0.94) #conve
 G3Full<-rbind(G3FullddPCR,G3Fullscopehemo) #rebind with ddPCR
 G3Full$cells.larvae_counts<-(10^G3Full$cells.larvae_log)-1  #converted all log back to Raw counts
 G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
-
+ 
 ```
 
 
