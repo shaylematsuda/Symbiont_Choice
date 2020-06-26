@@ -715,7 +715,7 @@ G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*0.94) #conve
 G3Full<-rbind(G3FullddPCR,G3Fullscopehemo) #rebind with ddPCR
 G3Full$cells.larvae_counts<-(10^G3Full$cells.larvae_log)-1  #converted all log back to Raw counts
 G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
- 
+  
 ```
 
 
@@ -1955,8 +1955,8 @@ G3heat<-heatmap.2(G3mat_data2,
 
 
 #Multi-infection
-**Use only Relabundance for within larvae comparisons, use Raw for comparision with Single infections **  
-df: ALL_9000b (has larvae removed where not all clades amped in each individual)  
+**Use only Relabundance for within larvae comparisons, use Raw for comparision with Single infections **    
+df: ALL_9000b (has larvae removed where not all clades amped in each individual)   
 Binomial - A. did the larvae infect at all? with anything, or B. did each individual clade infect    
 #A. Binomial. Did larvae infect or not, by clade and overall. Plots and comparison models singe v multi
 ```{r}    
@@ -3176,7 +3176,7 @@ Dom31<-subset(DomAll, Temp==31)
   dispersion_glmer(Dom31_mod)  #no overdispersion
 ```
 
-##Multi infection, relative abundance. What is the rel abund of each clade infected
+#Multi infection, relative abundance. What is the rel abund of each clade infected
 setup df
 ```{r} 
 #calc relative abundance for each 
@@ -3249,7 +3249,7 @@ cld(emm)
 ```
 Plot RA as stacked bar plots by Day and then by temp 
 
-By temps - line chart good (also show bar plot just in case)
+By temps - line chart good (also show bar plot just in case) 
 ```{r}  
 relabund_27<-subset(ALL_RelA_b, Temp=="27")
 relabund_30<-subset(ALL_RelA_b, Temp=="30")
@@ -3441,6 +3441,8 @@ ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
 ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
 grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 ``` 
+
+
 #NMDS
 ```{r}
 set.seed(2)
@@ -4534,7 +4536,7 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 ```
 
 
-## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades)
+## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades) 
 MultiCounts2=df (multi including all samples that amped (not trimmed))
 C1 
 ```{r}
@@ -4766,7 +4768,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 
 
 
-## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades REMOVED!!!)
+# Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades REMOVED!!!)
 MultiCounts2=df (multi including all samples that amped (not trimmed))
 ```{r}
 MultiCounts3<-subset(MultiCounts2, cells.larvae_round>0)   #subset only infected
@@ -5175,7 +5177,7 @@ pairs(emm)
 ```
 
 #Multi_raw counts full and by-clade for comparison (you said you don't want to use for main analysis)
-```{r}
+```{r} 
 #Full model MULTI only 
 CountsCompare_multi<-subset(CountsCompare, single.multi=="multi")
 CountsCompare_multi_mod<-lmer(cells.larvae_log~Temp*Day*Symbiont+(1|PotCode),CountsCompare_multi)
