@@ -2996,16 +2996,20 @@ DomAll_30_D7_waffle_plot<-DomAll_30_D7_waffle_plot+ theme(legend.position = "non
 DomAll_30_D14_waffle_plot<-DomAll_30_D14_waffle_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(DomAll_30_D3_waffle_plot,DomAll_30_D7_waffle_plot,DomAll_30_D14_waffle_plot,nrow =3 )
 
+#31 D3:
+aggregate(Win.lose ~ clade, data = DomAll_31_D3, sum) #figure out how many times each clade won by date/temp
+DomAll_31_D3_waffle <- c(C1=2, D1=4, F1=2, G3=29)
+DomAll_31_D3_waffle_plot<-waffle(DomAll_31_D3_waffle, rows=4, colors=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF")); DomAll_31_D3_waffle_plot 
+ 	
+ #31 D7
+aggregate(Win.lose ~ clade, data = DomAll_31_D7, sum) #figure out how many times each clade won by date/temp
+DomAll_31_D7_waffle <- c(C1=0, D1=1, F1=1, G3=5)
+DomAll_31_D7_waffle_plot<-waffle(DomAll_31_D7_waffle, rows=4, colors=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF")); DomAll_31_D7_waffle_plot 
 
-
-
+DomAll_31_D3_waffle_plot<-DomAll_31_D3_waffle_plot+ theme(legend.position = "none") #remove legend
+DomAll_31_D7_waffle_plot<-DomAll_31_D7_waffle_plot+ theme(legend.position = "none") #remove legend
+grid.arrange(DomAll_31_D3_waffle_plot,DomAll_31_D7_waffle_plot,nrow =3 )
 ```
-
-
-
-
-
-
 stats:
 ```{r} 
  #rename Pot interaction as a code: Pot_Temp
@@ -3042,6 +3046,66 @@ Dom31<-subset(DomAll, Temp==31)
   dispersion_glmer(Dom31_mod)  #no overdispersion
 ```
 
+Plot: Made in Affinity!
+Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect.
+```{r}
+#numb clades df:ALL_RelA_Infect
+ALL_RelA_Infect_2<-select(ALL_RelA_Infect, "ALL.number","numclade") #keep only cols you want
+
+#winning clade df: Dom
+Dom_2<-select(Dom, "Day", "Temp", "ALL.number","Pot","clade") #keep only cols you want
+
+#combine
+Win_Num<- merge(ALL_RelA_Infect_2,Dom_2, by="ALL.number")
+
+#Subset into Day/temp groups
+Win_Num_27<-subset(Win_Num, Temp==27)
+Win_Num_30<-subset(Win_Num, Temp==30)
+Win_Num_31<-subset(Win_Num, Temp==31)
+
+#subset into days by temp, calc num clades winner in each infection group
+Win_Num_27_D3<-subset(Win_Num_27, Day==3)
+  Win_Num_27_D3 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+  
+Win_Num_27_D7<-subset(Win_Num_27, Day==7)
+ Win_Num_27_D7 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+ 
+Win_Num_27_D14<-subset(Win_Num_27, Day==14)
+ Win_Num_27_D14 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+ 
+#30C
+Win_Num_30_D3<-subset(Win_Num_30, Day==3)
+ Win_Num_30_D3 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+Win_Num_30_D7<-subset(Win_Num_30, Day==7)
+Win_Num_30_D7 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+
+Win_Num_30_D14<-subset(Win_Num_30, Day==14)
+Win_Num_30_D14 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+
+#31C
+Win_Num_31_D3<-subset(Win_Num_31, Day==3)
+Win_Num_31_D3 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+
+Win_Num_31_D7<-subset(Win_Num_31, Day==7)
+Win_Num_31_D7 %>%                     
+   group_by(numclade, clade) %>%
+   tally()
+
+```
 
 #Multi infection: relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
