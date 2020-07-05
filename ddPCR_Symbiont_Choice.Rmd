@@ -627,11 +627,22 @@ Right plot: logged10 plot
 AH- Ideally, I want to plot the 95% confidence intervales on the regression line. But since I tell am manually entering the info, the confidence intervales are showing up wrong. Ideas? 
 
 See what I did with adding two more geom_abline's. Since you want it to be sloped, geom_line wont work. Now you can go an edit the "intercept" to match your confidence intervals. I just set them to +- 1 for visualization. - AH  
-```{r}
+```{r} 
 
 #so in order to plot the confidence intervals, you have to use this: 
-test<-lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)
+test<-lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)   #  We can't run an anova on this? right?
 plot(test)
+plot(test, "MA")
+
+ 
+
+#the is the ggplot lm version...not exactly what we want
+ggplot(data = scopehemo_ddPCRCompare) + 
+  geom_point(aes(x = Countmean_log, y = ddPCRmean_log), size = 2) +
+  geom_smooth(aes(x = Countmean_log, y = ddPCRmean_log), method = 'lm', alpha = 0.35) +
+  labs(x = "counts", y ="ddPCR", title = "") +
+  theme_bw()
+
 #since this is a base R function you would have to look up how to do the colaration, etc. that you want. The blue lines are your confidence intervals 
 
 
@@ -659,10 +670,16 @@ theme_classic()+
  #stat_ellipse(aes(x=Countmean, y=ddPCRmean, aes(fill=Symbiont)),type = "norm"), linetype = 2)+
 #stat_ellipse(geom = "polygon", alpha = 1/4, level=0.5,aes(fill = Symbiont)) # alpha lets you choose confidence interval for ellipse
 
+
+
+##lm ddpcrmean_log~countmean_log+countmean_log:count.type.x
+CountsMOD<-lm(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x,data = scopehemo_ddPCRCompare)
+anova(CountsMOD)
+
 ```
 
 Apply hemo.scope conversion and remake df with raw counts
-```{r}
+```{r} 
 #Convert Scope/hemo data, remake df with ddPCR data. Make new col with "raw" counts post conversion of logs
 #C1
 C1FullddPCR<-subset(C1Full, count.type=="ddPCR")
@@ -705,6 +722,8 @@ G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
 ```
 
 
+
+
 #Single Infection: Binomial: Did a larvae infect (Y/N)
 dfs: C1Full, D1Full, F1Full, G3Full
 Questions: 
@@ -714,7 +733,7 @@ Questions:
 - At ambient temperature, I hypothesize that C1 will be the most successful, and D1 at high temps. I predict that within each genus, infection rate will grow over time. 
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
-```{r} 
+```{r}   
 BinaryInfect<-rbind(C1Full,D1Full, F1Full, G3Full)  # make new df for binary infection
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_round>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_round==0]<-0
@@ -740,8 +759,8 @@ dispersion_glmer(Binary_mod) # no overdispersion
 ```
 
 By clade: infection ~ Temp*Day
-```{r}
-#by clade: 
+```{r} 
+#by clade:  
 #C1
   Binary_C1<-subset(BinaryInfect, Symbiont=="C1")
   Binary_C1_mod<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", Binary_C1)
@@ -775,7 +794,7 @@ By clade: infection ~ Temp*Day
 
 Plot: Clade by temp/time:
 C1
-```{r}  
+```{r}    
 Infect_N_mean_C1 <- ddply(Binary_C1, c("Symbiont", "Temp","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -794,11 +813,12 @@ C1_Infect_plot<-ggplot(data=Infect_N_mean_C1, aes(x=Day.num, y=mean, group = Tem
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    #scale_y_log10()+
        #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
@@ -816,7 +836,7 @@ C1_Infect_plot<-ggplot(data=Infect_N_mean_C1, aes(x=Day.num, y=mean, group = Tem
 ```
 D1 
 ```{r} 
-#D1 
+#D1  
  
 
 Infect_N_mean_D1 <- ddply(Binary_D1, c("Symbiont", "Temp","Day"), summarise, #summarize cell counts
@@ -838,11 +858,12 @@ D1_Infect_plot<-ggplot(data=Infect_N_mean_D1, aes(x=Day.num, y=mean, group = Tem
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    #scale_y_log10()+
        #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
@@ -862,7 +883,7 @@ D1_Infect_plot<-ggplot(data=Infect_N_mean_D1, aes(x=Day.num, y=mean, group = Tem
 F1 
 ```{r} 
 #F1
-
+ 
 
 Infect_N_mean_F1 <- ddply(Binary_F1, c("Symbiont", "Temp","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -883,11 +904,12 @@ F1_Infect_plot<-ggplot(data=Infect_N_mean_F1, aes(x=Day.num, y=mean, group = Tem
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    #scale_y_log10()+
        #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
@@ -905,7 +927,7 @@ F1_Infect_plot<-ggplot(data=Infect_N_mean_F1, aes(x=Day.num, y=mean, group = Tem
 ```
 G3 
 ```{r}    
-#G3
+#G3 
 
 Infect_N_mean_G3 <- ddply(Binary_G3, c("Symbiont", "Temp","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -927,10 +949,11 @@ G3_Infect_plot<-ggplot(data=Infect_N_mean_G3Test, aes(x=Day.num, y=mean, group =
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Temp), size=4, show.legend = T)+  
-  geom_line(aes(color=Temp))+
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   ylim(0,1) + #set Y limits
    #scale_y_log10()+
        #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
@@ -961,7 +984,7 @@ grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot, nrow
 
 
 Stats: By Temperature: at each temp, which clade infects the best?
-```{r}
+```{r}  
 #by Temp: 
 
 #27C
@@ -996,7 +1019,7 @@ Stats: By Temperature: at each temp, which clade infects the best?
 ```
 Plots: Binary infection clade compare by Temp
 ```{r}
-#27C 
+#27C  
   
 Infect_N_mean_27 <- ddply(Binary_27C, c("Symbiont","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -1019,13 +1042,13 @@ Infect_N_mean_27$Symbiont <- ordered(Infect_N_mean_27$Symbiont , levels = c("C1"
 Infect_27_plot<-ggplot(data=Infect_N_mean_27, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
-  geom_line(aes(color=Symbiont))+
-    #scale_color_manual(values=c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#3C5488B2"))+
-  scale_color_locuszoom()+ #color pallete
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1037,7 +1060,7 @@ Infect_27_plot<-ggplot(data=Infect_N_mean_27, aes(x=Day.num, y=mean, group = Sym
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) + 
  ggtitle("27C")+ 
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Infect_27_plot
+  theme(plot.title = element_text(size=20,  hjust=0.5));Infect_27_plot
 
 
 
@@ -1064,13 +1087,13 @@ Infect_N_mean_30$Symbiont <- ordered(Infect_N_mean_30$Symbiont , levels = c("C1"
 Infect_30_plot<-ggplot(data=Infect_N_mean_30, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
-  geom_line(aes(color=Symbiont))+
-    #scale_color_manual(values=c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#3C5488B2"))+
-  scale_color_locuszoom()+ #color pallete
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1082,7 +1105,7 @@ Infect_30_plot<-ggplot(data=Infect_N_mean_30, aes(x=Day.num, y=mean, group = Sym
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) + 
  ggtitle("30C")+ 
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Infect_30_plot
+  theme(plot.title = element_text(size=20, hjust=0.5));Infect_30_plot
 
 
 #31
@@ -1107,13 +1130,13 @@ Infect_N_mean_31$Symbiont <- ordered(Infect_N_mean_31$Symbiont , levels = c("C1"
 Infect_31_plot<-ggplot(data=Infect_N_mean_31, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
-  geom_line(aes(color=Symbiont))+
-    #scale_color_manual(values=c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#3C5488B2"))+
-  scale_color_locuszoom()+ #color pallete
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
-    scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1125,14 +1148,18 @@ Infect_31_plot<-ggplot(data=Infect_N_mean_31, aes(x=Day.num, y=mean, group = Sym
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) + 
  ggtitle("31C")+ 
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Infect_31_plot
+  theme(plot.title = element_text(size=20,  hjust=0.5));Infect_31_plot
 
 
-#log scale axis only 
+#combine plots
 Infect_27_plot<-Infect_27_plot+ theme(legend.position = "none") #remove legend
 Infect_30_plot<-Infect_30_plot+ theme(legend.position = "none") #remove legend
 Infect_31_plot<-Infect_31_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 1)
+
+
+#combine By clade plots and by temp plots in 2 row figure
+grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot,Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 2)
 
 ```
 
@@ -1142,9 +1169,9 @@ grid.arrange(Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 1)
 
   
 #PLOT SINGLE INFECTIONS (count data) With 0s included!!!!!! 
- 
-Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
   
+Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
+   
 C1 single infection plot  
 ```{r}      
 C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
@@ -1166,14 +1193,13 @@ C1Full_mean$Day.num[C1Full_mean$Day.num == 1] =3
 C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  #ylim(0,2000) + #set Y limits
-   #scale_y_log10()+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
-    scale_x_continuous(breaks=seq(0, 14, 2))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1183,7 +1209,7 @@ C1Full_plot_9000<-ggplot(data=C1Full_mean, aes(x=Day.num, y=mean, group = Temp, 
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste(""))) +
+  ylab(expression(paste("cells/larvae"))) +
   ggtitle("Cladocopium")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));C1Full_plot_9000
 ``` 
@@ -1209,14 +1235,13 @@ D1Full_mean$Day.num[D1Full_mean$Day.num == 1] =3
 D1Full_plot_9000<-ggplot(data=D1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  #ylim(0,2000) + #set Y limits
-   #scale_y_log10()+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
-    scale_x_continuous(breaks=seq(0, 14, 2))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1239,7 +1264,7 @@ F1Full_mean <- ddply(F1Full, c("Day", "Temp"), summarise, #summarize cell counts
                  sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
- 
+  
 F1Full_mean #display table
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
@@ -1252,14 +1277,13 @@ F1Full_mean$Day.num[F1Full_mean$Day.num == 1] =3
 F1Full_plot_9000<-ggplot(data=F1Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+ geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  #ylim(0,2000) + #set Y limits
-   #scale_y_log10()+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
-    scale_x_continuous(breaks=seq(0, 14, 2))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1283,7 +1307,7 @@ G3Full_mean <- ddply(G3Full, c("Day", "Temp"), summarise, #summarize cell counts
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
  
-G3Full_mean #display table
+G3Full_mean #display table 
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
 G3Full_mean$Day.num<-as.numeric(G3Full_mean$Day)
@@ -1295,14 +1319,13 @@ G3Full_mean$Day.num[G3Full_mean$Day.num == 1] =3
 G3Full_plot_9000<-ggplot(data=G3Full_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Temp), size=4, show.legend = T)+ 
-  geom_line(aes(color=Temp))+
+ geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
   scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  #ylim(0,2000) + #set Y limits
-   #scale_y_log10()+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
-    scale_x_continuous(breaks=seq(0, 14, 2))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1355,7 +1378,7 @@ cld(emm)
  
 C1 single  
 ```{r}
-#C1    
+#C1     
 Singles_C1<-subset(Singles, Symbiont=="C1")
 C1mod<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_C1)
 anova(C1mod)
@@ -1386,7 +1409,7 @@ pairs(emm)
 
 emm<-emmeans(D1mod,  ~ Temp |Day, adjust="Tukey")
 cld(emm)
-pairs(emm)
+pairs(emm) 
 ```
 F1 singles  
 ```{r} 
@@ -1479,10 +1502,9 @@ ggplot(AllSing_D14, aes(x = Temp,
   
   
   
-
-#Single Infection: Fig 1: Heat maps, by clade (temp x time
+#Single Infection: Fig 1: Heat maps, by clade (temp x time)  
 https://sebastianraschka.com/Articles/heatmaps_in_r.html
-Individual clades heatmaps SINGLE, C1Full 0s NOT REMOVED, dfs: C1Full, D1Full, F1Full, G3Full
+Individual clades heatmaps SINGLE, C1Full 0s NOT REMOVED, dfs: C1Full, D1Full, F1Full, G3Full 
 ```{r} 
 Hist1<-hist(C1Full$cells.larvae_log)
 Hist2<-hist(D1Full$cells.larvae_log)
@@ -1967,7 +1989,7 @@ G3_binary_Multi_plot<-ggplot(data=RelA_binary_G3_mean, aes(x=Day.num, y=mean, gr
 ```
 
 Figure X. Plot all mutli infection by clade alone
-```{r} 
+```{r}  
 C1_binary_Multi_plot<-C1_binary_Multi_plot+ theme(legend.position = "none") #remove legend
 D1_binary_Multi_plot<-D1_binary_Multi_plot+ theme(legend.position = "none") #remove legend
 F1_binary_Multi_plot<-F1_binary_Multi_plot+ theme(legend.position = "none") #remove legend
@@ -1977,9 +1999,9 @@ grid.arrange(C1_binary_Multi_plot,D1_binary_Multi_plot,F1_binary_Multi_plot,G3_b
 ```
 
 Plot Single and Multi Binomial infection plots 4x4 
-```{r}
+```{r} 
 library(cowplot)
-
+ 
 Counts_compare_singmult<-plot_grid(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plot_9000,C1_Infect_plot, D1_Infect_plot,F1_Infect_plot, G3_Infect_plot, C1_binary_Multi_plot, D1_binary_Multi_plot,F1_binary_Multi_plot,G3_binary_Multi_plot, labels = "AUTO", ncol=4, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);Counts_compare_singmult
 
 #add common x and y axis labels
@@ -2098,7 +2120,7 @@ cld(emm)
 ```
 
 C1 Single v Multi
-```{r} 
+```{r}  
 #Singel vs Multi 
 
 #model SINGLE vs MULTI
@@ -2209,7 +2231,7 @@ grid.arrange(C1_binary_SinMul_plot_27, C1_binary_SinMul_plot_30, C1_binary_SinMu
 
 ```
 D1 Single v Multi 
-```{r}
+```{r} 
 D1_binary_SinMul<-rbind(RelA_binary_D1, Binary_D1_binary)  
 D1_binary_SinMul$Infect<-as.factor(D1_binary_SinMul$Infect)
 D1_binary_SinMul$Symbiont<-as.factor(D1_binary_SinMul$Symbiont)
@@ -2571,7 +2593,7 @@ NumClades_27<-subset(NumClades3, Temp==27)
 # barplot 
 Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
             #scale_fill_locuszoom()+
    xlab("Day")+
  theme_bw() + #Set the background color
@@ -2595,7 +2617,7 @@ NumClades_30<-subset(NumClades, Temp==30)
 #plot
 Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2615,7 +2637,7 @@ NumClades_31<-subset(NumClades, Temp==31)
 #plot
 Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2819,7 +2841,7 @@ grid.arrange(NumClades2a_27_D3_wafflePLOT,NumClades2a_27_D7_wafflePLOT,NumClades
 
 
 
-##C Who was the most dominant clade in larvave. 
+#C Who was the most dominant clade in larvave. 
 This is in line plots: see below for waffles. 
 ```{r}     
 #df ALL_RelA
@@ -2877,6 +2899,26 @@ domAll_27_plot<-ggplot(data=Dom27mean, aes(x=Day, y=mean, group = clade, color=c
   ggtitle("27C Dom Symbiont")+
   theme(plot.title = element_text(size=20));domAll_27_plot
 
+# barplot 27
+domAll_27_BARplot<-ggplot(Dom27mean, aes(y=mean, x=Day, fill=clade)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("27C");domAll_27_BARplot   
+
+
+
 #30C
 Dom30mean<-subset(DomAll_mean, Temp==30)
 #plot
@@ -2900,6 +2942,25 @@ domAll_30_plot<-ggplot(data=Dom30mean, aes(x=Day, y=mean, group = clade, color=c
   ylab(expression(paste("% larvae"))) +
   ggtitle("30C Dom Symbiont")+
   theme(plot.title = element_text(size=20));domAll_30_plot
+
+
+# barplot 30
+domAll_30_BARplot<-ggplot(Dom30mean, aes(y=mean, x=Day, fill=clade)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("27C");domAll_30_BARplot   
 
 
 #31C
@@ -2926,12 +2987,35 @@ domAll_31_plot<-ggplot(data=Dom31mean, aes(x=Day, y=mean, group = clade, color=c
   ggtitle("31C Dom Symbiont")+
   theme(plot.title = element_text(size=20));domAll_31_plot
 
+# barplot 31
+domAll_31_BARplot<-ggplot(Dom31mean, aes(y=mean, x=Day, fill=clade)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("27C");domAll_31_BARplot   
 
 
-#plot all together
+#plot all together line
 domAll_27_plot<-domAll_27_plot+ theme(legend.position = "none") #remove legend
 domAll_30_plot<-domAll_30_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(domAll_27_plot, domAll_30_plot,domAll_31_plot, nrow = 1)
+
+
+#plot all together Bar
+domAll_27_BARplot<-domAll_27_BARplot+ theme(legend.position = "none") #remove legend
+domAll_30_BARplot<-domAll_30_BARplot+ theme(legend.position = "none") #remove legend
+grid.arrange(domAll_27_BARplot, domAll_30_BARplot,domAll_31_BARplot, nrow = 1)
 ```     
 
 Waffle chart (same data as above): each square represents one larvae (color is by most dom clade in each larvae)
@@ -3046,8 +3130,8 @@ Dom31<-subset(DomAll, Temp==31)
   dispersion_glmer(Dom31_mod)  #no overdispersion
 ```
 
-Plot: Made in Affinity!
-Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect.
+Plot: Made in Affinity! This plot shows each square = 1 larvae and the blue scale represents how many clades infected it, the small color square indicates the dominant clade in the larvae. 
+Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect. 
 ```{r}
 #numb clades df:ALL_RelA_Infect
 ALL_RelA_Infect_2<-select(ALL_RelA_Infect, "ALL.number","numclade") #keep only cols you want
@@ -3109,9 +3193,9 @@ Win_Num_31_D7 %>%
 
 #Multi infection: relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
-setup df
-```{r} 
-#calc relative abundance for each 
+setup df  
+```{r}  
+#calc relative abundance for each  
 ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
@@ -3125,9 +3209,9 @@ colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="variable"]<-"Symbiont" #rename value
 ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
 ``` 
 
-Relative abundance Stats, df ALL_RelA_b 
+Stats: Relative abundance, df = ALL_RelA_b 
 ```{r}
-
+ 
 #Full model 
 hist(ALL_RelA_b$cells.larvae)
 ALL_RelA_b$cells.larvae_log<-log10(ALL_RelA_b$cells.larvae+1)
@@ -3137,8 +3221,8 @@ hist(ALL_RelA_b$cells.larvae_arc)
 qqnorm(ALL_RelA_b$cells.larvae_arc) #
 ALL_RelA_b$cells.larvae_sq<-sqrt(ALL_RelA_b$cells.larvae)
 hist(ALL_RelA_b$cells.larvae_sq)
-qqnorm(ALL_RelA_b$cells.larvae_sq) #
-
+qqnorm(ALL_RelA_b$cells.larvae_sq) # 
+ 
 
  ALL_RelA_b$PotCode<-paste0(ALL_RelA_b$Temp, ALL_RelA_b$Pot,ALL_RelA_b$clade )
  ALL_RelA_b$PotCode<-as.factor(ALL_RelA_b$PotCode) #make factor#none are good 
@@ -3182,13 +3266,27 @@ cld(emm)
 Plot RA as stacked bar plots by Day and then by temp 
 
 By temps - line chart good (also show bar plot just in case) 
-```{r}  
+```{r}   
+library(RColorBrewer)
+display.brewer.pal(n = 9, name = 'YlOrBr')
+brewer.pal(9, 'YlOrBr')
+
+
+#Blue #1D91C0" 
+#Green "#41AB5D"
+#Yellow "#FEC44F"
+#Red "#993404"
+
+ALL_RelA_b$Day2<-ALL_RelA_b$Day #change Day to numeric for plots
+ALL_RelA_b$Day2<-as.character(ALL_RelA_b$Day2)
+ALL_RelA_b$Day2<-as.numeric(ALL_RelA_b$Day2)
+
 relabund_27<-subset(ALL_RelA_b, Temp=="27")
 relabund_30<-subset(ALL_RelA_b, Temp=="30")
 relabund_31<-subset(ALL_RelA_b, Temp=="31")
  
 #27 
-ALL_RelA_27_mean <- ddply(relabund_27, c("Day","Symbiont"), summarise, #summarize cell counts
+ALL_RelA_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -3201,34 +3299,8 @@ ALL_RelA_27_mean #display table
 ALL_RelA_27_mean$mean100<-ALL_RelA_27_mean$mean*100
 ALL_RelA_27_mean$mean100r<-round(ALL_RelA_27_mean$mean100, digits = 0)
  
- #line plot
- ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
-  geom_line(aes(color=Symbiont))+
-            scale_color_locuszoom()+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("27C_RelAbund")+
-  theme(plot.title = element_text(size=20));ALL_STP_27_line
-            
-``` 
-
-30C - ALL relative abundance stacked bar
-```{r}  
-#30C means  
-ALL_RelA_30_mean <- ddply(relabund_30, c("Day", "Symbiont"), summarise, #summarize cell counts
+ #30C means  
+ALL_RelA_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -3241,33 +3313,9 @@ ALL_RelA_30_mean #display table
 ALL_RelA_30_mean$mean100<-ALL_RelA_30_mean$mean*100
 ALL_RelA_30_mean$mean100r<-round(ALL_RelA_30_mean$mean100, digits = 1)
 
-#line plot
- ALL_STP_30_line<-ggplot(data=ALL_RelA_30_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
-  geom_line(aes(color=Symbiont))+
-            scale_color_locuszoom()+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance (%)"))) +
-  ggtitle("30C_RelAbund")+
-  theme(plot.title = element_text(size=20));ALL_STP_30_line
-            
-```
-31C - ALL relative abundance stacked bar
-```{r} 
-#31C means
-ALL_RelA_31_mean <- ddply(relabund_31, c("Day", "Symbiont"), summarise, #summarize cell counts
+
+#31C
+ALL_RelA_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                   mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
@@ -3278,18 +3326,123 @@ ALL_RelA_31_mean #display table
 
 #round to nearest integer
 ALL_RelA_31_mean$mean100<-ALL_RelA_31_mean$mean*100
-ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 0)
+ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 0)  
  
+ #stacked bar plots
+ #27
+ relabund_27_D3<-subset(relabund_27, Day2==3)
+ relabund_27_D3_plot <-ggplot(data=relabund_27, aes(x=Day, y=cells.larvae, group = interaction(Day,Symbiont), color=Symbiont))+
+   geom_boxplot(width=0.5,aes(color = Symbiont))+ 
+   theme_classic()+
+  # geom_jitter(aes(color = Symbiont, shape = Symbiont), position = position_jitter(0.2)) +
+   geom_point(position=position_jitterdodge(),alpha=0.3) +
+     scale_color_manual(values = c("#D43F3AFF", "#EEA236FF", "#5CB85CFF","#46B8DAFF"));relabund_27_D3_plot
+ 
+ #30
+ relabund_30_D3_plot <-ggplot(data=relabund_30, aes(x=Day2, y=cells.larvae, group = interaction(Day,Symbiont), color=Symbiont))+
+   geom_boxplot(width=0.5,aes(color = Symbiont))+ 
+   theme_classic()+
+  # geom_jitter(aes(color = Symbiont, shape = Symbiont), position = position_jitter(0.2)) +
+   geom_point(position=position_jitterdodge(),alpha=0.3) +
+     scale_color_manual(values = c("#D43F3AFF", "#EEA236FF", "#5CB85CFF","#46B8DAFF"));relabund_30_D3_plot
 
-#line plot
- ALL_STP_31_line<-ggplot(data=ALL_RelA_31_mean, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
+  #31
+ relabund_31_D3_plot <-ggplot(data=relabund_31, aes(x=Day2, y=cells.larvae, group = interaction(Day,Symbiont), color=Symbiont))+
+   geom_boxplot(width=0.5,aes(color = Symbiont))+ 
+   theme_classic()+
+  # geom_jitter(aes(color = Symbiont, shape = Symbiont), position = position_jitter(0.2)) +
+   geom_point(position=position_jitterdodge(),alpha=0.3) +
+     scale_color_manual(values = c("#D43F3AFF", "#EEA236FF", "#5CB85CFF","#46B8DAFF"));relabund_31_D3_plot
+ 
+ 
+ #plot all together
+relabund_27_D3_plot<-relabund_27_D3_plot+ theme(legend.position = "none") #remove legend
+relabund_30_D3_plot<-relabund_30_D3_plot+ theme(legend.position = "none") #remove legend
+relabund_31_D3_plot<-relabund_31_D3_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(relabund_27_D3_plot, relabund_30_D3_plot,relabund_31_D3_plot, nrow = 1)
+
+
+
+
+### same but stacked bar
+
+# barplot 
+RelAbund27_plot<-ggplot(ALL_RelA_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund27_plot   
+
+RelAbund30_plot<-ggplot(ALL_RelA_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund30_plot
+
+RelAbund31_plot<-ggplot(ALL_RelA_31_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#46B8DAFF","#5CB85CFF","#EEA236FF","#D43F3AFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund31_plot
+
+ #plot all together
+RelAbund27_plot<-RelAbund27_plot+ theme(legend.position = "none") #remove legend
+RelAbund30_plot<-RelAbund30_plot+ theme(legend.position = "none") #remove legend
+RelAbund31_plot<-RelAbund31_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
+
+
+``` 
+
+ALL relative abundance Line plots
+```{r}   
+
+#27C line plot
+ ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
-  geom_point(aes(color=Symbiont), size=4, show.legend = T)+
-  geom_line(aes(color=Symbiont))+
-            scale_color_locuszoom()+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
   xlab("Days") + #Label the X Axis 
   ylim(0, 1) + #set Y limits 
+         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3299,10 +3452,65 @@ ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 0)
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance (%)"))) +
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("27C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_27_line
+
+#30C line plot
+ ALL_STP_30_line<-ggplot(data=ALL_RelA_30_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+          scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("30C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_30_line
+ 
+ #31C line plot
+ ALL_STP_31_line<-ggplot(data=ALL_RelA_31_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
   ggtitle("31C_RelAbund")+
   theme(plot.title = element_text(size=20));ALL_STP_31_line
-            
+     
+#plot all together
+ALL_STP_27_line<-ALL_STP_27_line+ theme(legend.position = "none") #remove legend
+ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
+ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
+
+grid.arrange(ALL_STP_27_line, ALL_STP_30_line,ALL_STP_31_line, nrow = 1)
+       
 ```
  
 Figure x. Plot all temps together (Rel Abund)
@@ -4030,11 +4238,11 @@ grid.arrange(C1Fulla_plot_9000, D1Fulla_plot_9000, F1Fulla_plot_9000,G3Fulla_plo
 ```
  
 # let's look at some plots of raw counts by single vs multi infection. Blue and pink plots
-C1  
+C1    
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected
 Counts, on log y-axis
-```{r}  
+```{r}   
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(1,5:8)] #remove metadata
@@ -4050,7 +4258,7 @@ MultiCounts2<-melt(MultiCounts2, id=c("Temp","Day","single.multi","Pot"))
 colnames(MultiCounts2)[colnames(MultiCounts2)=="value"]<-"cells.larvae_round" #rename value col
 colnames(MultiCounts2)[colnames(MultiCounts2)=="variable"]<-"Symbiont" #rename value col
 
-SingleCounts<-rbind(C1Fulla,D1Fulla,F1Fulla,G3Fulla)
+SingleCounts<-rbind(C1Full,D1Full,F1Full,G3Full)
 SingleCounts<-SingleCounts[-c(5:10)] #remove metadata
 SingleCounts$single.multi<-"single"
 
@@ -4088,7 +4296,7 @@ CountsCompare_mean_31<-subset(CountsCompare_mean, Temp=="31")
 
 subset by Symbiont plots
 C1: 27C
-```{r}     
+```{r}      
 #subset C1 
 CountsCompare_C1_27<-subset(CountsCompare_mean_27, Symbiont=="C1")
  
@@ -4463,7 +4671,7 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
  
 Plot Single and Multi raw counts infection plots 4x2  
 ```{r} 
-  
+   
 InfectRaw_Fig1<-plot_grid(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);InfectRaw_Fig1 
 
 #add common x and y axis labels
@@ -4477,6 +4685,174 @@ InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom =
 #save
 ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
 ```
+
+Plot comparing cell counts of individual infection vs total for multi (all clades totaled)
+
+Use ALLcast_9000_cast2b = relabund (data for all clades in single larvae)
+```{r}
+#organize multi infection df
+Competition<-ALLcast_9000_cast2b
+Competition$code<-paste0(Competition$Day, "_", Competition$Temp,"_", Competition$Pot) #code
+Competition$totalcells<-Competition$C1+Competition$D1+Competition$F1+Competition$G3
+Competition$cells.larvae_log<-log10(Competition$totalcells+1)
+Competition2<-Competition[-c(1,5:8)]  
+Competition2$Symbiont<-"All"  #cerate Symbiont column with "All"
+Competition2$cells.larvae_round<-Competition2$totalcells
+Competition2<-Competition2[-c(5)]  
+
+#organize Single df
+SingleCounts2<-rbind(C1Full,D1Full, F1Full, G3Full)
+SingleCounts2$code<-paste0(SingleCounts2$Day, "_", SingleCounts2$Temp,"_", SingleCounts2$Pot) #code
+SingleCounts2<-SingleCounts2[-c(5:7,9)]  
+SingleCounts2$cells.larvae_round<-SingleCounts2$cells.larvae_counts_round
+SingleCounts2<-SingleCounts2[-c(6)] 
+#combine single and multi 
+CompetitionSingle<-rbind(SingleCounts2,Competition2)
+
+#MEANs
+CompetitionSingle_mean <- ddply(CompetitionSingle, c("Temp","Day","Symbiont"), summarise, #summarize cell count
+                 N    = length(cells.larvae_round[!is.na(cells.larvae_round)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(cells.larvae_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(cells.larvae_round, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(cells.larvae_round, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+
+CompetitionSingle_mean #display table
+CompetitionSingle_mean<-na.omit(CompetitionSingle_mean)
+
+
+#make Day numeric
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+CompetitionSingle_mean$Day<-as.numeric(CompetitionSingle_mean$Day)
+CompetitionSingle_mean$Day[CompetitionSingle_mean$Day == 2] =7
+CompetitionSingle_mean$Day[CompetitionSingle_mean$Day == 3] =14
+CompetitionSingle_mean$Day[CompetitionSingle_mean$Day == 1] =3
+
+
+
+
+#subset by temp
+
+CompetitionSingle_27<-subset(CompetitionSingle_mean, Temp=="27")
+ CompetitionSingle_30<-subset(CompetitionSingle_mean, Temp=="30")
+CompetitionSingle_31<-subset(CompetitionSingle_mean, Temp=="31")
+
+#27C
+CompetitionSingle_27_plot<-ggplot(data=CompetitionSingle_27, aes(x=Day, y=mean, group=Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis
+         scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+#  ylab(expression(paste(italic("Cells/Larvae")))) +
+  ggtitle("27C")+
+  theme(plot.title = element_text(size=20, hjust=0.5));CompetitionSingle_27_plot
+
+#30C
+CompetitionSingle_30_plot<-ggplot(data=CompetitionSingle_30, aes(x=Day, y=mean, group=Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis
+         scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ylab(expression(paste(italic("Cells/Larvae")))) +
+  ggtitle("30C")+
+  theme(plot.title = element_text(size=20, hjust=0.5));CompetitionSingle_30_plot
+
+#31C
+CompetitionSingle_31_plot<-ggplot(data=CompetitionSingle_31, aes(x=Day, y=mean, group=Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+   geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis
+         scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+ # ylab(expression(paste(italic("Cells/Larvae")))) +
+  ggtitle("31C")+
+  theme(plot.title = element_text(size=20, hjust=0.5));CompetitionSingle_31_plot
+
+CompetitionSingle_27_plot<-CompetitionSingle_27_plot+ theme(legend.position = "none")
+CompetitionSingle_30_plot<-CompetitionSingle_30_plot+ theme(legend.position = "none")
+CompetitionSingle_31_plot<-CompetitionSingle_31_plot+ theme(legend.position = "none")
+#combine all plots
+plot_grid(CompetitionSingle_27_plot, CompetitionSingle_30_plot, CompetitionSingle_31_plot,  nrow=1)
+                                  
+
+#stats
+CompetitionSingle_27mod<-subset(CompetitionSingle, Temp=="27")
+CompetitionSingle_27mod$code<-as.factor(CompetitionSingle_27mod$code)
+
+CompetitionSingle_27_mod<-lmer(totalcells_log~Day*Symbiont+(1|code),CompetitionSingle_27mod)
+anova(CompetitionSingle_27_mod)
+qqPlot(residuals(CompetitionSingle_27_mod))   # good
+  emm<-emmeans(CompetitionSingle_27_mod,  ~ Symbiont|Day, adjust="Tukey") 
+cld(emm)
+
+CompetitionSingle_30mod<-subset(CompetitionSingle, Temp=="30")
+CompetitionSingle_30mod$code<-as.factor(CompetitionSingle_30mod$code)
+
+CompetitionSingle_30_mod<-lmer(totalcells_log~Day*Symbiont+(1|code),CompetitionSingle_30mod)
+anova(CompetitionSingle_30_mod)
+qqPlot(residuals(CompetitionSingle_30_mod))   # good
+  emm<-emmeans(CompetitionSingle_30_mod,  ~ Symbiont|Day, adjust="Tukey") 
+cld(emm)
+
+
+#31  WE LOST TOO MANY VALUES AT D14. Don't run stats on it. 
+CompetitionSingle_31mod<-subset(CompetitionSingle, Temp=="31")
+CompetitionSingle_31mod<-subset(CompetitionSingle_31mod, Day==3 | Day==7)
+#remove <3 larvae groups
+#CompetitionSingle_31mod$code2<-paste0(CompetitionSingle_31mod$Day, "_", CompetitionSingle_31mod$Symbiont,"_") #MAKE NEW COde to get rid of single value on D14, ALL 31C#
+#ompetitionSingle_31mod<-CompetitionSingle_31mod[!(CompetitionSingle_31mod$code2=="14_All_"),] #remove it
+
+CompetitionSingle_31_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|code),CompetitionSingle_31mod)
+anova(CompetitionSingle_31_mod)
+qqPlot(residuals(CompetitionSingle_31_mod))   # good
+  emm<-emmeans(CompetitionSingle_31_mod,  ~ Symbiont|Day, adjust="Tukey") 
+cld(emm)
+
+```
+
 
 
 ## Individual clade heatmaps MUTLI INFECTION counts not relabund (with 0s for individual clades) 
@@ -4959,7 +5335,7 @@ cld(emm)
 
 ```
 C1, full mod, then by temp 
-```{r}
+```{r} 
 #C1 
 #full
 CountsCompare_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare_C1)
