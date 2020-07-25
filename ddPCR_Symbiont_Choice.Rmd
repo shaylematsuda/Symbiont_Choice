@@ -795,7 +795,7 @@ By clade: infection ~ Temp*Day
 
 Plot: Clade by temp/time:
 C1
-```{r}    
+```{r}     
 Infect_N_mean_C1 <- ddply(Binary_C1, c("Symbiont", "Temp","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -821,7 +821,6 @@ C1_Infect_plot<-ggplot(data=Infect_N_mean_C1, aes(x=Day.num, y=mean, group = Tem
   ylim(0,1) + #set Y limits 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    #scale_y_log10()+
-       #scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -1171,7 +1170,7 @@ grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot,Infec
   
 #Single-genus Infection: Plots: by clade,cell counts (count data, with 0s included) 
 C1 single infection plot  
-```{r}        
+```{r}         
 C1Full_mean <- ddply(C1Full, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -1349,7 +1348,7 @@ grid.arrange(C1Full_plot_9000, D1Full_plot_9000, F1Full_plot_9000,G3Full_plot_90
 ```
 
 
-#Single-genus infection: Models, log transformed
+#REMOVE Single-genus infection: Models, log transformed
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
 using log transformed! (Cells.larvae_log)  
 Single infections (histograms and full model) 
@@ -1494,10 +1493,359 @@ pairs(emm)
 ```
 
 
+
+
+#Single-genus infection_ZEROS REMOVED: Models, log transformed
+Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
+using log transformed! (Cells.larvae_log)  
+Single infections (histograms and full model) 
+```{r}      
+#REMOVE 0s
+
+C1Full_no0<-subset(C1Full, cells.larvae>0)
+D1Full_no0<-subset(D1Full, cells.larvae>0)
+F1Full_no0<-subset(F1Full, cells.larvae>0)
+G3Full_no0<-subset(G3Full, cells.larvae>0)
+
+
+hist(C1Full_no0$cells.larvae_log) # normal
+hist(D1Full_no0$cells.larvae_log) # normal
+hist(F1Full_no0$cells.larvae_log) # normal
+hist(G3Full_no0$cells.larvae_log) # normal
+
+Singles_no0<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0)
+hist(Singles_no0$cells.larvae_log) # normal 
+
+#rename Pot interaction as a code: Pot_Temp
+ Singles_no0$PotCode<-paste0(Singles_no0$Temp, Singles_no0$Pot,Singles_no0$Symbiont )
+ Singles_no0$PotCode<-as.factor(Singles_no0$PotCode) #make factor
+
+#Full model  
+## lmer  symbionts*days*temp
+Single_no0_all_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Singles_no0)
+anova(Single_no0_all_mod) 
+qqPlot(residuals(Single_no0_all_mod))   # good
+
+  emm<-emmeans(Single_no0_all_mod,  ~ Symbiont*Temp *Day, adjust="Tukey")
+cld(emm)
+```
+ 
+C1 single  
+```{r} 
+#C1     
+Singles_no0_C1<-subset(Singles_no0, Symbiont=="C1")
+C1mod_no0<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_no0_C1)
+anova(C1mod_no0)
+#summary(C1mod_no0) #for std err df and t
+qqPlot(residuals(C1mod_no0))   #  good
+
+#post hoc diff at each day
+ emm<-emmeans(C1mod_no0,  ~ Temp |Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+#post hoc within temp
+ emm<-emmeans(C1mod_no0,  ~ Day |Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+```
+D1 singles    
+```{r}
+#D1   
+Singles_no0_D1<-subset(Singles_no0, Symbiont=="D1")
+D1mod_no0<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_no0_D1)
+anova(D1mod_no0)
+#summary(D1mod) #for std err df and t
+qqPlot(residuals(D1mod_no0))   #  low end
+  emm<-emmeans(D1mod_no0,  ~ Day |Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+emm<-emmeans(D1mod_no0,  ~ Temp |Day, adjust="Tukey")
+cld(emm)
+pairs(emm) 
+```
+F1 singles  
+```{r}  
+#F1   
+Singles_no0_F1<-subset(Singles_no0, Symbiont=="F1")
+F1mod_no0<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_no0_F1)
+anova(F1mod_no0)
+#summary(F1mod) #for std err df and t
+qqPlot(residuals(F1mod_no0))   #  good
+  emm<-emmeans(F1mod_no0,  ~ Temp |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+emm<-emmeans(F1mod_no0,  ~ Day |Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+```
+G3 singles  
+```{r} 
+#G3   
+Singles_no0_G3<-subset(Singles_no0, Symbiont=="G3")
+G3mod_no0<-lmer(cells.larvae_log~Day*Temp+(1|PotCode), Singles_no0_G3)
+anova(G3mod_no0)
+#summary(G3mod) #for std err df and t
+qqPlot(residuals(G3mod_no0))   #  good
+  emm<-emmeans(G3mod_no0,  ~ Temp|Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+  emm<-emmeans(G3mod_no0,  ~ Day|Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+```
+
+Models by temp to compare genera:  
+27C
+```{r} 
+#27C    
+Singles_no0_27<-subset(Singles_no0, Temp=="27")
+Singles_no0_27_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|PotCode), Singles_no0_27)
+anova(Singles_no0_27_mod)
+#summary(C1mod) #for std err df and t
+qqPlot(residuals(Singles_no0_27_mod))   #  good
+
+#post hoc diff at each day
+ emm<-emmeans(Singles_no0_27_mod,  ~ Symbiont |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+```
+
+30
+```{r}
+#30C    
+Singles_no0_30<-subset(Singles_no0, Temp=="30")
+Singles_no0_30_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|PotCode), Singles_no0_30)
+anova(Singles_no0_30_mod)
+#summary(C1mod) #for std err df and t
+qqPlot(residuals(Singles_no0_30_mod))   #  good
+
+#post hoc diff at each day
+ emm<-emmeans(Singles_no0_30_mod,  ~ Symbiont |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+```
+
+31C
+```{r}
+#31C    
+Singles_no0_31<-subset(Singles_no0, Temp=="31")
+Singles_no0_31_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|PotCode), Singles_no0_31)
+anova(Singles_no0_31_mod)
+#summary(C1mod) #for std err df and t
+qqPlot(residuals(Singles_no0_31_mod))   #  good
+
+#post hoc diff at each day
+ emm<-emmeans(Singles_no0_31_mod,  ~ Symbiont |Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Single-genus Infection: ZEROS REMOVED Plots: by clade,cell counts (count data, with 0s included) 
+C1 single infection plot  
+```{r}         
+C1Full_no0_mean <- ddply(C1Full_no0, c("Day", "Temp"), summarise, #summarize cell counts
+                  N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+C1Full_no0_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+C1Full_no0_mean$Day.num<-as.numeric(C1Full_no0_mean$Day)
+C1Full_no0_mean$Day.num[C1Full_no0_mean$Day.num == 2] =7
+C1Full_no0_mean$Day.num[C1Full_no0_mean$Day.num == 3] =14
+C1Full_no0_mean$Day.num[C1Full_no0_mean$Day.num == 1] =3
+ 
+#plot with yaxis log10, real data (not transformed)
+C1Full_no0_plot_9000<-ggplot(data=C1Full_no0_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells/larvae"))) +
+  ggtitle("Cladocopium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));C1Full_no0_plot_9000
+``` 
+
+D1 single infection plot
+```{r}     
+D1Full_no0_mean <- ddply(D1Full_no0, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+D1Full_no0_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+D1Full_no0_mean$Day.num<-as.numeric(D1Full_no0_mean$Day)
+D1Full_no0_mean$Day.num[D1Full_no0_mean$Day.num == 2] =7
+D1Full_no0_mean$Day.num[D1Full_no0_mean$Day.num == 3] =14
+D1Full_no0_mean$Day.num[D1Full_no0_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+D1Full_no0_plot_9000<-ggplot(data=D1Full_no0_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Durusdinium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));D1Full_no0_plot_9000
+``` 
+
+F1 single infection  plot
+```{r}     
+F1Full_no0_mean <- ddply(F1Full_no0, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+  
+F1Full_no0_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+F1Full_no0_mean$Day.num<-as.numeric(F1Full_no0_mean$Day)
+F1Full_no0_mean$Day.num[F1Full_no0_mean$Day.num == 2] =7
+F1Full_no0_mean$Day.num[F1Full_no0_mean$Day.num == 3] =14
+F1Full_no0_mean$Day.num[F1Full_no0_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+F1Full_no0_plot_9000<-ggplot(data=F1Full_no0_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+ geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Fugacium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));F1Full_no0_plot_9000
+``` 
+
+G3 single infection plot
+```{r}     
+G3Full_no0_mean <- ddply(G3Full_no0, c("Day", "Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae_counts_round[!is.na(cells.larvae_counts_round)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae_counts_round, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae_counts_round, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae_counts_round, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+G3Full_no0_mean #display table 
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+G3Full_no0_mean$Day.num<-as.numeric(G3Full_no0_mean$Day)
+G3Full_no0_mean$Day.num[G3Full_no0_mean$Day.num == 2] =7
+G3Full_no0_mean$Day.num[G3Full_no0_mean$Day.num == 3] =14
+G3Full_no0_mean$Day.num[G3Full_no0_mean$Day.num == 1] =3
+
+#plot with yaxis log10, real data (not transformed)
+G3Full_no0_plot_9000<-ggplot(data=G3Full_no0_mean, aes(x=Day.num, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+ geom_point(aes(color=Temp), size=4, show.legend = T)+  
+  geom_line(aes(color=Temp),linetype="dotted")+
+  scale_color_manual(values=c("dodgerblue3", "darkorange", "darkred"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("Gerakladium")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));G3Full_no0_plot_9000
+``` 
+
+Plot all four SINGLE INFECTION together: Figure x
+```{r} 
+#log scale axis only 
+C1Full_no0_plot_9000<-C1Full_no0_plot_9000+ theme(legend.position = "none") #remove legend
+D1Full_no0_plot_9000<-D1Full_no0_plot_9000+ theme(legend.position = "none") #remove legend
+F1Full_no0_plot_9000<-F1Full_no0_plot_9000+ theme(legend.position = "none") #remove legend
+G3Full_no0_plot_9000<-G3Full_no0_plot_9000+ theme(legend.position = "none") #remove legend
+grid.arrange(C1Full_no0_plot_9000, D1Full_no0_plot_9000, F1Full_no0_plot_9000,G3Full_no0_plot_9000, nrow = 1)
+```
+
+
+
+
 #Single-genus Infection: Fig 1: Heat maps, by clade (temp x time)  
 https://sebastianraschka.com/Articles/heatmaps_in_r.html 
 Individual clades heatmaps SINGLE, C1Full 0s NOT REMOVED, dfs: C1Full, D1Full, F1Full, G3Full  
-```{r} 
+```{r}  
 Hist1<-hist(C1Full$cells.larvae_log)
 Hist2<-hist(D1Full$cells.larvae_log)
 Hist3<-hist(F1Full$cells.larvae_log)
@@ -3213,8 +3561,8 @@ Win_Num_31_D7 %>%
 #Competative-infection: relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df  
-```{r}   
-#calc relative abundance for each   
+```{r}    
+#calc relative abundance for each   (any non infected larvae will NA out here)
 ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
@@ -4270,7 +4618,7 @@ C1
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected
 Counts, on log y-axis
-```{r}    
+```{r}     
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(1,5:8)] #remove metadata
@@ -4286,8 +4634,11 @@ MultiCounts2<-melt(MultiCounts2, id=c("Temp","Day","single.multi","Pot"))
 colnames(MultiCounts2)[colnames(MultiCounts2)=="value"]<-"cells.larvae_round" #rename value col
 colnames(MultiCounts2)[colnames(MultiCounts2)=="variable"]<-"Symbiont" #rename value col
 
-SingleCounts<-rbind(C1Full,D1Full,F1Full,G3Full)
-SingleCounts<-SingleCounts[-c(5:10)] #remove metadata
+SingleCounts<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0)
+SingleCounts<-SingleCounts[-c(5:9)] #remove metadata
+SingleCounts$cells.larvae_round<-SingleCounts$cells.larvae_counts_round #rename
+SingleCounts<-SingleCounts[-c(5)] #remove duplicate col
+
 SingleCounts$single.multi<-"single"
 
 CountsCompare<-rbind(SingleCounts, MultiCounts2) # combine
@@ -4324,7 +4675,7 @@ CountsCompare_mean_31<-subset(CountsCompare_mean, Temp=="31")
 
 subset by Symbiont plots
 C1: 27C
-```{r}      
+```{r}       
 #subset C1 
 CountsCompare_C1_27<-subset(CountsCompare_mean_27, Symbiont=="C1")
  
@@ -4337,7 +4688,7 @@ CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1_27, aes(x=Day, y=mean, gro
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  
   xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4355,7 +4706,7 @@ CountsCompare_C1_plot27<-ggplot(data=CountsCompare_C1_27, aes(x=Day, y=mean, gro
 ```
 C1: 30C
 
-```{r}
+```{r} 
 #Subset 30 
 CountsCompare_C1_30<-subset(CountsCompare_mean_30, Symbiont=="C1")
 
@@ -4367,7 +4718,7 @@ CountsCompare_C1_plot30<-ggplot(data=CountsCompare_C1_30, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4383,10 +4734,10 @@ CountsCompare_C1_plot30<-ggplot(data=CountsCompare_C1_30, aes(x=Day, y=mean, gro
 ```
 
 C1: 31C
-```{r} 
+```{r}  
 #Subset 31
 CountsCompare_C1_31<-subset(CountsCompare_mean_31, Symbiont=="C1")
- 
+ CountsCompare_C1_31<-subset(CountsCompare_C1_31, Day=="3" |Day=="7")
  
 CountsCompare_C1_plot31<-ggplot(data=CountsCompare_C1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -4396,7 +4747,7 @@ CountsCompare_C1_plot31<-ggplot(data=CountsCompare_C1_31, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4424,7 +4775,7 @@ CountsCompare_D1_plot27<-ggplot(data=CountsCompare_D1, aes(x=Day, y=mean, group=
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4452,7 +4803,7 @@ CountsCompare_D1_plot30<-ggplot(data=CountsCompare_D1_30, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4469,9 +4820,9 @@ CountsCompare_D1_plot30<-ggplot(data=CountsCompare_D1_30, aes(x=Day, y=mean, gro
 ```
 D1: 31C
 ```{r}
-#Subset 31
+#Subset 31 
 CountsCompare_D1_31<-subset(CountsCompare_mean_31, Symbiont=="D1")
-
+ CountsCompare_D1_31<-subset(CountsCompare_D1_31, Day=="3" |Day=="7")
 
 CountsCompare_D1_plot31<-ggplot(data=CountsCompare_D1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -4481,7 +4832,7 @@ CountsCompare_D1_plot31<-ggplot(data=CountsCompare_D1_31, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
       scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   expand_limits(x = 14, y = 0)+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -4512,7 +4863,7 @@ CountsCompare_F1_plot27<-ggplot(data=CountsCompare_F1, aes(x=Day, y=mean, group=
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4541,7 +4892,7 @@ CountsCompare_F1_plot30<-ggplot(data=CountsCompare_F1_30, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4559,6 +4910,7 @@ F1: 31C
 ```{r}
 #Subset 31
 CountsCompare_F1_31<-subset(CountsCompare_mean_31, Symbiont=="F1")
+ CountsCompare_F1_31<-subset(CountsCompare_F1_31, Day=="3" |Day=="7")
 
 CountsCompare_F1_plot31<-ggplot(data=CountsCompare_F1_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -4568,7 +4920,7 @@ CountsCompare_F1_plot31<-ggplot(data=CountsCompare_F1_31, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
       scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4598,7 +4950,7 @@ CountsCompare_G3_plot27<-ggplot(data=CountsCompare_G3, aes(x=Day, y=mean, group=
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4627,7 +4979,7 @@ CountsCompare_G3_plot30<-ggplot(data=CountsCompare_G3_30, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4646,6 +4998,7 @@ G3: 31C
 ```{r}
 #Subset 31
 CountsCompare_G3_31<-subset(CountsCompare_mean_31, Symbiont=="G3")
+ CountsCompare_G3_31<-subset(CountsCompare_G3_31, Day=="3" |Day=="7")
 
 
 CountsCompare_G3_plot31<-ggplot(data=CountsCompare_G3_31, aes(x=Day, y=mean, group=single.multi,color=single.multi)) +
@@ -4657,7 +5010,7 @@ CountsCompare_G3_plot31<-ggplot(data=CountsCompare_G3_31, aes(x=Day, y=mean, gro
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("") + #Label the X Axis
        scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
-      scale_x_continuous(breaks=seq(0, 14, 2))+
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4678,7 +5031,7 @@ Figure x. Plot 3x4:
 #line plot 
 CountsCompare_G3_plot27<-CountsCompare_G3_plot27+ theme(legend.position = "none")
 CountsCompare_G3_plot30<-CountsCompare_G3_plot30+ theme(legend.position = "none")
-#CountsCompare_G3_plot31<-CountsCompare_G3_plot31+ theme(legend.position = "none")
+CountsCompare_G3_plot31<-CountsCompare_G3_plot31+ theme(legend.position = "none")
 
 CountsCompare_F1_plot27<-CountsCompare_F1_plot27+ theme(legend.position = "none")
 CountsCompare_F1_plot30<-CountsCompare_F1_plot30+ theme(legend.position = "none")
@@ -4699,7 +5052,7 @@ grid.arrange(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_
  
 Plot Single and Multi raw counts infection plots 4x2  
 ```{r} 
-   
+    
 InfectRaw_Fig1<-plot_grid(CountsCompare_C1_plot27, CountsCompare_C1_plot30, CountsCompare_C1_plot31, CountsCompare_D1_plot27,CountsCompare_D1_plot30, CountsCompare_D1_plot31,CountsCompare_F1_plot27,CountsCompare_F1_plot30,CountsCompare_F1_plot31,CountsCompare_G3_plot27,CountsCompare_G3_plot30,CountsCompare_G3_plot31, labels = "AUTO", ncol=3, nrow=4, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15);InfectRaw_Fig1 
 
 #add common x and y axis labels
@@ -4711,13 +5064,13 @@ x.grob <- textGrob("Days Post Infection",
 #add to plot
 InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom = x.grob))
 #save
-ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
+#ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, width=12, height=12, units="in")
 ```
 
 #Plot comparing cell counts of individual infection vs total for multi (all clades totaled)
 Fig S6  
 Use ALLcast_9000_cast2b = relabund (data for all clades in single larvae)
-```{r}
+```{r} 
 #organize multi infection df
 Competition<-ALLcast_9000_cast2b
 Competition$code<-paste0(Competition$Day, "_", Competition$Temp,"_", Competition$Pot) #code
@@ -4729,7 +5082,7 @@ Competition2$cells.larvae_round<-Competition2$totalcells
 Competition2<-Competition2[-c(5)]  
 
 #organize Single df
-SingleCounts2<-rbind(C1Full,D1Full, F1Full, G3Full)
+SingleCounts2<-rbind(C1Full_no0,D1Full_no0, F1Full_no0, G3Full_no0)
 SingleCounts2$code<-paste0(SingleCounts2$Day, "_", SingleCounts2$Temp,"_", SingleCounts2$Pot) #code
 SingleCounts2<-SingleCounts2[-c(5:7,9)]  
 SingleCounts2$cells.larvae_round<-SingleCounts2$cells.larvae_counts_round
@@ -4843,42 +5196,22 @@ CompetitionSingle_27_plot<-CompetitionSingle_27_plot+ theme(legend.position = "n
 CompetitionSingle_30_plot<-CompetitionSingle_30_plot+ theme(legend.position = "none")
 CompetitionSingle_31_plot<-CompetitionSingle_31_plot+ theme(legend.position = "none")
 #combine all plots
-plot_grid(CompetitionSingle_27_plot, CompetitionSingle_30_plot, CompetitionSingle_31_plot,  nrow=1)
+grid.arrange(CompetitionSingle_27_plot, CompetitionSingle_30_plot, CompetitionSingle_31_plot,  nrow=1)
                                   
 
 #stats
-CompetitionSingle_27mod<-subset(CompetitionSingle, Temp=="27")
-CompetitionSingle_27mod$code<-as.factor(CompetitionSingle_27mod$code)
-
-CompetitionSingle_27_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|code),CompetitionSingle_27mod)
-anova(CompetitionSingle_27_mod)
-qqPlot(residuals(CompetitionSingle_27_mod))   # good
-  emm<-emmeans(CompetitionSingle_27_mod,  ~ Symbiont|Day, adjust="Tukey") 
+#df CompetitionSingle
+CompetitionSingle_mod<-lmer(cells.larvae_log~Day*Symbiont*Temp+(1|code),CompetitionSingle)
+anova(CompetitionSingle_mod)
+qqPlot(residuals(CompetitionSingle_mod))   # good
+  emm<-emmeans(CompetitionSingle_mod,  ~ Symbiont|Day|Temp, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
-CompetitionSingle_30mod<-subset(CompetitionSingle, Temp=="30")
-CompetitionSingle_30mod$code<-as.factor(CompetitionSingle_30mod$code)
-
-CompetitionSingle_30_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|code),CompetitionSingle_30mod)
-anova(CompetitionSingle_30_mod)
-qqPlot(residuals(CompetitionSingle_30_mod))   # good
-  emm<-emmeans(CompetitionSingle_30_mod,  ~ Symbiont|Day, adjust="Tukey") 
-cld(emm)
 
 
-#31  WE LOST TOO MANY VALUES AT D14. Don't run stats on it. 
-CompetitionSingle_31mod<-subset(CompetitionSingle, Temp=="31")
-CompetitionSingle_31mod<-subset(CompetitionSingle_31mod, Day==3 | Day==7)
-#remove <3 larvae groups
-CompetitionSingle_31mod$code2<-paste0(CompetitionSingle_31mod$Day, "_", CompetitionSingle_31mod$Symbiont,"_") #MAKE NEW COde to get rid of single value on D14, ALL 31C#
-CompetitionSingle_31mod<-CompetitionSingle_31mod[!(CompetitionSingle_31mod$code2=="14_All_"),] #remove it
 
-CompetitionSingle_31_mod<-lmer(cells.larvae_log~Day*Symbiont+(1|code),CompetitionSingle_31mod)
-anova(CompetitionSingle_31_mod)
-qqPlot(residuals(CompetitionSingle_31_mod))   # good
-  emm<-emmeans(CompetitionSingle_31_mod,  ~ Symbiont|Day, adjust="Tukey") 
-cld(emm)
+
 
 ```
 
@@ -5072,7 +5405,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 
 
 #Single-genus & Competative-infection: Models by symbiont
-```{r}  
+```{r}   
 #stats, log10
 hist(CountsCompare$cells.larvae_round)
 CountsCompare$cells.larvae_log<-log10(CountsCompare$cells.larvae_round+1)
@@ -5080,17 +5413,31 @@ hist(CountsCompare$cells.larvae_log) #normal
 CountsCompare$PotCode<-paste0(CountsCompare$Symbiont, "_", CountsCompare$Temp,"_", CountsCompare$Pot) #code
   
 
+#HERE C1 AND F1 ARE NOT AMAZING....
 CountsCompare_C1<-subset(CountsCompare, Symbiont=="C1")
-hist(CountsCompare_C1$cells.larvae_log) #normal
+hist(CountsCompare_C1$cells.larvae_round) #
+CountsCompare_C1$cells.larvae_log<-log10(CountsCompare_C1$cells.larvae_round+1)
+hist(CountsCompare_C1$cells.larvae_log)
+
+
 CountsCompare_D1<-subset(CountsCompare, Symbiont=="D1")
-hist(CountsCompare_D1$cells.larvae_log) #ok
+hist(CountsCompare_D1$cells.larvae_round) #
+CountsCompare_D1$cells.larvae_log<-log10(CountsCompare_D1$cells.larvae_round+1)
+hist(CountsCompare_D1$cells.larvae_log)
+
+
 CountsCompare_F1<-subset(CountsCompare, Symbiont=="F1")
-hist(CountsCompare_F1$cells.larvae_log) #normal
+hist(CountsCompare_F1$cells.larvae_round) #
+CountsCompare_F1$cells.larvae_log<-log10(CountsCompare_F1$cells.larvae_round+1)
+hist(CountsCompare_F1$cells.larvae_log)
+
 CountsCompare_G3<-subset(CountsCompare, Symbiont=="G3")
-hist(CountsCompare_G3$cells.larvae_log) #normal
+hist(CountsCompare_G3$cells.larvae_round) #
+CountsCompare_G3$cells.larvae_log<-log10(CountsCompare_G3$cells.larvae_round+1)
+hist(CountsCompare_G3$cells.larvae_log)
 
 
-#Full model single v multi
+#Full model single v multi <- no reason to do this
 
 CountsCompare_ALL_mod<-lmer(cells.larvae_log~Temp*Day*single.multi*Symbiont+(1|PotCode),CountsCompare)
 anova(CountsCompare_ALL_mod)
@@ -5104,41 +5451,19 @@ cld(emm)
 C1, full mod, then by temp 
 ```{r} 
 #C1 
-#full
+#full 
 CountsCompare_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare_C1)
 anova(CountsCompare_C1_mod)
 qqPlot(residuals(CountsCompare_C1_mod))   # good
-  emm<-emmeans(CountsCompare_C1_mod,  ~ Temp*Day, adjust="Tukey") 
+  emm<-emmeans(CountsCompare_C1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 
-#subset by temp
-CountsCompare_C1_27<-subset(CountsCompare_C1, Temp=="27")
-CountsCompare_C1_30<-subset(CountsCompare_C1, Temp=="30")
-CountsCompare_C1_31<-subset(CountsCompare_C1, Temp=="31")
+#using counts (not transformed)
+CountsCompare_C1_mod2<-lmer(cells.larvae_round~Temp*Day*single.multi+(1|PotCode),CountsCompare_C1)
+anova(CountsCompare_C1_mod2)
 
-#27
-CountsCompare_C1_27_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_C1_27)
-anova(CountsCompare_C1_27_mod)
-qqPlot(residuals(CountsCompare_C1_27_mod))   # good
-  emm<-emmeans(CountsCompare_C1_27_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
+model.sel(CountsCompare_C1_mod, CountsCompare_C1_mod2)
 
-#30
-CountsCompare_C1_30_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_C1_30)
-anova(CountsCompare_C1_30_mod)
-qqPlot(residuals(CountsCompare_C1_30_mod))   # good
-   emm<-emmeans(CountsCompare_C1_30_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
-
-#31
-CountsCompare_C1_31_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_C1_31)
-anova(CountsCompare_C1_31_mod)
-qqPlot(residuals(CountsCompare_C1_31_mod))   # good
-emm<-emmeans(CountsCompare_C1_31_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
 
 
 ```
@@ -5147,39 +5472,19 @@ D1, full mod, then by temp
 ```{r}
 #D1
 #full
+hist(CountsCompare_D1$cells.larvae_log)
 CountsCompare_D1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare_D1)
 anova(CountsCompare_D1_mod)
 qqPlot(residuals(CountsCompare_D1_mod))   # ok
- 
-
-#subset by temp
-CountsCompare_D1_27<-subset(CountsCompare_D1, Temp=="27")
-CountsCompare_D1_30<-subset(CountsCompare_D1, Temp=="30")
-CountsCompare_D1_31<-subset(CountsCompare_D1, Temp=="31")
-
-#27
-CountsCompare_D1_27_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_D1_27)
-anova(CountsCompare_D1_27_mod)
-qqPlot(residuals(CountsCompare_D1_27_mod))   # good
-  emm<-emmeans(CountsCompare_D1_27_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
+   emm<-emmeans(CountsCompare_D1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
-pairs(emm)
- 
-#30
-CountsCompare_D1_30_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_D1_30)
-anova(CountsCompare_D1_30_mod)
-qqPlot(residuals(CountsCompare_D1_30_mod))   # good
-emm<-emmeans(CountsCompare_D1_30_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
 
-#31
-CountsCompare_D1_31_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_D1_31)
-anova(CountsCompare_D1_31_mod)
-qqPlot(residuals(CountsCompare_D1_31_mod))   # good
-emm<-emmeans(CountsCompare_D1_31_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
+CountsCompare_D1_mod2<-lmer(cells.larvae_round~Temp*Day*single.multi+(1|PotCode),CountsCompare_D1)
+anova(CountsCompare_D1_mod2)
+
+model.sel(CountsCompare_D1_mod, CountsCompare_D1_mod2)
+
+
 
 ```
 
@@ -5190,36 +5495,17 @@ F1, full mod, then by temp
 CountsCompare_F1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare_F1)
 anova(CountsCompare_F1_mod)
 qqPlot(residuals(CountsCompare_F1_mod))   # ok
-
-
-#subset by temp
-CountsCompare_F1_27<-subset(CountsCompare_F1, Temp=="27")
-CountsCompare_F1_30<-subset(CountsCompare_F1, Temp=="30")
-CountsCompare_F1_31<-subset(CountsCompare_F1, Temp=="31")
-
-#27
-CountsCompare_F1_27_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_F1_27)
-anova(CountsCompare_F1_27_mod)
-qqPlot(residuals(CountsCompare_F1_27_mod))   # good
-  emm<-emmeans(CountsCompare_F1_27_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
+ emm<-emmeans(CountsCompare_F1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
-pairs(emm)
-
-#30
-CountsCompare_F1_30_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_F1_30)
-anova(CountsCompare_F1_30_mod)
-qqPlot(residuals(CountsCompare_F1_30_mod))   # good
- emm<-emmeans(CountsCompare_F1_30_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
+ emm<-emmeans(CountsCompare_G3_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
-pairs(emm)
 
-#31
-CountsCompare_F1_31_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_F1_31)
-anova(CountsCompare_F1_31_mod)
-qqPlot(residuals(CountsCompare_F1_31_mod))   # good
- emm<-emmeans(CountsCompare_F1_31_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
+CountsCompare_F1_mod2<-lmer(cells.larvae_round~Temp*Day*single.multi+(1|PotCode),CountsCompare_F1)
+anova(CountsCompare_F1_mod2)
+
+model.sel(CountsCompare_F1_mod, CountsCompare_F1_mod2)
+
+
 
 ```
 
@@ -5231,35 +5517,12 @@ CountsCompare_G3_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),Co
 anova(CountsCompare_G3_mod)
 qqPlot(residuals(CountsCompare_G3_mod))   # ok
 
+CountsCompare_G3_mod2<-lmer(cells.larvae_round~Temp*Day*single.multi+(1|PotCode),CountsCompare_G3)
+anova(CountsCompare_G3_mod2)
 
-#subset by temp
-CountsCompare_G3_27<-subset(CountsCompare_G3, Temp=="27")
-CountsCompare_G3_30<-subset(CountsCompare_G3, Temp=="30")
-CountsCompare_G3_31<-subset(CountsCompare_G3, Temp=="31")
+model.sel(CountsCompare_G3_mod, CountsCompare_G3_mod2)
 
-#27
-CountsCompare_G3_27_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_G3_27)
-anova(CountsCompare_G3_27_mod)
-qqPlot(residuals(CountsCompare_G3_27_mod))   # good
- emm<-emmeans(CountsCompare_G3_27_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
 
-#30
-CountsCompare_G3_30_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_G3_30)
-anova(CountsCompare_G3_30_mod)
-qqPlot(residuals(CountsCompare_G3_30_mod))   # good
- emm<-emmeans(CountsCompare_G3_30_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
-
-#31
-CountsCompare_G3_31_mod<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare_G3_31)
-anova(CountsCompare_G3_31_mod)
-qqPlot(residuals(CountsCompare_G3_31_mod))   # good
- emm<-emmeans(CountsCompare_G3_31_mod,  ~ single.multi|Day, adjust="Tukey")  # use the "|"" to test specific date
-cld(emm)
-pairs(emm)
 ```
 
 #Competition-Infection: Models, full and by-clade for comparison (you said you don't want to use for main analysis)
