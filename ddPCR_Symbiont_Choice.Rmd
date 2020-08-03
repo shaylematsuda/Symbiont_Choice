@@ -2964,7 +2964,7 @@ NumClades_27<-subset(NumClades3, Temp==27)
 # barplot 
 Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
+  scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
             #scale_fill_locuszoom()+
    xlab("Day")+
  theme_bw() + #Set the background color
@@ -2983,12 +2983,12 @@ Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) +
 
 
 #30C
-NumClades_30<-subset(NumClades, Temp==30)
+NumClades_30<-subset(NumClades3, Temp==30)
 
 #plot
 Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
+  scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3003,12 +3003,12 @@ Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) +
   ggtitle("30C");Infect30_plot  
 
 #31C
-NumClades_31<-subset(NumClades, Temp==31)
+NumClades_31<-subset(NumClades3, Temp==31)
 
 #plot
 Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
            geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#FFF7FB","#ECE7F2", "#A6BDDB" ,"#0570B0", "#023858"))+
+  scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3029,6 +3029,29 @@ Infect31_plot<-Infect31_plot+ theme(legend.position = "none") #remove legend
 
 grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #stats   CHECK THIS! you may need to transform data better!  HEY you don't really want to do this. just talk about as %s
@@ -3210,7 +3233,7 @@ grid.arrange(NumClades2a_27_D3_wafflePLOT,NumClades2a_27_D7_wafflePLOT,NumClades
 
 ```
 
-Try to stack bar by numb of clades in rel abund -this worked
+Clade winners: which genus was dominant in larvae on avg in each infection number group?
 ```{r}
 NumWinner<-read.csv("SC18_numGeneraInfect.csv")
 #remove 0s (code called C1 'winner' for 0s C1 by default)
@@ -4104,7 +4127,7 @@ cld(emm)
   emm<-emmeans(Temp30_modRelA,  ~ Symbiont|Day, adjust="Tukey")
 cld(emm)
 
-#31C
+#31C 
 Temp31_modRelA<-lmer(cells.larvae_arc~Symbiont*Day+(1|PotCode), Temp31_RelA)
 anova(Temp31_modRelA)
 qqPlot(residuals(Temp31_modRelA))   # good
@@ -4281,7 +4304,7 @@ grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
 
 ALL relative abundance Line plots
 ```{r}   
-
+ 
 #27C line plot
  ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
