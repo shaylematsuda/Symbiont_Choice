@@ -3995,7 +3995,7 @@ Dom31<-subset(DomAll, Temp==31)
 ```
 
 Plot: Made in Affinity! This plot shows each square = 1 larvae and the blue scale represents how many clades infected it, the small color square indicates the dominant clade in the larvae. 
-Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect. 
+ Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect. 
 ```{r}
 #numb clades df:ALL_RelA_Infect
 ALL_RelA_Infect_2<-select(ALL_RelA_Infect, "ALL.number","numclade") #keep only cols you want
@@ -4143,7 +4143,7 @@ By temps - line chart good (also show bar plot just in case)
 library(RColorBrewer)
 display.brewer.pal(n = 9, name = 'YlOrBr')
 brewer.pal(9, 'YlOrBr')
-
+ 
 
 #Blue #1D91C0" 
 #Green "#41AB5D"
@@ -7258,10 +7258,174 @@ Day7_nmds<-ggplot(ALLdata_Day7.nmds_xy, aes(MDS1, MDS2, color=Temp))+
 
 
 #Mortality
-```{r} 
-Mort.df<-read.csv("SC_mortality_20200722.csv")
- 
+```{r}  
+Mort.df<-read.csv("SC_mortality_20200722.csv") #read mortality df
+ Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
+  hist(Mort.df$Total_log)
+  hist(Mort.df$Total)
 
+ Mort.df$Pot<-as.factor(as.character(Mort.df$Pot))
+  Mort.df$Temp<-as.factor(as.character(Mort.df$Temp))
+ Mort.df$Day<-as.factor(as.character(Mort.df$Day))
+ 
+ #try only plotting % decrease aka total mortality by pot
+ mort_test<-subset(Mort.df, Day==1|Day==14)
+ #write.csv(mort_test, "mort_test.csv")
+ Mord.df2<-read.csv("mort_test.csv")
+ 
+ Mord.df2_mean<- ddply(Mord.df2, c( "Temp","Symbiont"), summarise, #summarize cell counts
+                 N    = length(PercentSurv[!is.na(PercentSurv)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(PercentSurv, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(PercentSurv, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(PercentSurv, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);Mord.df2_mean #display table
+
+Mord.df2_mean_27<-subset(Mord.df2_mean, Temp=="27")
+Mord.df2_mean_30<-subset(Mord.df2_mean, Temp=="30")
+Mord.df2_mean_31<-subset(Mord.df2_mean, Temp=="31")
+
+
+
+ 
+ 
+ #test stats for this:
+ hist(Mord.df2$PercentSurv)
+Mord.df2$PercentSurv_log<-log10(Mord.df2$PercentSurv+1)
+hist(Mord.df2$PercentSurv_log)
+
+Mord.df2$PercentSurv_sqrt<-sqrt(Mord.df2$PercentSurv+1)
+hist(Mord.df2$PercentSurv_sqrt)
+
+Mord.df2$Temp<-as.factor(as.character(Mord.df2$Temp))
+Mord.df2$Pot<-as.factor(as.character(Mord.df2$Pot))
+
+Mort.df2_mod<-lmer(PercentSurv_log~Temp*Symbiont+(1|Pot), Mord.df2)
+anova(Mort.df2_mod)
+qqPlot(residuals(Mort.df2_mod))   #  meh 
+#post hoc diff at each day
+ emm<-emmeans(Mort.df2_mod,  ~ Symbiont*Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+#post hoc diff at each day
+ emm<-emmeans(Mort.df2_mod,  ~ Symbiont|Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+
+ 
+Mord.df2_mean$Temp<-as.factor(as.character(Mord.df2_mean$Temp))
+Mord.df2_mean$Symbiont <- factor(Mord.df2_mean$Symbiont, levels = c("C1", "D1", "F1","G3","All","Control"))
+
+Mort_plot2<-ggplot(data=Mord.df2_mean, aes(x=Temp, y=mean, group = Symbiont, colour=Symbiont)) +
+scale_colour_manual(values=c( "#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF","black","grey"))+
+geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.3, position=position_dodge(0.3))+
+  geom_point(aes(group=Symbiont), size = 4,position=position_dodge(0.3))+
+     geom_point(shape = 1,size = 4,colour = "black",position=position_dodge(0.3))+
+xlab("Temp") + #Label the X Axis 
+ # scale_x_discrete(limits=c("27","30","31"))+
+theme_bw() + #Set the background color
+theme(axis.line = element_line(color = 'black'), #Set the axes color
+axis.title=element_text(size=14,face="bold"), #Set axis format
+panel.border = element_blank(), #Set the border
+panel.grid.major = element_blank(), #Set the major gridlines
+panel.grid.minor = element_blank(), #Set the minor gridlines
+text = element_text(size=18),# set element text
+plot.background =element_blank(), #Set the plot background
+legend.key = element_blank()) + #Set plot legend key
+ylab(expression(paste("% Surviorship"))) +
+ggtitle("Percent survivorship at day 14")+
+theme(plot.title = element_text(size=20));Mort_plot2
+
+
+ 
+ #### DELETE
+ #lets try GLMER poisson
+Mort.df_modGLMER1<-glmer(Total ~ Temp*Symbiont*Day+(1|Pot), data = Mort.df, family = poisson(link = "log"))
+Anova(Mort.df_modGLMER1)
+qqPlot(residuals(Mort.df_modGLMER1))   #  meh 
+
+Mort.df_27_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "identity"))
+Anova(Mort.df_27_modGLMER2)
+qqPlot(residuals(Mort.df_27_modGLMER2))   #  meh 
+
+
+#Stats
+Mort.df_27<-subset(Mort.df, Temp==27) #subset by temp
+Mort.df_30<-subset(Mort.df, Temp==30)
+Mort.df_31<-subset(Mort.df, Temp==31)
+
+#27
+#models 
+hist(Mort.df_27$Total_log)
+Mort.df_27_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_27)
+anova(Mort.df_27_mod)
+qqPlot(residuals(Mort.df_27_mod))   #  meh 
+#post hoc diff at each day
+ emm<-emmeans(Mort.df_27_mod,  ~ Symbiont|Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+#lets try GLMER poisson
+Mort.df_27_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "log"))
+Anova(Mort.df_27_modGLMER1)
+qqPlot(residuals(Mort.df_27_modGLMER1))   #  meh 
+
+Mort.df_27_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "identity"))
+Anova(Mort.df_27_modGLMER2)
+qqPlot(residuals(Mort.df_27_modGLMER2))   #  meh 
+
+
+
+hist(Mort.df_30$Total_log) #not great
+
+Mort.df_30_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_30)
+anova(Mort.df_30_mod)
+qqPlot(residuals(Mort.df_30_mod))   #  this is awful 
+#post hoc diff at each day
+ emm<-emmeans(Mort.df_30_mod,  ~ Symbiont|Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+Mort.df_30_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_30, family = poisson(link="log"))
+Anova(Mort.df_30_modGLMER1)
+qqPlot(residuals(Mort.df_30_modGLMER1))   #  meh 
+
+Mort.df_30_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_30, family = poisson(link="identity"))
+Anova(Mort.df_30_modGLMER2)
+qqPlot(residuals(Mort.df_30_modGLMER2))   #  meh 
+
+#31
+hist(Mort.df_31$Total_log) #not great
+
+
+hist(Mort.df_31$Total_log) #not great
+
+Mort.df_31_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_31)
+anova(Mort.df_31_mod)
+qqPlot(residuals(Mort.df_31_mod))   #  this is awful 
+#post hoc diff at each day
+ emm<-emmeans(Mort.df_31_mod,  ~ Symbiont|Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+Mort.df_31_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_31, family = poisson(link="log"))
+Anova(Mort.df_31_modGLMER1)
+qqPlot(residuals(Mort.df_31_modGLMER1))   #  meh 
+
+Mort.df_31_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_31, family = poisson(link="identity"))
+Anova(Mort.df_31_modGLMER2)
+qqPlot(residuals(Mort.df_31_modGLMER2))   #  meh 
+
+
+
+
+
+
+
+
+#PLOTS
 #Raw means scope and hemo only
 Mort.mean<- ddply(Mort.df, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
                  N    = length(Total[!is.na(Total)]), #calculate the length of the data frame, excluding NA’s *this part is important*
@@ -7275,7 +7439,7 @@ Mort.mean_27<-subset(Mort.mean, Temp=="27")
 Mort.mean_30<-subset(Mort.mean, Temp=="30")
 Mort.mean_31<-subset(Mort.mean, Temp=="31")
 
-write.csv(Mort.mean_27, "Mort.mean_27.csv")
+
 
 #27
  Mort27_plot<-ggplot(data=Mort.mean_27, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
