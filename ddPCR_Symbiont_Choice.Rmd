@@ -7,9 +7,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-Ariana's Notes from 6/25: 
-- I am not as familiar with this data, so it is pretty difficult for me to follow the script and understand what is happening in each part. It might be super helpful to add some headings and sections that break the script apart by hypotheses/analysis/question. Of course if you don't think this is necessary than no problem, its just a thought that might be helpful for others to follow the script and know where to look for certain analyses :) 
-
 This is the data analysis of the Symbiont Choice 2018 experiment conducted at AIMS in 2018 and 2019. 
 
 Authors: Matsuda, SB, Chakravarti, LC, Cunning, JR, Huffmyer, AS, Gates, RD, van Oppen, MJH
@@ -87,9 +84,9 @@ library(huxtable)
 library(flextable)
 ```
 
-#Load in data and setup dataframes:   
+# Load in data and setup dataframes:   
 Load in Hemocytometer (Individuals subset, Days 7 and 14) and Scope (Individuals subset, Day 3) counts data: 
-```{r}   
+```{r}    
 ####Load in hemocytometer counts and fluorescent scope counts:  
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
 Day7Counts<-read.csv("SC18_cellcounts_day7.csv")
@@ -112,8 +109,8 @@ Day14Counts<-na.omit(Day14Counts)
 
 #combine days:
 Countdat<-rbind(Day3Counts, Day7Counts, Day14Counts)
-Countdat1<-Countdat[!(Countdat$Symbiont=="ALL"),] #remove ALLs
-Countdat1<-Countdat1[!(Countdat1$Symbiont=="CONTROL"),] #remove controls
+#Countdat1<-Countdat[!(Countdat$Symbiont=="ALL"),] #remove ALLs
+Countdat1<-Countdat[!(Countdat$Symbiont=="CONTROL"),] #remove controls
 Countdat1$Temp<-as.factor(Countdat1$Temp)
 Countdat1$cells.larvae<-as.numeric(Countdat1$cells.larvae) 
 ```
@@ -385,13 +382,13 @@ dData2$copyNum[dData2$Primer=="G3"]<-19
 dData2$cells.larvae<-dData2$copies.larvae/dData2$copyNum
   dData2<-dData2[!(dData2$Info=="NTC"),]
 
-#subset Samples
+#subset Samples 
 sData<-subset(dData2, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
-#write.csv(sData, "sData20191221.csv")
+#write.csv(sData, "sData20191221.csv") 
 ```
 
 Create dfs for each symbiont genus. Subset for each ddPCR Infection trial (C1, D1, F1, G3, ALL).   
-```{r}   
+```{r}    
 #subset by infection (individual and multi infections)
 C1_9000<-subset(sData, Info=="C1")
 D1_9000<-subset(sData, Info=="D1")
@@ -481,13 +478,20 @@ Countdat_D714<-subset(Countdat1, Day=="7"|Day=="14") #subset days 7 and 14, hemo
 Countdat_D714$count.type<-"hemo"
  
 Countdat_2<-rbind(Countdat_D3,Countdat_D714) #bind together for non-ddPCR dataset 
+
+Countdat_2$PotCode<-
 ```
 
-#Do ddPCR counts differe significantly from hemocytometer + scope counts?
+# Do ddPCR counts differe significantly from hemocytometer + scope counts?
 For individual infections, we additionally counted symbionts by eye (flurescent scope) on Day 3, and by hemoctyometer (Days 7 and 14). Running a model2 analysis, we show that the slope of ddPCR x scope/hemo counts is not different than 1. 
 
 Organize dfs:
-```{r}    
+```{r}      
+
+
+Countdat_2_d3<-subset(Countdat_2, Day=="3")
+
+
 #C1   
 #organize the ddPCR data for individual infections  
 C1_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
@@ -504,6 +508,9 @@ C1Full<-rbind(C1_9000b,C1countdat) #combine hemo and ddPCR
 hist(C1Full$cells.larvae) #right skew
 C1Full$cells.larvae_log<-log10(C1Full$cells.larvae+1) #log counts
 hist(C1Full$cells.larvae_log)
+
+C1Full$PotCode<-paste0(C1Full$Temp, C1Full$Day, C1Full$Pot, C1Full$count.type)
+
 
 
 #D1
@@ -553,6 +560,23 @@ hist(G3Full$cells.larvae)
 G3Full$cells.larvae_log<-log10(G3Full$cells.larvae+1)
 hist(G3Full$cells.larvae_log) 
 
+#ALL
+#organize the ddPCR data 
+ALL_vars<-c("Temp","Day", "Info","Pot", "Replicate","cells.larvae")
+ALL_9000b<-ALL_9000[ALL_vars]
+colnames(ALL_9000b)[colnames(ALL_9000b)=="Info"] <- "Symbiont"
+ALL_9000b$count.type<-"ddPCR"
+hist(ALL_9000b$cells.larvae)
+#ALL_9000b$cells.larvae_log<-log(ALL_9000b$cells.larvae+1)
+#  hist(ALL_9000b$cells.larvae_log, w=.01, breaks = 10) 
+
+#organize hemo data
+ALLcountdat<-subset(Countdat_2, Symbiont=="ALL")
+ALLFull<-rbind(ALL_9000b,ALLcountdat) #combine hemo and ddPCR
+hist(ALLFull$cells.larvae) 
+ALLFull$cells.larvae_log<-log10(ALLFull$cells.larvae+1)
+hist(ALLFull$cells.larvae_log) 
+
 
 #Means for clade/temp/pot/day for ddpcr x scopehemo
 
@@ -564,16 +588,18 @@ scopehemoFull_mean<- ddply(Countdat_2, c("Day", "Temp","Symbiont","Pot","count.t
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );scopehemoFull_mean #display table
-scopehemoFull_mean$mean<-round(scopehemoFull_mean$mean)
-#write.csv(scopehemoFull_mean,"scopehemoFull_mean.csv")
+#scopehemoFull_mean$mean<-round(scopehemoFull_mean$mean)
+#write.csv(scopehemoFull_mean,"scopehemoFull_mean20200820.csv")
 
-scopehemoFull_meanVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type") #keep only cols you need
+scopehemoFull_meanVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type","N") #keep only cols you need
 scopehemoFull_mean2<-scopehemoFull_mean[scopehemoFull_meanVars]
 colnames(scopehemoFull_mean2)[colnames(scopehemoFull_mean2)=="mean"] <- "Countmean"
 
+#remove means groups without n=3
+scopehemoFull_mean2<-subset(scopehemoFull_mean2, N=="3")
 
 # raw means for ddPCR  only
-ddPCRcompare<-rbind(C1_9000b,D1_9000b,F1_9000b,G3_9000b)
+ddPCRcompare<-rbind(C1_9000b,D1_9000b,F1_9000b,G3_9000b,ALL_9000b)
 #Raw means
 ddPCRcompare_mean<- ddply(ddPCRcompare, c("Day", "Temp","Symbiont","Pot", "count.type"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
@@ -582,15 +608,21 @@ ddPCRcompare_mean<- ddply(ddPCRcompare, c("Day", "Temp","Symbiont","Pot", "count
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );ddPCRcompare_mean #display table
-ddPCRcompare_mean$mean<-round(ddPCRcompare_mean$mean)
+#ddPCRcompare_mean$mean<-round(ddPCRcompare_mean$mean)
 
-ddPCRcompareVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type")
+ddPCRcompareVars<-c("Temp","Day","Pot", "Symbiont","mean","count.type","N")
 ddPCRcompare_mean2<-ddPCRcompare_mean[ddPCRcompareVars]
 colnames(ddPCRcompare_mean2)[colnames(ddPCRcompare_mean2)=="mean"] <- "ddPCRmean" 
+
+#remove data groups where n<3
+ddPCRcompare_mean2<-subset(ddPCRcompare_mean2, N=="3")
+
+
+
  
 #write.csv(ddPCRcompare_mean,"ddPCRcompare_mean.csv")
 # combine Scope and ddPCR
-scopehemo_ddPCRCompare<-merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
+AScopehemo_ddPCRCompare<- merge(scopehemoFull_mean2,ddPCRcompare_mean2,by=c("Symbiont","Temp","Day","Pot"))
 
 ```
 
@@ -598,40 +630,59 @@ Regression
 Scope/hemo Calc means for clade/temp/time/pot VS ddPCR
 
 Model2 regression
-```{r}
+```{r}  
 #Model_II_linear_regression    https://rpubs.com/jasonvenkiteswaran/22815 
 
-#everything
+#log ddpcr and counts
 scopehemo_ddPCRCompare$Countmean_log<-log10(scopehemo_ddPCRCompare$Countmean+1) #log10 the hemo/scope counts
 hist(scopehemo_ddPCRCompare$Countmean_log)
 scopehemo_ddPCRCompare$ddPCRmean_log<-log10(scopehemo_ddPCRCompare$ddPCRmean+1) #log10 the ddPCR counts
 hist(scopehemo_ddPCRCompare$ddPCRmean_log)
 
-#ScopeHemo ddPCR 
+#ScopeHemo ddPCR  ALL data points
 lmodel2(ddPCRmean_log~Countmean_log, data = scopehemo_ddPCRCompare)
-# y =0.94x + 0 to convert scope/hemo to ddPCR Use MA, force 0 intercept. CN said ok to 0.18 ->0
-
-#reshape this data into one long col. not straighforward to sorry you had to download and reupload
-#write.csv(scopehemo_ddPCRCompare,"scopehemo_ddPCRCompare.csv")
-scopehemo_ddPCRCompare_all<-read.csv("scopehemo_ddPCRCompare_all.csv")
-scopehemo_ddPCRCompare_all$code<-as.factor(scopehemo_ddPCRCompare_all$code)
-lmodel2(Countmean_log~coundition+(1|code), data = scopehemo_ddPCRCompare_all)
+# slope 1.04x CI .80 and 1.35
 
 #Scope vs ddPCR
 scope_ddPCRCompare<-subset(scopehemo_ddPCRCompare, count.type.x=="scope")
 lmodel2(ddPCRmean_log~Countmean_log, data = scope_ddPCRCompare)
 
+
+
 #Hemo vs ddPCR
 hemo_ddPCRCompare<-subset(scopehemo_ddPCRCompare, count.type.x=="hemo")
 lmodel2(ddPCRmean_log~Countmean_log, data = hemo_ddPCRCompare)
 
+
+##lm ddpcrmean_log~countmean_log+countmean_log:count.type.x
+#CountsMOD<-lm(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x,data = scopehemo_ddPCRCompare)
+anova(CountsMOD)
+summary(CountsMOD)
+
+#CN mod, force through origin
+#CountsMOD2<-lm(ddPCRmean_log ~ 0 + Countmean_log+Countmean_log:count.type.x,data = scopehemo_ddPCRCompare)
+anova(CountsMOD2)
+summary(CountsMOD2)
+
+#CountsMOD3<-lm(ddPCRmean_log ~ 0 + Countmean_log:count.type.x + Countmean_log,data = scopehemo_ddPCRCompare)
+anova(CountsMOD3)
+summary(CountsMOD3)
+
+#btw this is the correct one!
+CountsMOD4<-lm(ddPCRmean_log ~ 0 + Countmean_log*count.type.x,data = scopehemo_ddPCRCompare)
+anova(CountsMOD4)
+
+
+
+#WHY DID YOU DO THIS? 
+#reshape this data into one long col. not straighforward to sorry you had to download and reupload
+#write.csv(scopehemo_ddPCRCompare,"scopehemo_ddPCRCompare20200820.csv")
+#scopehemo_ddPCRCompare_all<-read.csv("scopehemo_ddPCRCompare1.csv")
+#scopehemo_ddPCRCompare_all$code<-as.factor(scopehemo_ddPCRCompare_all$code)
 ```
 
 Right plot: logged10 plot   
-AH- Ideally, I want to plot the 95% confidence intervales on the regression line. But since I tell am manually entering the info, the confidence intervales are showing up wrong. Ideas? 
-
-See what I did with adding two more geom_abline's. Since you want it to be sloped, geom_line wont work. Now you can go an edit the "intercept" to match your confidence intervals. I just set them to +- 1 for visualization. - AH  
-```{r} 
+```{r}  
 
 #so in order to plot the confidence intervals, you have to use this: 
 test<-lmodel2(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x, data = scopehemo_ddPCRCompare)  
@@ -662,11 +713,12 @@ ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
   #scale_x_continuous(trans = "log10")+
   #scale_y_continuous(trans = "log10")+
 theme_classic()+
- geom_abline(intercept = 0, slope = .94)+ #add in lmodel2 slope/intercept
+ geom_abline(intercept = 0, slope = 1.04)
+#add in lmodel2 slope/intercept
   #geom_smooth(aes(ymin=.73, ymax=1.20))+     # when I run these lines it make a new line and plots conf int on those
   #geom_smooth(aes(ymin=.73, ymax=1.20, fill =count.type.x, colour=count.type.x,stat="identity"))
-   geom_abline(intercept = 1.2, slope = .94, color = "red", linetype = "dashed")+
-   geom_abline(intercept = -1.2, slope = .94, color = "red", linetype = "dashed")
+   #geom_abline(intercept = 1.2, slope = .94, color = "red", linetype = "dashed")+
+   geom_abline(intercept = 0, slope = 1.04, color = "red", linetype = "dashed")
 
 #geom_line(aes(y = .73), color = "red", linetype = "dashed")+ 
     #geom_line(aes(y = 1.2), color = "red", linetype = "dashed")
@@ -676,61 +728,91 @@ theme_classic()+
 
 
 
-##lm ddpcrmean_log~countmean_log+countmean_log:count.type.x
-CountsMOD<-lm(ddPCRmean_log~Countmean_log+Countmean_log:count.type.x,data = scopehemo_ddPCRCompare)
-anova(CountsMOD)
 
 ```
 
 Apply hemo.scope conversion and remake df with raw counts
-```{r} 
+```{r}  
+
+
+
+
+
+
+
+
+
 #Convert Scope/hemo data, remake df with ddPCR data. Make new col with "raw" counts post conversion of logs
 #C1
 C1FullddPCR<-subset(C1Full, count.type=="ddPCR")
 C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
 #C1Fullscopehemo$cells.larvae_log_Pre<-C1Fullscopehemo$cells.larvae_log #save old to check then comment out
-C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*0.94) #convert and check
+C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*1.04) #convert and check
+#  plot(C1Fullscopehemo$cells.larvae_log, C1Fullscopehemo$cells.larvae_log) #check
 C1Full<-rbind(C1FullddPCR,C1Fullscopehemo) #rebind with ddPCR
-C1Full$cells.larvae_counts<-(10^C1Full$cells.larvae_log)-1  #converted all log back to Raw counts
-C1Full$cells.larvae_counts_round<-round(C1Full$cells.larvae_counts)
+C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted all log back to Raw counts WHY
+#C1Full$cells.larvae_counts_round<-round(C1Full$cells.larvae_counts)
 
-plot(C1Full$cells.larvae, C1Full$cells.larvae_counts_round) #check
+
+#plot(C1Full$cells.larvae_log, C1Full$cells.larvae_log2) #check
 
 #D1
 D1FullddPCR<-subset(D1Full, count.type=="ddPCR")
 D1Fullscopehemo<-subset(D1Full, count.type=="hemo"|count.type=="scope")
 #D1Fullscopehemo$cells.larvae_log_Pre<-D1Fullscopehemo$cells.larvae_log #save old to check then comment out
-D1Fullscopehemo$cells.larvae_log<-(D1Fullscopehemo$cells.larvae_log*0.94) #convert and check
+D1Fullscopehemo$cells.larvae_log<-(D1Fullscopehemo$cells.larvae_log*1.04) #convert and check
+  plot(D1Fullscopehemo$cells.larvae_log, D1Fullscopehemo$cells.larvae_log) #check
+
 D1Full<-rbind(D1FullddPCR,D1Fullscopehemo) #rebind with ddPCR
-D1Full$cells.larvae_counts<-(10^D1Full$cells.larvae_log)-1  #converted all log back to Raw counts
-D1Full$cells.larvae_counts_round<-round(D1Full$cells.larvae_counts)
+D1Full$cells.larvae_counts_unlog<-(10^D1Full$cells.larvae_log)-1  #converted all log back to Raw counts
+#D1Full$cells.larvae_counts_round<-round(D1Full$cells.larvae_counts)
+#plot(D1Full$cells.larvae, D1Full$cells.larvae_counts_round) #check
 
 #F1
 F1FullddPCR<-subset(F1Full, count.type=="ddPCR")
 F1Fullscopehemo<-subset(F1Full, count.type=="hemo"|count.type=="scope")
 #F1Fullscopehemo$cells.larvae_log_Pre<-F1Fullscopehemo$cells.larvae_log #save old to check then comment out
-F1Fullscopehemo$cells.larvae_log<-(F1Fullscopehemo$cells.larvae_log*0.94) #convert and check
+F1Fullscopehemo$cells.larvae_log<-(F1Fullscopehemo$cells.larvae_log*1.04) #convert and check
 F1Full<-rbind(F1FullddPCR,F1Fullscopehemo) #rebind with ddPCR
-F1Full$cells.larvae_counts<-(10^F1Full$cells.larvae_log)-1  #converted all log back to Raw counts
-F1Full$cells.larvae_counts_round<-round(F1Full$cells.larvae_counts)
+F1Full$cells.larvae_counts_unlog<-(10^F1Full$cells.larvae_log)-1  #converted all log back to Raw counts
+#F1Full$cells.larvae_counts_round<-round(F1Full$cells.larvae_counts)
+#plot(F1Full$cells.larvae, F1Full$cells.larvae_counts_round) #check
 
 #G3
 G3FullddPCR<-subset(G3Full, count.type=="ddPCR")
 G3Fullscopehemo<-subset(G3Full, count.type=="hemo"|count.type=="scope")
 #G3Fullscopehemo$cells.larvae_log_Pre<-G3Fullscopehemo$cells.larvae_log #save old to check then comment out
-G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*0.94) #convert and check
+G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*1.04) #convert and check
 G3Full<-rbind(G3FullddPCR,G3Fullscopehemo) #rebind with ddPCR
-G3Full$cells.larvae_counts<-(10^G3Full$cells.larvae_log)-1  #converted all log back to Raw counts
-G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
-  
+G3Full$cells.larvae_counts_unlog<-(10^G3Full$cells.larvae_log)-1  #converted all log back to Raw counts
+#G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
+#plot(G3Full$cells.larvae, G3Full$cells.larvae_counts_round) #check
+
+
+#ALL
+ALLFullddPCR<-subset(ALLFull, count.type=="ddPCR")
+ALLFullscopehemo<-subset(ALLFull, count.type=="hemo"|count.type=="scope")
+#ALLFullscopehemo$cells.larvae_log_Pre<-ALLFullscopehemo$cells.larvae_log #save old to check then comment out
+ALLFullscopehemo$cells.larvae_log<-(ALLFullscopehemo$cells.larvae_log*1.04) #convert and check
+ALLFull<-rbind(ALLFullddPCR,ALLFullscopehemo) #rebind with ddPCR
+ALLFull$cells.larvae_counts_unlog<-(10^ALLFull$cells.larvae_log)-1  #converted all log back to Raw counts
+#ALLFull$cells.larvae_counts_round<-round(ALLFull$cells.larvae_counts)
+
+#plot(ALLFull$cells.larvae, ALLFull$cells.larvae_counts_round) #check
+
+ConversionCheck<-rbind(C1Full,D1Full, F1Full, G3Full, ALLFull)
+  plot(ConversionCheck$cells.larvae, ConversionCheck$cells.larvae_counts_unlog) #check
+
 ```
 
 
 
 
+MORTALITY
 
-#Larval Mortality
-```{r}  
+MORTALITY
+# Larval Mortality
+```{r}   
 Mort.df<-read.csv("SC_mortality_20200722.csv") #read mortality df
  Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
   hist(Mort.df$Total_log)
@@ -1088,8 +1170,11 @@ grid.arrange(Mort.mean_27_noD1_plot, Mort.mean_30_noD1_plot, Mort.mean_31_noD1_p
 
 
 
+DID LARVAE INFECT OR NOT (binomial)
 
-#Monoculture: Binomial: Did a larvae infect (Y/N) modeles and plots
+BINOMIAL DID IT INFECT
+BINOMIAL
+# Monoculture: Binomial: Did a larvae infect (Y/N) modeles and plots
 dfs: C1Full, D1Full, F1Full, G3Full
 Questions: 
 1. Within each genus, what is the effect of temp and time on what percent of larvae infect with at leaste one symbiont?
@@ -1098,10 +1183,10 @@ Questions:
 - At ambient temperature, I hypothesize that C1 will be the most successful, and D1 at high temps. I predict that within each genus, infection rate will grow over time.  
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
-```{r}      
-BinaryInfect<-rbind(C1Full,D1Full, F1Full, G3Full)  # make new df for binary infection
-  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_round>0]<-1  #make new col for infect or not 1 for infect, 0 not.
-  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_round==0]<-0
+```{r}       
+BinaryInfect<-ConversionCheck  # make new df for binary infection
+  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
+  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
  BinaryInfect$Infect<-as.character(BinaryInfect$Infect)
   BinaryInfect$Infect<-as.numeric(BinaryInfect$Infect)
  BinaryInfect$count.type<-as.factor(BinaryInfect$count.type) #make factor
@@ -1117,7 +1202,7 @@ BinaryInfect<-rbind(C1Full,D1Full, F1Full, G3Full)  # make new df for binary inf
 #Full model including all clades/temp/time:
  Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect) #
   Anova(Binary_mod)
-dispersion_glmer(Binary_mod) # no overdispersion 
+dispersion_glmer(Binary_mod) # no overdispersion  .97
   emm<-emmeans(Binary_mod,  ~ Symbiont|Temp)
   pairs(emm)
   cld(emm) 
@@ -1127,7 +1212,7 @@ BinaryInfect_27and30<-subset(BinaryInfect, Temp=="27"|Temp=="30")
 
 BinaryInfect_27and30_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect_27and30) #
   Anova(BinaryInfect_27and30_mod)
-dispersion_glmer(BinaryInfect_27and30_mod) # .88
+dispersion_glmer(BinaryInfect_27and30_mod) # .95
   emm<-emmeans(BinaryInfect_27and30_mod,  ~ Symbiont|Temp)
   pairs(emm)
   cld(emm) 
@@ -1137,13 +1222,14 @@ BinaryInfect_D3andD7<-subset(BinaryInfect, Day=="3"|Day=="7")
 
 BinaryInfect_D3andD7_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect_D3andD7) #
   Anova(BinaryInfect_D3andD7_mod)
-dispersion_glmer(BinaryInfect_D3andD7_mod) # no overdispersion 
+dispersion_glmer(BinaryInfect_D3andD7_mod) # no overdispersion  1.01
   emm<-emmeans(BinaryInfect_D3andD7_mod,  ~ Symbiont|Temp)
   pairs(emm)
   cld(emm) 
 ```
 
-By clade: infection ~ Temp*Day
+
+By clade: infection ~ Temp*Day (keep bc you need dfs)
 ```{r} 
 #by clade:   
 #C1
@@ -1366,9 +1452,9 @@ grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot, nrow
 
 ```
 
-
+ 
 Stats: By Temperature: at each temp, which clade infects the best?
-```{r}   
+```{r}     
 #by Temp:   
 
 #27C
@@ -1402,7 +1488,7 @@ Stats: By Temperature: at each temp, which clade infects the best?
   
 ```
 Plots: Binary infection clade compare by Temp
-```{r}
+```{r} 
 #27C  
   
 Infect_N_mean_27 <- ddply(Binary_27C, c("Symbiont","Day"), summarise, #summarize cell counts
@@ -1544,7 +1630,7 @@ grid.arrange(Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 1)
 
 #combine By clade plots and by temp plots in 2 row figure
 grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot,Infect_27_plot, Infect_30_plot, Infect_31_plot, nrow = 2)
-
+ 
 ```
 
 
@@ -1553,10 +1639,10 @@ grid.arrange(C1_Infect_plot, D1_Infect_plot, F1_Infect_plot,G3_Infect_plot,Infec
 
   
 
-#Monoculture vs Polyculture by clade: Binomial TAKE 2 -PINK and BLUE binomial:all amplifications ALLcast_9000_cast2a
+# Monoculture vs Polyculture by clade: Binomial TAKE 2 -PINK and BLUE binomial:all amplifications ALLcast_9000_cast2a
 Plots and comparison models singe v multi 
 ```{r}    
- ALL_RelAb<-ALLcast_9000_cast2a #copy
+ ALL_RelAb<-ALLcast_9000_cast2a #copy ddPCR df
 drops <- c("C1","D1","F1","G3") #get rid of cell.larvae col
 ALL_RelAb<-ALL_RelAb[ , !(names(ALL_RelAb) %in% drops)]
 
@@ -1578,6 +1664,21 @@ RelA_binaryb$G3[RelA_binaryb$G3==0]<-0
 
 #new col sum of each clade in a larvae (Check to make sure NA are not changed to 0)
 RelA_binaryb$numclade<-RelA_binaryb$C1+RelA_binaryb$D1+RelA_binaryb$F1+RelA_binaryb$G3
+
+#write.csv(RelA_binaryb,"RelA_binaryb20200820.csv")
+
+
+#GIVE TO AH to write if else to make this tell you if an ALL larva infected even if NAs for some clades. this is CONSERVATIVE. 
+
+
+
+
+
+
+
+
+
+
 
 RelA_binaryb$Infect[RelA_binaryb$numclade>0]<-1  
 RelA_binaryb$Infect[RelA_binaryb$numclade==0]<-0
@@ -2145,8 +2246,8 @@ binarybInfect_Figb<-grid.arrange(arrangeGrob(binarybInfect_Fig, left = y.grob, b
 ggsave(filename="Figures/binarybInfect_Fig20200816.pdf", plot=binarybInfect_Fig, dpi=300, width=12, height=17, units="in")
 ``` 
 
-
-#Monoculture and Polucluture (total, not by genus): Plot comparing cell counts of individual infection vs total for poly
+CELL DENSITY
+# Monoculture and Polucluture (total, not by genus): Plot comparing cell counts of individual infection vs total for poly
 Fig S6  
 Use ALLcast_9000_cast2b = relabund (data for all clades in single larvae)
 ```{r} 
@@ -2355,8 +2456,8 @@ pairs(emm)
 
 
 
-#New FIg 1 Plot combo counts of mono and poly and pink and blue
-```{r}
+# New FIg 1 Plot combo counts of mono and poly and pink and blue
+```{r} 
  
 #combine all plots
 grid.arrange(CompetitionSingle_27_plot, CompetitionSingle_30_plot, CompetitionSingle_31_plot,  CountsCompare2_C1_plot27, CountsCompare2_C1_plot30, CountsCompare2_C1_plot31, CountsCompare2_D1_plot27,CountsCompare2_D1_plot30, CountsCompare2_D1_plot31,CountsCompare2_F1_plot27,CountsCompare2_F1_plot30,CountsCompare2_F1_plot31,CountsCompare2_G3_plot27,CountsCompare2_G3_plot30,CountsCompare2_G3_plot31,nrow=5)
@@ -2557,7 +2658,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 
 
 
-#Monoculture infection_ZEROS REMOVED (no poly): Cell Counts Models, log transformed
+# Monoculture infection_ZEROS REMOVED (no poly): Cell Counts Models, log transformed
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))`
 using log transformed! (Cells.larvae_log)  
 Single infections (histograms and full model) 
@@ -2872,7 +2973,7 @@ Singles_no0_31_mean_plot<-Singles_no0_31_mean_plot+ theme(legend.position = "non
 grid.arrange(Singles_no0_27_mean_plot, Singles_no0_30_mean_plot, Singles_no0_31_mean_plot, nrow = 1) 
 ```
 
-#Monoculture Infection: ZEROS REMOVED (no poly)Plots: by clade,cell counts (count data, with 0s included) 
+# Monoculture Infection: ZEROS REMOVED (no poly)Plots: by clade,cell counts (count data, with 0s included) 
 C1 single infection plot  
 ```{r}         
 C1Full_no0_mean <- ddply(C1Full_no0, c("Day", "Temp"), summarise, #summarize cell counts
@@ -3055,7 +3156,7 @@ grid.arrange(C1Full_no0_plot_9000, D1Full_no0_plot_9000, F1Full_no0_plot_9000,G3
 
 
 
-#Monoculture vs poluculture-infection:counts PLOTS (Blue and pink plots) with 0s removed for multi (aka ONLY when they infected with a SPECIFIC zoox)
+# Monoculture vs poluculture-infection:counts PLOTS (Blue and pink plots) with 0s removed for multi (aka ONLY when they infected with a SPECIFIC zoox)
 C1       
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected  EDITED per each clade to remove 0s
@@ -3517,7 +3618,7 @@ InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom =
 ggsave(filename="Figures/PinkblueCounts2.pdf", plot=InfectRaw_Fig1, dpi=300, width=12, height=17, units="in")
 ```
   
-#Monoculture vs polyculture: Pink and Blue Models by symbiont, 0s removed for multi within specific zoox. 
+# Monoculture vs polyculture: Pink and Blue Models by symbiont, 0s removed for multi within specific zoox. 
 ```{r}     
 #stats, log10: Normal 
 hist(CountsCompare2$cells.larvae_round)
@@ -3643,7 +3744,7 @@ model.sel(CountsCompare2_G3_mod, CountsCompare2_G3_mod2)
 
 
 
-#Monoculture & Polyculture-infection:counts PLOTS (Blue and pink plots)
+# Monoculture & Polyculture-infection:counts PLOTS (Blue and pink plots)
 C1    
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected
@@ -4109,11 +4210,12 @@ InfectRaw_Fig1<-grid.arrange(arrangeGrob(InfectRaw_Fig1, left = y.grob, bottom =
 
 
 
-Under Competition Infection: 
+
+POLYCULTURE: 
 **Use only Relabundance for within larvae comparisons, use Raw counts for comparision with Single-genus infections **     
 df: ALL_9000b (has larvae removed where not all clades amped in each individual)     
 
-#B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
+# B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
 ```{r}       
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
@@ -4879,7 +4981,7 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 
 
 
-#C Who was the most dominant clade in larvave. Only larvae where all four genera amped
+# C Who was the most dominant clade in larvave. Only larvae where all four genera amped
 This is in line plots: see below for waffles. 
 ```{r}      
 #df ALL_RelA
@@ -5230,7 +5332,7 @@ Win_Num_31_D7 %>%
 
 ```
 
-#Competative-infection: relative abundance of each clade  
+# Competative-infection: relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df    
 ```{r}      
@@ -5682,59 +5784,6 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 ```
 
 
-#richness test Aug 14, 2020 CN chat
-```{r}
-ALL_RelA_Infect2<-ALL_RelA_Infect #make a copy
-ALL_RelA_Infect2<-ALL_RelA_Infect2[c(3,9)] #keep cols you want
-Competition3<-Competition[c(1:4,10)]  #keep cols you want (Competition df is made below so might not knit)
-
-#bind
-richnessBYcount<-merge(ALL_RelA_Infect2,Competition3, by="ALL.number")
-
-richnessBYcount$log<-log10(richnessBYcount$totalcells+1)
-richnessBYcount2 <- richnessBYcount[apply(richnessBYcount!=0, 1, all),]
-
-plot(richnessBYcount2$log, richnessBYcount2$numclade)
-plot(richnessBYcount$log, richnessBYcount$numclade)
-
-#richness.per.larva.as.factor~logcount.zoox.per.larva
-
-richnessBYcount2$numclade<-as.factor(as.character(richnessBYcount2$numclade))
-fhfhf<-lm(numclade~log,richnessBYcount2)
-
-#write.csv(richnessBYcount2,"richnessBYcount2.csv")
-
-#Richness~time*temp + (1|logcount)
-richmod1<-lmer(numclade~Day*Temp+(1|log),richnessBYcount2)
-an
-
-
-
-Competition4<-Competition[c(2:3, 5:8)]
-Competition4$C1log<-log10(Competition4$C1+1)
-Competition4$D1log<-log10(Competition4$D1+1)
-Competition4$F1log<-log10(Competition4$F1+1)
-Competition4$G3log<-log10(Competition4$G3+1)
-
-Competition5<-Competition4[c(1:2, 7:10)]
-Competition6<-melt(Competition5)
-names(Competition6)[names(Competition6)=="value"] <- "logcount"
-names(Competition6)[names(Competition6)=="variable"] <- "symbiont"
-
-#count~sym*time*temp+(1|larva)
-Richmod<-lm(logcount~symbiont*Day*Temp, Competition6)
-anova(Richmod)
-summary(Richmod)
-
-
-
-# Richness~time*temp + (1|logcount)  remove 0s
-richnessBYcount_No0<-
-```
-
-
-
-
 
 #Competition-Infection: Models, full and by-clade for comparison (you said you don't want to use for main analysis)
 ```{r}  
@@ -5772,7 +5821,7 @@ qqPlot(residuals(CountsCompare_multi_G3_mod))   # good
 
 
 
-#Multi-infection data, ALL1 data (cutoff 9000)   
+#POLYCULTURE data, ALL1 data (cutoff 9000)   
 THIS IS THE SAME AS THE ABOVE BUT THOSE FIGURES IN MY PPT AFTER THE 'END' WITH THE SINGLE ON LEFT AND MULTI ON RIGHT. 
 Expected vs observed infections, all and by clade
 ```{r}   
@@ -6933,6 +6982,75 @@ Day7_nmds<-ggplot(ALLdata_Day7.nmds_xy, aes(MDS1, MDS2, color=Temp))+
 
 
 Things you want to remove
+
+#richness test Aug 14, 2020 CN chat
+```{r}
+ALL_RelA_Infect2<-ALL_RelA_Infect #make a copy
+ALL_RelA_Infect2<-ALL_RelA_Infect2[c(3,9)] #keep cols you want
+Competition3<-Competition[c(1:4,10)]  #keep cols you want (Competition df is made below so might not knit)
+
+#bind
+richnessBYcount<-merge(ALL_RelA_Infect2,Competition3, by="ALL.number")
+
+richnessBYcount$log<-log10(richnessBYcount$totalcells+1)
+richnessBYcount2 <- richnessBYcount[apply(richnessBYcount!=0, 1, all),]
+
+plot(richnessBYcount2$log, richnessBYcount2$numclade)
+plot(richnessBYcount$log, richnessBYcount$numclade)
+
+#richness.per.larva.as.factor~logcount.zoox.per.larva
+
+richnessBYcount2$numclade<-as.factor(as.character(richnessBYcount2$numclade))
+fhfhf<-lm(numclade~log,richnessBYcount2)
+
+#write.csv(richnessBYcount2,"richnessBYcount2.csv")
+
+#Richness~time*temp + (1|logcount)
+richmod1<-lmer(numclade~Day*Temp+(1|log),richnessBYcount2)
+an
+
+
+
+Competition4<-Competition[c(2:3, 5:8)]
+Competition4$C1log<-log10(Competition4$C1+1)
+Competition4$D1log<-log10(Competition4$D1+1)
+Competition4$F1log<-log10(Competition4$F1+1)
+Competition4$G3log<-log10(Competition4$G3+1)
+
+Competition5<-Competition4[c(1:2, 7:10)]
+Competition6<-melt(Competition5)
+names(Competition6)[names(Competition6)=="value"] <- "logcount"
+names(Competition6)[names(Competition6)=="variable"] <- "symbiont"
+
+#count~sym*time*temp+(1|larva)
+Richmod<-lm(logcount~symbiont*Day*Temp, Competition6)
+anova(Richmod)
+summary(Richmod)
+
+
+
+# Richness~time*temp + (1|logcount)  remove 0s
+richnessBYcount_No0<-
+```
+
+
+
+
+
+
+
+THINGS TO DELETE ONCE YOU ARE SURE
+
+
+
+
+
+
+
+
+
+REMOVE WHEN YOU ARE SURE
+
 #REMOVESingle-genus Infection: Plots: by clade,cell counts (count data, with 0s included) 
 C1 single infection plot  
 ```{r}         
@@ -8959,7 +9077,7 @@ x.grob <- textGrob("Days Post Infection",
 #add to plot
 BinaryInfect_Figb<-grid.arrange(arrangeGrob(BinaryInfect_Fig, left = y.grob, bottom = x.grob))
 #save
-ggsave(filename="Figures/BinaryInfect_FigbNEW3.pdf", plot=BinaryInfect_Fig, dpi=300, width=12, height=17, units="in")
+ggsave(filename="Figures/BinaryInfect_FigbNEW3.pdf", plot=BinaryInfect_Fig, dpi=300, width=12, height=17, units="in") 
 ``` 
 
 
