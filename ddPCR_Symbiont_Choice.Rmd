@@ -2945,6 +2945,25 @@ qqPlot(residuals(CountsCompare2_C1_mod))   # good
   emm<-emmeans(CountsCompare2_C1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
+
+#model just for 27 and 30
+CountsCompare2_C1_27C30C<-subset(CountsCompare2_C1, Temp=="27"|Temp=="30")
+CountsCompare2_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1_27C30C)
+anova(CountsCompare2_C1_mod)
+qqPlot(residuals(CountsCompare2_C1_27C30C))   # good
+  emm<-emmeans(CountsCompare2_C1_27C30C,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for D3 and D7
+CountsCompare2_C1_D3D7<-subset(CountsCompare2_C1, Day=="3"|Day=="7")
+CountsCompare2_C1_D3D7_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1_D3D7)
+anova(CountsCompare2_C1_D3D7_mod)
+qqPlot(residuals(CountsCompare2_C1_D3D7_mod))   # good
+  emm<-emmeans(CountsCompare2_C1_D3D7_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
 ```
 
 D1, full mod, then by temp 
@@ -2958,6 +2977,24 @@ qqPlot(residuals(CountsCompare2_D1_mod))   # good
    emm<-emmeans(CountsCompare2_D1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
+
+#model just for 27 and 30
+CountsCompare2_D1_27C30C<-subset(CountsCompare2_D1, Temp=="27"|Temp=="30")
+CountsCompare2_D1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_D1_27C30C)
+anova(CountsCompare2_D1_mod)
+qqPlot(residuals(CountsCompare2_D1_mod))   # good
+  emm<-emmeans(CountsCompare2_D1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for D3 and D7
+CountsCompare2_D1_D3D7<-subset(CountsCompare2_D1, Day=="3"|Day=="7")
+CountsCompare2_D1_D3D7_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_D1_D3D7)
+anova(CountsCompare2_D1_D3D7_mod)
+qqPlot(residuals(CountsCompare2_D1_D3D7_mod))   # good
+  emm<-emmeans(CountsCompare2_D1_D3D7_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
 ```
 
 F1, full mod, then by temp 
@@ -2968,6 +3005,24 @@ CountsCompare2_F1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),C
 anova(CountsCompare2_F1_mod)
 qqPlot(residuals(CountsCompare2_F1_mod))   # ok
  emm<-emmeans(CountsCompare2_F1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for 27 and 30
+CountsCompare2_F1_27C30C<-subset(CountsCompare2_F1, Temp=="27"|Temp=="30")
+CountsCompare2_F1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_F1_27C30C)
+anova(CountsCompare2_F1_mod)
+qqPlot(residuals(CountsCompare2_F1_27C30C))   # good
+  emm<-emmeans(CountsCompare2_F1_27C30C,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for D3 and D7
+CountsCompare2_F1_D3D7<-subset(CountsCompare2_F1, Day=="3"|Day=="7")
+CountsCompare2_F1_D3D7_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_F1_D3D7)
+anova(CountsCompare2_F1_D3D7_mod)
+qqPlot(residuals(CountsCompare2_F1_D3D7_mod))   # good
+  emm<-emmeans(CountsCompare2_F1_D3D7_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
@@ -2984,6 +3039,23 @@ qqPlot(residuals(CountsCompare2_G3_mod))   # good
 cld(emm)
 pairs(emm)
 
+#model just for 27 and 30
+CountsCompare2_G3_27C30C<-subset(CountsCompare2_G3, Temp=="27"|Temp=="30")
+CountsCompare2_G3_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_G3_27C30C)
+anova(CountsCompare2_G3_mod)
+qqPlot(residuals(CountsCompare2_G3_mod))   # good
+  emm<-emmeans(CountsCompare2_G3_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for D3 and D7
+CountsCompare2_G3_D3D7<-subset(CountsCompare2_G3, Day=="3"|Day=="7")
+CountsCompare2_G3_D3D7_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_G3_D3D7)
+anova(CountsCompare2_G3_D3D7_mod)
+qqPlot(residuals(CountsCompare2_G3_D3D7_mod))   # good
+  emm<-emmeans(CountsCompare2_G3_D3D7_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
 ```
 
 
