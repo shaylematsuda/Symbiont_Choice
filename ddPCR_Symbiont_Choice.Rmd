@@ -1135,7 +1135,7 @@ FIRST make df for ALLs with proper binomial
 ORganize df: ddPCR and then combine with monoculture ALLs
 ```{r}    
 #ALLcast_9000_cast2a includes all samples even if not all clades amped
-
+ 
 #ALL
 #organize the ddPCR data 
  ALL_RelAb<-ALLcast_9000_cast2a #copy ddPCR df
@@ -1212,7 +1212,7 @@ ALL_forCounts<-na.omit(ALL_forCounts)
 ```
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
-```{r}        
+```{r}         
 BinaryInfect<-Monoculture  # make new df for binary infection
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
@@ -1240,7 +1240,7 @@ dispersion_glmer(Binary_mod) # no overdispersion  .77
   pairs(emm)
   cld(emm) 
   
-    emm<-emmeans(Binary_mod,  ~ Symbiont*Day|Temp)
+    emm<-emmeans(Binary_mod,  ~ Day*Temp|Symbiont)
 cld(emm)
   
 #subset 27 and 30 ONLY
@@ -2401,7 +2401,7 @@ grid.arrange(Singles_no0_27_mean_plot, Singles_no0_30_mean_plot, Singles_no0_31_
 
 
 # Monoculture vs poluculture-infection: Cell Counts PLOTS (Blue and pink plots) No 0s 20200824
-C1        
+C1         
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected  
 ```{r}   
@@ -2897,7 +2897,7 @@ ggsave(filename="Figures/PinkblueCounts2.pdf", plot=InfectRaw_Fig1, dpi=300, wid
 ```
   
 # Monoculture vs polyculture: Pink and Blue Models by symbiont, 0s removed for multi within specific zoox. YOU need this 
-```{r}        
+```{r}         
 #stats, log10: Normal 
 hist(CountsCompare2$cells.larvae_round)
 CountsCompare2$cells.larvae_log<-log10(CountsCompare2$cells.larvae_round+1)
@@ -2961,6 +2961,15 @@ CountsCompare2_C1_D3D7_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCo
 anova(CountsCompare2_C1_D3D7_mod)
 qqPlot(residuals(CountsCompare2_C1_D3D7_mod))   # good
   emm<-emmeans(CountsCompare2_C1_D3D7_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#model just for D3 
+CountsCompare2_C1_D3<-subset(CountsCompare2_C1, Day=="3")
+CountsCompare2_C1_D3_mod<-lmer(cells.larvae_log~Temp*single.multi+(1|PotCode),CountsCompare2_C1_D3)
+anova(CountsCompare2_C1_D3_mod)
+qqPlot(residuals(CountsCompare2_C1_D3_mod))   # good
+  emm<-emmeans(CountsCompare2_C1_D3_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
@@ -4283,7 +4292,7 @@ Win_Num_31_D7 %>%
 
 ```
 
-# Competative-infection: relative abundance of each clade  
+# Competative-infection: Polycluture only, relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df    
 ```{r}      
@@ -4303,7 +4312,7 @@ ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (d
 ``` 
   
 Stats: Relative abundance, df = ALL_RelA_b 
-```{r} 
+```{r}  
    
 #Full model  
 hist(ALL_RelA_b$cells.larvae)
@@ -4339,6 +4348,17 @@ anova(ALL_RelA_b_27C30C_mod)
 qqPlot(residuals(ALL_RelA_b_27C30C_mod))   # meh
 
   emm<-emmeans(ALL_RelA_b_27C30C_mod,  ~ Symbiont *Day|Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+##Subset Day 3 and D7
+ALL_RelA_b_D3D7<-subset(ALL_RelA_b, Day=="3"|Day=="7")
+
+ALL_RelA_b_D3D7_mod<-lmer(cells.larvae_log~Symbiont*Temp*Day+(1|ALL.number)+(1|Pot), ALL_RelA_b_D3D7)
+anova(ALL_RelA_b_D3D7_mod)
+qqPlot(residuals(ALL_RelA_b_D3D7_mod))   # meh
+
+  emm<-emmeans(ALL_RelA_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -4775,7 +4795,7 @@ qqPlot(residuals(CountsCompare_multi_G3_mod))   # good
 #POLYCULTURE data, ALL1 data (cutoff 9000)   
 THIS IS THE SAME AS THE ABOVE BUT THOSE FIGURES IN MY PPT AFTER THE 'END' WITH THE SINGLE ON LEFT AND MULTI ON RIGHT. 
 Expected vs observed infections, all and by clade
-```{r}   
+```{r}    
 #ALL everything (this is way too big) 
 Allmod<-lmer(log(cells.larvae+1)~Day*Temp*Primer+(1|Pot), ALL1)  #All.number is the larvae ID
 #summary(Allmod)
@@ -4826,7 +4846,7 @@ emmeans(AllmodDay14, pairwise ~ Temp |Primer)
 Compare expected vs observed. Do this at each Time point (2-way easier to interpret)
 C1
 ```{r}   
-#copy df  
+#copy df   
 C1Full2<-C1Full 
 D1Full2<-D1Full
 F1Full2<-F1Full 
@@ -4851,7 +4871,7 @@ C1_EO<-rbind(C1ALLb, C1Full3)
 C1_EO$single.multi<-factor(C1_EO$single.multi, levels=c("single","multi"))
 ```
 C1 Day 3
-```{r} 
+```{r}  
 # Day 3 
 C1_EO.D3<-subset(C1_EO, Day=="3")
 C1_EOmodD3<-lmer(cells.larvae_log~Temp*single.multi+(1|Pot), C1_EO.D3)
