@@ -1211,7 +1211,7 @@ ALLcast_9000_cast3<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars] # new df
   ALLFullscopehemo4<-subset(ALLFullscopehemo2, select = -c(Infect)) #prep scope hemo df
   
 ALL_forCounts<-rbind(ALLFullscopehemo4,ALLcast_9000_cast3)
-ALL_forCounts<-na.omit(ALL_forCounts)
+ALL_forCounts<-na.omit(ALL_forCounts) 
 ```
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
@@ -4663,7 +4663,7 @@ grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
 ``` 
 
 ALL relative abundance Line plots
-```{r}   
+```{r}    
  
 #27C line plot
  ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
@@ -4826,6 +4826,111 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 
 ```
 
+***********NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
+```{r}
+#ALL_RelA_Infect2  ALLnumb and number of clades df
+#ALLcast_9000_cast2cAvars2 <- df for 
+
+#get cell counts for ALL number for correct df
+ALLcast_9000_cast2cAvars2<-c("ALL.number","Temp","Day","cells.larvae") #select cols to keep
+ALLcast_9000_cast4<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars2] # new df
+
+#merge 2 dfs
+CellsByNum<-merge(ALL_RelA_Infect2,ALLcast_9000_cast4, by="ALL.number")
+CellsByNum$ALL.number<-as.factor(CellsByNum$ALL.number)
+CellsByNum$numclade<-as.factor(CellsByNum$numclade)
+CellsByNum$cells.larvae_log<-log10(CellsByNum$cells.larvae+1)
+
+#plot 
+CellsByNum_27C<-subset(CellsByNum, Temp=="27")
+CellsByNum_30C<-subset(CellsByNum, Temp=="30")
+CellsByNum_31C<-subset(CellsByNum, Temp=="31")
+
+#plot 27 
+CellsByNum_plot27<-ggplot(data=CellsByNum_27C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+  #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+             #   width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+      geom_smooth(method = lm )+
+      # geom_point(shape = 1,size = 4,colour = "black")+
+  #geom_line(linetype="dotted")+
+  xlab("number of clades infected by") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+       #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells larva log"))) +
+  ggtitle("cells larva- by number clades")+
+  theme(plot.title = element_text(size=20));CellsByNum_plot27
+
+#plot 30 
+CellsByNum_plot30<-ggplot(data=CellsByNum_30C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+  #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+             #   width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+      # geom_point(shape = 1,size = 4,colour = "black")+
+  #geom_line(linetype="dotted")+
+  xlab("number of clades infected by") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+       #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells larva log"))) +
+  ggtitle("cells larva- by number clades 30")+
+  theme(plot.title = element_text(size=20));CellsByNum_plot30
+
+#plot 31
+CellsByNum_plot31<-ggplot(data=CellsByNum_31C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+  #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+             #   width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+    geom_smooth(method = "lm")+
+      # geom_point(shape = 1,size = 4,colour = "black")+
+  #geom_line(linetype="dotted")+
+  xlab("number of clades infected by") + #Label the X Axis 
+  #ylim(0, 1) + #set Y limits 
+       #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("cells larva log"))) +
+  ggtitle("cells larva- by number clades31")+
+  theme(plot.title = element_text(size=20));CellsByNum_plot31
+
+
+
+CellsByNum_plot27<-CellsByNum_plot27+ theme(legend.position = "none") #remove legend
+CellsByNum_plot30<-CellsByNum_plot30+ theme(legend.position = "none") #remove legend
+#CellsByNum_plot31<-CellsByNum_plot31+ theme(legend.position = "none") #remove legend
+
+grid.arrange(CellsByNum_plot27, CellsByNum_plot30,CellsByNum_plot31, nrow = 1)
+
+
+```
 
 
 #Competition-Infection: Models, full and by-clade for comparison (you said you don't want to use for main analysis)
