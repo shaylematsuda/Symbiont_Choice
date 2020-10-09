@@ -3794,16 +3794,62 @@ aData3<-merge(aData2,ALL_RelA_b, by="ALL.number")
 NumWinner_27RelA<-subset(aData3, Temp==27) #subset temp 27
 #D3
 NumWinner_27RelA_D3<-subset(NumWinner_27RelA, Day==3) #subset day 3
-NumWinner_27RelA_D3a<-NumWinner_27RelA_D3[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
+NumWinner_27RelA_D3a<-NumWinner_27RelA_D3[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need, btw cells. larvae is actually relative abundance
 NumWinner_27RelA_D3a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D3a, mean) #aggregate by symbiont + numbclades
+
+  #27 Day 3 by 3  <- use to make new spreadsheet with relA for 3-gen and 4-gen
+  NumWinner_27RelA_D3b<-NumWinner_27RelA_D3[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_27RelA_D3b_3gen<-subset(NumWinner_27RelA_D3b, numbClades=="3")
+  NumWinner_27RelA_D3b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D3b_3gen, mean)
+  NumWinner_27RelA_D3b_3gen$Day<-3
+    NumWinner_27RelA_D3b_3gen$Temp<-27
+    NumWinner_27RelA_D3b_3gen$genera<-3
+
+  
+   #27 Day 3 by 4
+  NumWinner_27RelA_D3b_4gen<-subset(NumWinner_27RelA_D3b, numbClades=="4")
+  NumWinner_27RelA_D3b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D3b_4gen, mean)
+NumWinner_27RelA_D3b_4gen$Day<-3
+NumWinner_27RelA_D3b_4gen$Temp<-27
+    NumWinner_27RelA_D3b_4gen$genera<-4
+    
+  testing<-rbind(NumWinner_27RelA_D3b_3gen,NumWinner_27RelA_D3b_4gen)
+
+
+
 #D7
 NumWinner_27RelA_D7<-subset(NumWinner_27RelA, Day==7) #subset day 7
 NumWinner_27RelA_D7a<-NumWinner_27RelA_D7[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_27RelA_D7a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D7a, mean) #aggregate by symbiont + numbclades
+
+ #27 Day 7 by 3 
+  NumWinner_27RelA_D7b<-NumWinner_27RelA_D7[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_27RelA_D7b_3gen<-subset(NumWinner_27RelA_D7b, numbClades=="3")
+  NumWinner_27RelA_D7b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D7b_3gen, mean)
+  
+   #27 Day 7 by 4
+  NumWinner_27RelA_D7b_4gen<-subset(NumWinner_27RelA_D7b, numbClades=="4")
+  NumWinner_27RelA_D7b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D7b_4gen, mean)
+
+
+
 #D14
 NumWinner_27RelA_D14<-subset(NumWinner_27RelA, Day==14) #subset day 14
 NumWinner_27RelA_D14a<-NumWinner_27RelA_D14[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_27RelA_D14a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D14a, mean) #aggregate by symbiont + numbclades
+
+ #27 Day 14 by 3 
+  NumWinner_27RelA_D14b<-NumWinner_27RelA_D14[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_27RelA_D14b_3gen<-subset(NumWinner_27RelA_D14b, numbClades=="3")
+  NumWinner_27RelA_D14b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D14b_3gen, mean)
+  
+   #27 Day 14 by 4
+  NumWinner_27RelA_D14b_4gen<-subset(NumWinner_27RelA_D14b, numbClades=="4")
+  NumWinner_27RelA_D14b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27RelA_D14b_4gen, mean)
+
+
+
+
 
 #Plots
 # barplot 27 D3 
@@ -3869,14 +3915,49 @@ NumWinner_30RelA<-subset(aData3, Temp==30) #subset temp 30
 NumWinner_30RelA_D3<-subset(NumWinner_30RelA, Day==3) #subset day 3
 NumWinner_30RelA_D3a<-NumWinner_30RelA_D3[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_30RelA_D3a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D3a, mean) #aggregate by symbiont + numbclades
+
+#30 Day 3 by 3  <- use to make new spreadsheet with relA for 3-gen and 4-gen
+  NumWinner_30RelA_D3b<-NumWinner_30RelA_D3[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_30RelA_D3b_3gen<-subset(NumWinner_30RelA_D3b, numbClades=="3")
+  NumWinner_30RelA_D3b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D3b_3gen, mean)
+  
+   #30 Day 3 by 4
+  NumWinner_30RelA_D3b_4gen<-subset(NumWinner_30RelA_D3b, numbClades=="4")
+  NumWinner_30RelA_D3b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D3b_4gen, mean)
+
+
 #D7
 NumWinner_30RelA_D7<-subset(NumWinner_30RelA, Day==7) #subset day 7
 NumWinner_30RelA_D7a<-NumWinner_30RelA_D7[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_30RelA_D7a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D7a, mean) #aggregate by symbiont + numbclades
+
+#30 Day 7 by 3 
+  NumWinner_30RelA_D7b<-NumWinner_30RelA_D7[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_30RelA_D7b_3gen<-subset(NumWinner_30RelA_D7b, numbClades=="3")
+  NumWinner_30RelA_D7b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D7b_3gen, mean)
+  
+   #30 Day 7 by 4
+  NumWinner_30RelA_D7b_4gen<-subset(NumWinner_30RelA_D7b, numbClades=="4")
+  NumWinner_30RelA_D7b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D7b_4gen, mean)
+
+
+
 #D14
 NumWinner_30RelA_D14<-subset(NumWinner_30RelA, Day==14) #subset day 14
 NumWinner_30RelA_D14a<-NumWinner_30RelA_D14[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_30RelA_D14a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D14a, mean) #aggregate by symbiont + numbclades
+
+
+#30 Day 14 by 3 
+  NumWinner_30RelA_D14b<-NumWinner_30RelA_D14[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_30RelA_D14b_3gen<-subset(NumWinner_30RelA_D14b, numbClades=="3")
+  NumWinner_30RelA_D14b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D14b_3gen, mean)
+  
+   #30 Day 14 by 4
+  NumWinner_30RelA_D14b_4gen<-subset(NumWinner_30RelA_D14b, numbClades=="4")
+  NumWinner_30RelA_D14b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_30RelA_D14b_4gen, mean)
+
+
 
 #Plots
 # barplot 30 D3 
@@ -3943,14 +4024,31 @@ NumWinner_31RelA<-subset(aData3, Temp==31) #subset temp 31
 NumWinner_31RelA_D3<-subset(NumWinner_31RelA, Day==3) #subset day 3
 NumWinner_31RelA_D3a<-NumWinner_31RelA_D3[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_31RelA_D3a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D3a, mean) #aggregate by symbiont + numbclades
+
+#31 Day 3 by 3  <- use to make new spreadsheet with relA for 3-gen and 4-gen
+  NumWinner_31RelA_D3b<-NumWinner_31RelA_D3[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_31RelA_D3b_3gen<-subset(NumWinner_31RelA_D3b, numbClades=="3")
+  NumWinner_31RelA_D3b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D3b_3gen, mean)
+  
+   #31 Day 3 by 4
+  NumWinner_31RelA_D3b_4gen<-subset(NumWinner_31RelA_D3b, numbClades=="4")
+  NumWinner_31RelA_D3b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D3b_4gen, mean)
+
+
+
 #D7
 NumWinner_31RelA_D7<-subset(NumWinner_31RelA, Day==7) #subset day 7
 NumWinner_31RelA_D7a<-NumWinner_31RelA_D7[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
 NumWinner_31RelA_D7a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D7a, mean) #aggregate by symbiont + numbclades
-#D14
-NumWinner_31RelA_D14<-subset(NumWinner_31RelA, Day==14) #subset day 14
-NumWinner_31RelA_D14a<-NumWinner_31RelA_D14[c("numbClades","Symbiont","cells.larvae")] #keep only cols you need
-NumWinner_31RelA_D14a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D14a, mean) #aggregate by symbiont + numbclades
+
+  #31 Day 3 by 3  <- use to make new spreadsheet with relA for 3-gen and 4-gen
+  NumWinner_31RelA_D7b<-NumWinner_31RelA_D7[c("numbClades","Symbiont","cells.larvae")]
+  NumWinner_31RelA_D7b_3gen<-subset(NumWinner_31RelA_D7b, numbClades=="3")
+  NumWinner_31RelA_D7b_3gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D7b_3gen, mean)
+  
+   #31 Day 3 by 4
+  NumWinner_31RelA_D7b_4gen<-subset(NumWinner_31RelA_D7b, numbClades=="4")
+  NumWinner_31RelA_D7b_4gen_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_31RelA_D7b_4gen, mean)
 
 #Plots
 # barplot 31 D3 
@@ -4013,10 +4111,50 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+YOU are here!  Separeated out 3 and 4 genra groups. made mean table. figure out stats and new plots. note the single larvae with 4-genera in d7 31, do you want to include only groups with 3+
+Now figure out relA by genus-infection group dom genus:
+```{r}
+#3gen
+aData4<-aData3  #make copy
+
+aData4_3or4<-subset(aData4, numbClades=="3"|numbClades=="4")
+
+aData4_3or4_mean <- ddply(aData4_3or4, c("Day", "Temp","numbClades","Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+
+aData4_3or4_mean #display table 
+
+
+
+
+
+
+
+```
+
+
+
 # C Who was the most dominant clade in larvave. Only larvae where all four genera amped
 This is in line plots: see below for waffles. 
-```{r}      
-#df ALL_RelA
+```{r}       
+#df ALL_RelA 
  
 ALL_RelA2<-select(ALL_RelA, "ALL.number", "Temp", "Day","Pot","C1","D1" ,"F1","G3") #keep only cols you want
 
@@ -4408,6 +4546,10 @@ anova(ALL_RelA_b_mod)
 qqPlot(residuals(ALL_RelA_b_mod))   # good
 
   emm<-emmeans(ALL_RelA_b_mod,  ~ Symbiont *Day|Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+  emm<-emmeans(ALL_RelA_b_mod,  ~ Day*Temp|Symbiont, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -4826,19 +4968,19 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 
 ```
 
-***********NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
+****NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
 ```{r}
 #ALL_RelA_Infect2  ALLnumb and number of clades df
-#ALLcast_9000_cast2cAvars2 <- df for 
+#ALLcast_9000_cast2c <- df for 
 
 #get cell counts for ALL number for correct df
-ALLcast_9000_cast2cAvars2<-c("ALL.number","Temp","Day","cells.larvae") #select cols to keep
+ALLcast_9000_cast2cAvars2<-c("ALL.number","Temp","Day","cells.larvae","Pot") #select cols to keep
 ALLcast_9000_cast4<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars2] # new df
 
 #merge 2 dfs
 CellsByNum<-merge(ALL_RelA_Infect2,ALLcast_9000_cast4, by="ALL.number")
 CellsByNum$ALL.number<-as.factor(CellsByNum$ALL.number)
-CellsByNum$numclade<-as.factor(CellsByNum$numclade)
+#CellsByNum$numclade<-as.factor(CellsByNum$numclade)
 CellsByNum$cells.larvae_log<-log10(CellsByNum$cells.larvae+1)
 
 #plot 
@@ -4930,6 +5072,17 @@ CellsByNum_plot30<-CellsByNum_plot30+ theme(legend.position = "none") #remove le
 grid.arrange(CellsByNum_plot27, CellsByNum_plot30,CellsByNum_plot31, nrow = 1)
 
 
+#MODELS
+CellsByNum_model<-lmer(numclade ~cells.larvae_log*Day*Temp+(1|Pot), CellsByNum)
+anova(CellsByNum_model)
+
+CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
+anova(CellsByNum_model)
+qqPlot(residuals(CellsByNum_model))   # good
+
+  emm<-emmeans(CellsByNum_model,  ~ numclade |Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
 ```
 
 
@@ -6132,7 +6285,7 @@ Day7_nmds<-ggplot(ALLdata_Day7.nmds_xy, aes(MDS1, MDS2, color=Temp))+
 Things you want to remove
 
 #richness test Aug 14, 2020 CN chat
-```{r} 
+```{r}  
 ALL_RelA_Infect2<-ALL_RelA_Infect #make a copy
 ALL_RelA_Infect2<-ALL_RelA_Infect2[c(3,9)] #keep cols you want
 Competition3<-Competition[c(1:4,10)]  #keep cols you want (Competition df is made below so might not knit)
