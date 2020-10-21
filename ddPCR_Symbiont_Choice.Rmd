@@ -3169,7 +3169,8 @@ ALL_RelA_Infect2$numclade<-as.factor(as.character(ALL_RelA_Infect2$numclade))
 
 
 NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #you couldn't do this in R so you did in excel and are reuploading....ugh. 
-#you are trying this new again (old is saved below incase) 20200824
+
+#you are trying this new again (old is saved below incase) 20200824 relative abundance of numclade bygrouping
 NumClades$T0_relA<-NumClades$T0/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
 NumClades$T1_relA<-NumClades$T1/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
 NumClades$T2_relA<-NumClades$T2/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
@@ -3195,9 +3196,17 @@ NumCladesB_mean <- ddply(NumCladesB, c("Temp","Day","Number"), summarise, #summa
 ) 
 NumCladesB_mean #display table
 
-#write.csv(NumCladesB_mean,"NumCladesB_mean.csv")
+#write.csv(NumCladesB_mean,"NumCladesB_mean20201014.csv")
 
-
+#do only by Number of clades (no temp time) for how many larvae with 3 or 4 genera
+NumCladesB_numbonly_mean <- ddply(NumCladesB, c("Number"), summarise, #summarize cell count
+                 N    = length(NumGenera[!is.na(NumGenera)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 mean = mean(NumGenera, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                  sd   = sd(NumGenera, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                  max = max(NumGenera, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+NumCladesB_numbonly_mean #display table
 
 
 
@@ -3551,7 +3560,11 @@ grid.arrange(NumClades2a_27_D3_wafflePLOT,NumClades2a_27_D7_wafflePLOT,NumClades
 
 ```
 
-Clade winners: which genus was dominant in larvae on avg in each infection number group?
+
+
+Ok do you actually need this or can you use the rel abound for 3 and 4 to pull out the winner genera?
+THIS MIGHt be the issue: 20201019 figure this out
+** WHICH Clade winners: which genus was dominant in larvae on avg in each infection number group?
 ```{r}
 NumWinner<-read.csv("SC18_numGeneraInfect.csv")
 #remove 0s (code called C1 'winner' for 0s C1 by default)
@@ -3562,6 +3575,7 @@ T27_D3<-subset(T27_D, Day=="3")
 T27_D7<-subset(T27_D, Day=="7")
 T27_D14<-subset(T27_D, Day=="14")
 
+# what percent of the total by these groupings is each genus?
 T27_D3_rel<-T27_D3 %>% group_by(NumGenera) %>% mutate(relAbundByPath = numblarv / sum(numblarv))
 T27_D3_rel<-subset(T27_D3_rel, select = -c(numblarv) )
 names(T27_D3_rel)[names(T27_D3_rel)=="relAbundByPath"] <- "RelA"
@@ -3577,7 +3591,7 @@ T27_D14_rel<-subset(T27_D14_rel, select = -c(numblarv) )
 names(T27_D14_rel)[names(T27_D14_rel)=="relAbundByPath"] <- "RelA"
 T27_D14_relc<-dcast(T27_D14_rel, Temp+Day+NumGenera~NumberWinners)
 
-# barplot 27 D3 
+# barplot 27 D3  <- this gives us winner of all genera infections but we only want 3 and 4 bc so few 0-2
 T27_D3_rel_plot<-ggplot(T27_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)) + 
 geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
@@ -3651,7 +3665,7 @@ T30_D7_relc<-dcast(T30_D7_rel, Temp+Day+NumGenera~NumberWinners)
 T30_D14_rel<-T30_D14 %>% group_by(NumGenera) %>% mutate(relAbundByPath = numblarv / sum(numblarv))
 T30_D14_rel<-subset(T30_D14_rel, select = -c(numblarv) )
 names(T30_D14_rel)[names(T30_D14_rel)=="relAbundByPath"] <- "RelA"
-6<-dcast(T30_D14_rel, Temp+Day+NumGenera~NumberWinners)
+T30_D14_relc<-dcast(T30_D14_rel, Temp+Day+NumGenera~NumberWinners)
 
 # barplot 30 D3 
 T30_D3_rel_plot<-ggplot(T30_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)) + 
@@ -3718,14 +3732,14 @@ T31_D7<-subset(T31_D, Day=="7")
 T31_D3_rel<-T31_D3 %>% group_by(NumGenera) %>% mutate(relAbundByPath = numblarv / sum(numblarv))
 T31_D3_rel<-subset(T31_D3_rel, select = -c(numblarv) )
 names(T31_D3_rel)[names(T31_D3_rel)=="relAbundByPath"] <- "RelA"
+T31_D3_relc<-dcast(T30_D14_rel, Temp+Day+NumGenera~NumberWinners)
 
 T31_D7_rel<-T31_D7 %>% group_by(NumGenera) %>% mutate(relAbundByPath = numblarv / sum(numblarv))
 T31_D7_rel<-subset(T31_D7_rel, select = -c(numblarv) )
 names(T31_D7_rel)[names(T31_D7_rel)=="relAbundByPath"] <- "RelA"
+T31_D7_relc<-dcast(T30_D14_rel, Temp+Day+NumGenera~NumberWinners)
 
-T31_D14_rel<-T31_D14 %>% group_by(NumGenera) %>% mutate(relAbundByPath = numblarv / sum(numblarv))
-T31_D14_rel<-subset(T31_D14_rel, select = -c(numblarv) )
-names(T31_D14_rel)[names(T31_D14_rel)=="relAbundByPath"] <- "RelA"
+
 
 # barplot 31 D3 
 T31_D3_rel_plot<-ggplot(T31_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)) + 
@@ -3776,11 +3790,23 @@ T31_D7_rel_plot<-T31_D7_rel_plot+ theme(legend.position = "none") #remove legend
 
 grid.arrange(T27_D3_rel_plot, T27_D7_rel_plot, T27_D14_rel_plot,T30_D3_rel_plot,T30_D7_rel_plot,T30_D14_rel_plot, T31_D3_rel_plot,T31_D7_rel_plot,nrow = 3)
 
+#combine all separate 
+#not all genera represented so add in genera with 0s 
+T27_D7_relc$F1<-0
+T27_D14_relc$F1<-0
+T30_D7_relc$F1<-0
+T30_D7_relc$C1<-0
+
+#% of winning genera
+GeneraWinners<-rbind(T27_D3_relc, T27_D7_relc,T27_D14_relc,T30_D3_relc, T30_D7_relc,T30_D14_relc,T31_D3_relc, T31_D7_relc)
+
+
 
 ```
+
 Now lets do relA for each grouping of number of genera/larva  
 df: ALL_RelA_b  (relative abundance, the cells.larvae=Rel abund)
-```{r}
+```{r} 
 aData<-ALL_RelA2
   aData$C1[aData$C1>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
   aData$C1[aData$C1==0]<-0
@@ -3800,6 +3826,10 @@ aData2<-aData[c("ALL.number","numbClades")] #new row with the sum of num of gene
 
 aData3<-merge(aData2,ALL_RelA_b, by="ALL.number")
 
+
+
+
+## THIS IS RELATIVE ABUNDANCES FOR 3 AND 4 GENERA LARVA (NOT DOMINANT CLADE)
 #27C
 NumWinner_27RelA<-subset(aData3, Temp==27) #subset temp 27
 #D3
@@ -3861,7 +3891,7 @@ NumWinner_27RelA_D14a_agg<-aggregate(.~Symbiont+numbClades, data=NumWinner_27Rel
 
 
 
-#Plots
+#Plots relative abundance by # of genera
 # barplot 27 D3 
 NumWinner_27RelA_D3a_agg_plot<-ggplot(NumWinner_27RelA_D3a_agg, aes(y=cells.larvae,x=numbClades, fill=Symbiont)) + 
 geom_bar(stat="identity", width = .6)+
@@ -4122,21 +4152,11 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+THIS SECTION IS RELATIVE ABUNDANCE OF LARVAE INFECTED WITH 3 OR 4 GENERA BY dom GENERA :
 YOU are here!  Separeated out 3 and 4 genra groups. made mean table. figure out stats and new plots. note the single larvae with 4-genera in d7 31, do you want to include only groups with 3+
 Now figure out relA by genus-infection group dom genus:
 ```{r}
+# gives the relative abundance of larvae within 3 or 4 genera infected larvae. manually plotted by dom genus. 
 #3gen
 aData4<-aData3  #make copy
 
@@ -4173,6 +4193,7 @@ aData4_3or4_cast2_31C_D3<-subset(aData4_3or4_cast2_31C, Day=="3")
 aData4_3or4_cast2_31C_D7<-subset(aData4_3or4_cast2_31C, Day=="7")
 
 #Same as above but no cast
+#27
 aData4_3or4_27<-subset(aData4_3or4, Temp==27)
   aData4_3or4_27_D3<-subset(aData4_3or4_27, Day==3)
     aData4_3or4_27_D3_g3<-subset(aData4_3or4_27_D3, numbClades==3)
@@ -4185,16 +4206,25 @@ aData4_3or4_27<-subset(aData4_3or4, Temp==27)
   aData4_3or4_27_D14<-subset(aData4_3or4_27, Day==14)
     aData4_3or4_27_D14_g3<-subset(aData4_3or4_27_D14, numbClades==3)
     aData4_3or4_27_D14_g4<-subset(aData4_3or4_27_D14, numbClades==4)
-
+#30
 aData4_3or4_30<-subset(aData4_3or4, Temp==30)
 aData4_3or4_30_D3<-subset(aData4_3or4_30, Day==3)
+    aData4_3or4_30_D3_g3<-subset(aData4_3or4_30_D3, numbClades==3)
+    aData4_3or4_30_D3_g4<-subset(aData4_3or4_30_D3, numbClades==4)
 aData4_3or4_30_D7<-subset(aData4_3or4_30, Day==7)
+    aData4_3or4_30_D7_g3<-subset(aData4_3or4_30_D7, numbClades==3)
+    aData4_3or4_30_D7_g4<-subset(aData4_3or4_30_D7, numbClades==4)
 aData4_3or4_30_D14<-subset(aData4_3or4_30, Day==14)
+    aData4_3or4_30_D14_g3<-subset(aData4_3or4_30_D14, numbClades==3)
+    aData4_3or4_30_D14_g4<-subset(aData4_3or4_30_D14, numbClades==4)
 
 aData4_3or4_31<-subset(aData4_3or4, Temp==31)
 aData4_3or4_31_D3<-subset(aData4_3or4_31, Day==3)
+    aData4_3or4_31_D3_g3<-subset(aData4_3or4_31_D3, numbClades==3)
+    aData4_3or4_31_D3_g4<-subset(aData4_3or4_31_D3, numbClades==4)
 aData4_3or4_31_D7<-subset(aData4_3or4_31, Day==7)
-
+    aData4_3or4_31_D7_g3<-subset(aData4_3or4_31_D7, numbClades==3)
+    aData4_3or4_31_D7_g4<-subset(aData4_3or4_31_D7, numbClades==4)
 
  # library
 library(treemap)
@@ -4207,7 +4237,8 @@ treemap(aData4_3or4_27_D3,
             type="index"
             )
 
-#testing stacked bar
+#testing stacked bar - INDIVIDUAL LARVAE
+
 #27C 
 #3gen
 #D3
@@ -4321,14 +4352,263 @@ aData4_3or4_27_D14_g4_plot<-ggplot(aData4_3or4_27_D14_g4, aes(y=cells.larvae, x=
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("27C_D14_4gen");aData4_3or4_27_D3_g4_plot
+  ggtitle("27C_D14_4gen");aData4_3or4_27_D14_g4_plot
 
 aData4_3or4_27_D3_g4_plot<-aData4_3or4_27_D3_g4_plot+ theme(legend.position = "none") #remove legend
 aData4_3or4_27_D7_g4_plot<-aData4_3or4_27_D7_g4_plot+ theme(legend.position = "none") #remove legend
 aData4_3or4_27_D14_g4_plot<-aData4_3or4_27_D14_g4_plot+ theme(legend.position = "none") #remove legend
 
 grid.arrange(aData4_3or4_27_D3_g3_plot, aData4_3or4_27_D7_g3_plot,aData4_3or4_27_D14_g3_plot,aData4_3or4_27_D3_g4_plot, aData4_3or4_27_D7_g4_plot,aData4_3or4_27_D14_g4_plot, nrow = 2)
+
+#####################
+#30C 
+#3gen
+#D3
+aData4_3or4_30_D3_g3_plot<-ggplot(aData4_3or4_30_D3_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D3_3gen");aData4_3or4_30_D3_g3_plot
+
+aData4_3or4_30_D7_g3_plot<-ggplot(aData4_3or4_30_D7_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D7_3gen");aData4_3or4_30_D7_g3_plot
+
+aData4_3or4_30_D14_g3_plot<-ggplot(aData4_3or4_30_D14_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D14_3gen");aData4_3or4_30_D14_g3_plot
+
+aData4_3or4_30_D3_g3_plot<-aData4_3or4_30_D3_g3_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_30_D7_g3_plot<-aData4_3or4_30_D7_g3_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_30_D14_g3_plot<-aData4_3or4_30_D14_g3_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(aData4_3or4_30_D3_g3_plot, aData4_3or4_30_D7_g3_plot,aData4_3or4_30_D14_g3_plot, nrow = 1)
+
+
+#4 genera
+
+#D3
+aData4_3or4_30_D3_g4_plot<-ggplot(aData4_3or4_30_D3_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D3_4gen");aData4_3or4_30_D3_g4_plot
+
+aData4_3or4_30_D7_g4_plot<-ggplot(aData4_3or4_30_D7_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D7_4gen");aData4_3or4_30_D7_g4_plot
+
+aData4_3or4_30_D14_g4_plot<-ggplot(aData4_3or4_30_D14_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("30C_D14_4gen");aData4_3or4_30_D3_g4_plot
+
+aData4_3or4_30_D3_g4_plot<-aData4_3or4_30_D3_g4_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_30_D7_g4_plot<-aData4_3or4_30_D7_g4_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_30_D14_g4_plot<-aData4_3or4_30_D14_g4_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(aData4_3or4_30_D3_g3_plot, aData4_3or4_30_D7_g3_plot,aData4_3or4_30_D14_g3_plot,aData4_3or4_30_D3_g4_plot, aData4_3or4_30_D7_g4_plot,aData4_3or4_30_D14_g4_plot, nrow = 2)
+
+
+#########31C
+
+
+#31C 
+#3gen
+#D3
+aData4_3or4_31_D3_g3_plot<-ggplot(aData4_3or4_31_D3_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("31C_D3_3gen");aData4_3or4_31_D3_g3_plot
+
+aData4_3or4_31_D7_g3_plot<-ggplot(aData4_3or4_31_D7_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("31C_D7_3gen");aData4_3or4_31_D7_g3_plot
+
+
+
+aData4_3or4_31_D3_g3_plot<-aData4_3or4_31_D3_g3_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_31_D7_g3_plot<-aData4_3or4_31_D7_g3_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(aData4_3or4_31_D3_g3_plot, aData4_3or4_31_D7_g3_plot,, nrow = 1)
+
+
+#4 genera
+
+#D3
+aData4_3or4_31_D3_g4_plot<-ggplot(aData4_3or4_31_D3_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("31C_D3_4gen");aData4_3or4_31_D3_g4_plot
+
+aData4_3or4_31_D7_g4_plot<-ggplot(aData4_3or4_31_D7_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+           geom_bar(stat="identity", width=0.8)+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Larva")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("31C_D7_4gen");aData4_3or4_31_D7_g4_plot
+
+
+
+aData4_3or4_31_D3_g4_plot<-aData4_3or4_31_D3_g4_plot+ theme(legend.position = "none") #remove legend
+aData4_3or4_31_D7_g4_plot<-aData4_3or4_31_D7_g4_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(aData4_3or4_31_D3_g3_plot, aData4_3or4_31_D7_g3_plot,aData4_3or4_31_D3_g4_plot, aData4_3or4_31_D7_g4_plot, nrow = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4683,7 +4963,7 @@ Win_Num_31_D7 %>%
 
 ```
 
-# Competative-infection: Polycluture only, relative abundance of each clade  
+#Fig  Competative-infection: Polycluture only, relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df    
 ```{r}        
@@ -4703,7 +4983,7 @@ ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (d
 ``` 
   
 Stats: Relative abundance, df = ALL_RelA_b 
-```{r}  
+```{r}   
    
 #Full model  
 hist(ALL_RelA_b$cells.larvae)
@@ -4726,7 +5006,7 @@ ALL_RelA_b_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), 
 anova(ALL_RelA_b_mod)
 qqPlot(residuals(ALL_RelA_b_mod))   # good
 
-  emm<-emmeans(ALL_RelA_b_mod,  ~ Symbiont *Day|Temp, adjust="Tukey")
+  emm<-emmeans(ALL_RelA_b_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -4742,7 +5022,7 @@ ALL_RelA_b_27C30C_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|ALL.number)+(1
 anova(ALL_RelA_b_27C30C_mod)
 qqPlot(residuals(ALL_RelA_b_27C30C_mod))   # meh
 
-  emm<-emmeans(ALL_RelA_b_27C30C_mod,  ~ Symbiont *Day|Temp, adjust="Tukey")
+  emm<-emmeans(ALL_RelA_b_27C30C_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -4757,23 +5037,6 @@ qqPlot(residuals(ALL_RelA_b_D3D7_mod))   # meh
 cld(emm)
 pairs(emm)
 
-##Subset Day 3
-ALL_RelA_b_D3<-subset(ALL_RelA_b, Day=="3")
-
-ALL_RelA_b_D3_mod<-lmer(cells.larvae_log~Symbiont*Temp+(1|ALL.number)+(1|Pot), ALL_RelA_b_D3)
-anova(ALL_RelA_b_D3_mod)
-qqPlot(residuals(ALL_RelA_b_D3_mod))   # meh
-
-  emm<-emmeans(ALL_RelA_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
-cld(emm)
-pairs(emm)
-
-
-
-
-
-
-
 
 
 
@@ -4787,41 +5050,10 @@ pairs(emm)
 Temp27_RelA<-subset(ALL_RelA_b, Temp=="27")
 Temp30_RelA<-subset(ALL_RelA_b, Temp=="30")
 Temp31_RelA<-subset(ALL_RelA_b, Temp=="31")
-
-#27C
-Temp27_modRelA<-lmer(cells.larvae_arc~Symbiont*Day+(1|PotCode), Temp27_RelA)
-anova(Temp27_modRelA)
-qqPlot(residuals(Temp27_modRelA))   # good
-  emm<-emmeans(Temp27_modRelA,  ~ Symbiont *Day, adjust="Tukey")
-cld(emm)
-emm<-emmeans(Temp27_modRelA,  ~ Symbiont |Day, adjust="Tukey")
-cld(emm)
-
-
-
-
-
-#30C
-Temp30_modRelA<-lmer(cells.larvae_arc~Symbiont*Day+(1|PotCode), Temp30_RelA)
-anova(Temp30_modRelA)
-qqPlot(residuals(Temp30_modRelA))   # good
-  emm<-emmeans(Temp30_modRelA,  ~ Symbiont *Day, adjust="Tukey")
-cld(emm)
-  emm<-emmeans(Temp30_modRelA,  ~ Symbiont|Day, adjust="Tukey")
-cld(emm)
-
-#31C 
-Temp31_modRelA<-lmer(cells.larvae_arc~Symbiont*Day+(1|PotCode), Temp31_RelA)
-anova(Temp31_modRelA)
-qqPlot(residuals(Temp31_modRelA))   # good
- emm<-emmeans(Temp31_modRelA,  ~ Symbiont*Day, adjust="Tukey")
-cld(emm)
-  emm<-emmeans(Temp31_modRelA,  ~ Symbiont|Day, adjust="Tukey")
-cld(emm)
 ```
 Plot RA as stacked bar plots by Day and then by temp 
  
-By temps - line chart good (also show bar plot just in case) 
+By temps - weird boxplot chart good AND BAR chart (used)
 ```{r}    
 library(RColorBrewer)
 display.brewer.pal(n = 9, name = 'YlOrBr')
@@ -4848,7 +5080,7 @@ ALL_RelA_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summari
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
+) 
 ALL_RelA_27_mean #display table
 
 #round to nearest integer
@@ -5045,7 +5277,7 @@ ALL relative abundance Line plots
        geom_point(shape = 1,size = 4,colour = "black")+
   geom_line(linetype="dotted")+
   xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
+  ylim(-10, 1) + #set Y limits 
   theme_bw() + #Set the background color
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -5149,7 +5381,7 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 
 ```
 
-****NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
+# Table H: NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
 ```{r}
 #ALL_RelA_Infect2  ALLnumb and number of clades df
 #ALLcast_9000_cast2c <- df for 
@@ -5170,15 +5402,15 @@ CellsByNum_30C<-subset(CellsByNum, Temp=="30")
 CellsByNum_31C<-subset(CellsByNum, Temp=="31")
 
 #plot 27 
-CellsByNum_plot27<-ggplot(data=CellsByNum_27C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+CellsByNum_plot27<-ggplot(data=CellsByNum_27C, aes(x=cells.larvae_log, y=numclade, color=Day)) +
   #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
              #   width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
       scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
-      geom_smooth(method = lm )+
+      #geom_smooth(method = lm )+
       # geom_point(shape = 1,size = 4,colour = "black")+
   #geom_line(linetype="dotted")+
-  xlab("number of clades infected by") + #Label the X Axis 
+  xlab("cells/larvae") + #Label the X Axis 
   #ylim(0, 1) + #set Y limits 
        #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
@@ -5190,19 +5422,19 @@ CellsByNum_plot27<-ggplot(data=CellsByNum_27C, aes(x=numclade, y=cells.larvae_lo
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells larva log"))) +
+  ylab(expression(paste("number of clades"))) +
   ggtitle("cells larva- by number clades")+
   theme(plot.title = element_text(size=20));CellsByNum_plot27
 
 #plot 30 
-CellsByNum_plot30<-ggplot(data=CellsByNum_30C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+CellsByNum_plot30<-ggplot(data=CellsByNum_30C, aes(x=cells.larvae_log, y=numclade, color=Day)) +
   #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
              #   width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
       scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
       # geom_point(shape = 1,size = 4,colour = "black")+
   #geom_line(linetype="dotted")+
-  xlab("number of clades infected by") + #Label the X Axis 
+  xlab("cells/larva") + #Label the X Axis 
   #ylim(0, 1) + #set Y limits 
        #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
@@ -5214,20 +5446,20 @@ CellsByNum_plot30<-ggplot(data=CellsByNum_30C, aes(x=numclade, y=cells.larvae_lo
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells larva log"))) +
+  ylab(expression(paste("number of claes"))) +
   ggtitle("cells larva- by number clades 30")+
   theme(plot.title = element_text(size=20));CellsByNum_plot30
 
 #plot 31
-CellsByNum_plot31<-ggplot(data=CellsByNum_31C, aes(x=numclade, y=cells.larvae_log, color=Day)) +
+CellsByNum_plot31<-ggplot(data=CellsByNum_31C, aes(x=cells.larvae_log, y=numclade, color=Day)) +
   #geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
              #   width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
       scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
-    geom_smooth(method = "lm")+
+    #geom_smooth(method = "lm")+
       # geom_point(shape = 1,size = 4,colour = "black")+
   #geom_line(linetype="dotted")+
-  xlab("number of clades infected by") + #Label the X Axis 
+  xlab("cells/larva") + #Label the X Axis 
   #ylim(0, 1) + #set Y limits 
        #  scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme_bw() + #Set the background color
@@ -5240,7 +5472,7 @@ CellsByNum_plot31<-ggplot(data=CellsByNum_31C, aes(x=numclade, y=cells.larvae_lo
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells larva log"))) +
+  ylab(expression(paste("number of clades"))) +
   ggtitle("cells larva- by number clades31")+
   theme(plot.title = element_text(size=20));CellsByNum_plot31
 
@@ -5253,17 +5485,32 @@ CellsByNum_plot30<-CellsByNum_plot30+ theme(legend.position = "none") #remove le
 grid.arrange(CellsByNum_plot27, CellsByNum_plot30,CellsByNum_plot31, nrow = 1)
 
 
+# 78 larvae out of 87 larvae total are infected wit 3 or 4 clades, 90%
+
+
 #MODELS
-CellsByNum_model<-lmer(numclade ~cells.larvae_log*Day*Temp+(1|Pot), CellsByNum)
-anova(CellsByNum_model)
+
 
 CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
 anova(CellsByNum_model)
 qqPlot(residuals(CellsByNum_model))   # good
 
-  emm<-emmeans(CellsByNum_model,  ~ numclade |Temp, adjust="Tukey")
+  emm<-emmeans(CellsByNum_model,  ~ numclade, adjust="Tukey")
 cld(emm)
 pairs(emm)
+
+#if numclade is factor  YES??????
+CellsByNum$numclade<-as.factor(as.character(CellsByNum$numclade))
+CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
+anova(CellsByNum_model)
+qqPlot(residuals(CellsByNum_model))   # good
+
+  emm<-emmeans(CellsByNum_model,  ~ numclade*Temp, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+
+
 ```
 
 
