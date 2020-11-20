@@ -786,7 +786,7 @@ Mord.df2_mean_30<-subset(Mord.df2_mean, Temp=="30")
 Mord.df2_mean_31<-subset(Mord.df2_mean, Temp=="31")
 
 
-#mort by temp
+#mort mean by temp
  Mord.df2_temp_mean<- ddply(Mord.df2, c( "Temp"), summarise, #summarize cell counts
                  N    = length(PercentSurv[!is.na(PercentSurv)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(PercentSurv, na.rm=TRUE), #calculate mean of response variable, removing NA's
