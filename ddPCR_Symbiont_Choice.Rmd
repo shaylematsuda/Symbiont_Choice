@@ -86,7 +86,7 @@ library(flextable)
 
 # Load in data and setup dataframes:   
 Load in Hemocytometer (Individuals subset, Days 7 and 14) and Scope (Individuals subset, Day 3) counts data: 
-```{r}     
+```{r}      
 ####Load in hemocytometer counts and fluorescent scope counts:  
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
 Day7Counts<-read.csv("SC18_cellcounts_day7.csv")
@@ -3159,7 +3159,7 @@ pairs(emm)
 
 
 # B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
-```{r}          
+```{r}           
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 
@@ -3225,6 +3225,41 @@ NumCladesB_numbonly_mean #display table
 
 
 ```
+
+
+Stats for Numclades~temp*time
+```{r}
+# df RelA_CladeComp
+NumClades_stats<-RelA_CladeComp # make a copy
+NumClades_stats<-NumClades_stats[!(NumClades_stats$ALL.number=="115"),] #remove day 14 31C (single larva)
+
+#make PotCode
+NumClades_stats$PotCode<-paste0(NumClades_stats$Temp, NumClades_stats$Pot)
+hist(NumClades_stats$numclade)
+
+#Full model  
+## lmer  symbionts*days*temp
+NumClades_stats_mod<-lmer(numclade~Day*Temp+(1|PotCode), NumClades_stats)
+anova(NumClades_stats_mod) 
+qqPlot(residuals(NumClades_stats_mod))   # crap
+
+#try with numclade as factor
+#NumClades_stats$numclade<-as.factor(as.character(NumClades_stats$numclade)) won't run lmer
+
+#not any better
+NumClades_stats_mod<-glmer(numclade~Day*Temp+(1|PotCode), family="poisson", NumClades_stats)
+Anova(NumClades_stats_mod) 
+qqPlot(residuals(NumClades_stats_mod))   # crap
+
+```
+
+
+
+
+
+
+
+
 Plots new bar plots Grey scale, FIND THE OTHER ONES inthe script. 
 ```{r}
 ### STACKED BAR PLOTS 
