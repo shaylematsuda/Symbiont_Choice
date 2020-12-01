@@ -3237,9 +3237,26 @@ NumClades_stats<-NumClades_stats[!(NumClades_stats$ALL.number=="115"),] #remove 
 NumClades_stats$PotCode<-paste0(NumClades_stats$Temp, NumClades_stats$Pot)
 hist(NumClades_stats$numclade)
 
+library(moments)
+library(ggpubr)
+
+skewness(NumClades_stats$numclade, na.rm = TRUE) #-1.11889 neg skew
+
+NumClades_stats$numclade_log2<-log10(NumClades_stats$numclade+1) #this doesn't help
+
+# Distribution of numclade variable
+ggdensity(NumClades_stats, x = "numclade", fill = "lightgray", title = "number of clades") +
+  scale_x_continuous(limits = c(0, 4)) +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
+# Distribution of numclade variable2
+ggdensity(NumClades_stats, x = "numclade_log2", fill = "lightgray", title = "number of clades") +
+  scale_x_continuous(limits = c(0, 1)) +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+
 #Full model  
 ## lmer  symbionts*days*temp
-NumClades_stats_mod<-lmer(numclade~Day*Temp+(1|PotCode), NumClades_stats)
+NumClades_stats_mod<-lmer(numclade_log2~Day*Temp+(1|PotCode), NumClades_stats)
 anova(NumClades_stats_mod) 
 qqPlot(residuals(NumClades_stats_mod))   # crap
 
