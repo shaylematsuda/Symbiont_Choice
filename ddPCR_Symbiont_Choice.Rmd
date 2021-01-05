@@ -856,24 +856,44 @@ x<-cbind(Alive, Failures)
 #`stressFINALmod<-glmer(x~temp*symbiont*day + (1|pot), family=binomial)`
 #Run model and display summary as well as anova table for use of p-values.   
 
-#d7
-#Mort.df_NEW_D7_mod<-glmer(x7~Temp*Symbiont + (1|Pot), family=binomial)
-#summary(Mort.df_NEW_D7_mod)
-#Anova(Mort.df_NEW_D7_mod)
 
- #d14
-#Mort.df_NEW_D7_mod<-glmer(x7~Temp*Symbiont + (1|Pot), family=binomial)
-#summary(Mort.df_NEW_D7_mod)
-#Anova(Mort.df_NEW_D7_mod)
-
- #dALL
+#ALL model
 Mort.df_NEW_mod<-glmer(x~Temp*Symbiont*Day + (1|Pot), family=binomial)
 summary(Mort.df_NEW_mod)
 Anova(Mort.df_NEW_mod)
- 
+
 #dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
 
-#plot by tmep
+
+
+
+
+
+#AH CAN YOU HELP?????
+#model of mono vs poly with symbiont as nested
+
+Mort.df_MvP_NEW<-Mort.df_NEW                                                 #make a copy
+Mort.df_MvP_NEW$Symbiont<-as.character(Mort.df_MvP_NEW$Symbiont)             # change to character
+Mort.df_MvP_NEW$MonoPoly<-Mort.df_MvP_NEW$Symbiont                           #duplicate
+Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "C1" ] <- "Mono"        #change monos to mono
+Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "D1" ] <- "Mono"
+Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "F1" ] <- "Mono"
+Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "G3" ] <- "Mono"
+Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "All" ] <- "Poly"
+Mort.df_MvP_NEW$MonoPoly<-as.factor(Mort.df_MvP_NEW$MonoPoly)
+Mort.df_MvP_NEW<-subset(Mort.df_MvP_NEW, MonoPoly=="Mono"|MonoPoly=="Poly") #remove controls 
+
+attach(Mort.df_MvP_NEW)
+y<-cbind(Alive, Failures)
+
+Mort.df_NEW_MvP_mod<-glmer(y~Temp*MonoPoly*Day + (1|Pot), family=binomial) #why isn't this running? I think it's in the "y"?
+summary(Mort.df_NEW_MvP_mod)
+Anova(Mort.df_NEW_MvP_mod)
+
+
+
+
+#plot by temp
 D.Summary_27<-subset(D.Summary, Temp==27)
 D.Summary_30<-subset(D.Summary, Temp==30)
 D.Summary_31<-subset(D.Summary, Temp==31)
@@ -894,6 +914,7 @@ FigSurv_D.Summary_27 <- ggplot(data=D.Summary_27, aes(x=Day, y=mean, group=inter
   ggtitle("")+
   theme_classic() +
   theme(panel.background = element_blank()) +
+    ggtitle("27C")+
   theme(text = element_text(size=20),
         panel.border = element_blank(), 
         plot.background =element_blank(),
@@ -917,7 +938,7 @@ FigSurv_D.Summary_30 <- ggplot(data=D.Summary_30, aes(x=Day, y=mean, group=inter
   xlab(expression(bold("Day"))) +
   ylab(expression(bold("Survivorship (%)"))) +
   ylim(0,50) + 
-  ggtitle("")+
+  ggtitle("30C")+
   theme_classic() +
   theme(panel.background = element_blank()) +
   theme(text = element_text(size=20),
@@ -943,7 +964,7 @@ FigSurv_D.Summary_31 <- ggplot(data=D.Summary_31, aes(x=Day, y=mean, group=inter
   xlab(expression(bold("Day"))) +
   ylab(expression(bold("Survivorship (%)"))) +
   ylim(0,50) + 
-  ggtitle("")+
+  ggtitle("31C")+
   theme_classic() +
   theme(panel.background = element_blank()) +
   theme(text = element_text(size=20),
@@ -960,6 +981,12 @@ FigSurv_D.Summary_31 <- ggplot(data=D.Summary_31, aes(x=Day, y=mean, group=inter
         axis.title.y=element_text(margin=margin(0,7,0,0)), 
         axis.title.x=element_text(margin=margin(7,0,0,0)));FigSurv_D.Summary_31
 
+#plot all together
+FigSurv_D.Summary_27<-FigSurv_D.Summary_27+ theme(legend.position = "none") #remove legend
+FigSurv_D.Summary_30<-FigSurv_D.Summary_30+ theme(legend.position = "none") #remove legend
+FigSurv_D.Summary_31<-FigSurv_D.Summary_31+ theme(legend.position = "none") #remove legend
+
+grid.arrange(FigSurv_D.Summary_27, FigSurv_D.Summary_30,FigSurv_D.Summary_31, nrow = 1)
 
 
 
@@ -971,6 +998,7 @@ FigSurv_D.Summary_31 <- ggplot(data=D.Summary_31, aes(x=Day, y=mean, group=inter
 
 
 
+# I think you can delete all below
 
 
  #try only plotting % decrease aka total mortality by pot
