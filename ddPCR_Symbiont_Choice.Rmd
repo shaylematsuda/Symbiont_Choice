@@ -758,16 +758,221 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,ALLFull)
 
 MORTALITY
 # Larval Mortality
-```{r}    
+```{r}      
 Mort.df<-read.csv("SC_mortality_20200722.csv") #read mortality df
- Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
-  hist(Mort.df$Total_log)
   hist(Mort.df$Total)
+Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
+  hist(Mort.df$Total_log) #use log
+Mort.df$Total_sqrt<-sqrt(Mort.df$Total) #transform log10
+  hist(Mort.df$Total_sqrt) #
 
- Mort.df$Pot<-as.factor(as.character(Mort.df$Pot))
+  
+Mort.df$Pot<-as.factor(as.character(Mort.df$Pot))
   Mort.df$Temp<-as.factor(as.character(Mort.df$Temp))
  Mort.df$Day<-as.factor(as.character(Mort.df$Day))
  
+  Mort.df_mean<- ddply(Mort.df, c( "Temp","Symbiont","Day"), summarise, #summarize cell counts
+                 N    = length(Total_log[!is.na(Total_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(Total_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(Total_log, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(Total_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
+);Mort.df_mean #display table
+
+ 
+ Mort.df_mod<-lmer(Total_sqrt~Temp*Symbiont*Day+(1|Pot), Mort.df)
+anova(Mort.df_mod)
+qqPlot(residuals(Mort.df_mod))   #  meh 
+#post hoc
+ emm<-emmeans(Mort.df_mod,  ~ Symbiont*Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+ 
+ 
+
+
+#### AH binomial mixed effects model
+#stressFINALmod<-glmer(x~Stress.Temp*Rear.Temp*Nutrition + (1|Stress.Tank) + (1|Cohort), family=binomial)
+Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
+Mort.df_NEW$Temp<-as.factor(as.character(Mort.df_NEW$Temp))
+Mort.df_NEW$Pot<-as.factor(as.character(Mort.df_NEW$Pot))
+Mort.df_NEW$Day<-as.factor(as.character(Mort.df_NEW$Day))
+Mort.df_NEW$Day <- factor(Mort.df_NEW$Day, levels = c("1", "7", "14"))
+
+
+#calculation of survivorship by proportion
+Mort.df_NEW$Surv<-(Mort.df_NEW$Alive)/(Mort.df_NEW$Alive+Mort.df_NEW$Failures)
+
+#Mort.df_NEW_D7<-Mort.df_NEW[which(Mort.df_NEW$Day == "7"),] #subset d7 timepoint
+#Mort.df_NEW_D14<-Mort.df_NEW[which(Mort.df_NEW$Day == "14"),] #subset d14 timepoint
+
+
+#Summary of total survivorship at the end of the thermal stress test. Display survival as percentages (%).     
+#D7.Summary <- ddply(Mort.df_NEW_D7, c("Temp", "Symbiont"), summarise,
+#                        N    = length(Surv[!is.na(Surv)]),
+#                        mean = mean(Surv, na.rm=TRUE)*100,
+#                        sd   = sd(Surv, na.rm=TRUE)*100,
+#                        se   = sd / sqrt(N)
+#)
+
+#knitr::kable(D7.Summary)
+
+#D14.Summary <- ddply(Mort.df_NEW_D7, c("Temp", "Symbiont"), summarise,
+#                       N    = length(Surv[!is.na(Surv)]),
+#                        mean = mean(Surv, na.rm=TRUE)*100,
+#                        sd   = sd(Surv, na.rm=TRUE)*100,
+#                        se   = sd / sqrt(N)
+#)
+
+#knitr::kable(D14.Summary)
+
+#all
+D.Summary <- ddply(Mort.df_NEW, c("Temp", "Symbiont","Day"), summarise,
+                        N    = length(Surv[!is.na(Surv)]),
+                        mean = mean(Surv, na.rm=TRUE)*100,
+                        sd   = sd(Surv, na.rm=TRUE)*100,
+                        se   = sd / sqrt(N)
+)
+
+knitr::kable(D.Summary)
+#remove day1
+D.Summary<-subset(D.Summary, Day==7|Day==14)
+
+
+
+##create binomial vector
+
+#attach(Mort.df_NEW_D7)
+#x7<-cbind(Alive, Failures) 
+
+
+attach(Mort.df_NEW)
+x<-cbind(Alive, Failures)
+
+
+#Analyze survivorship at the end of the thermal stress using a binomial mixed effects model.  
+#Main effects: temperature, Symbiont treatment, time?  
+#Random effects: Pot  
+#`stressFINALmod<-glmer(x~temp*symbiont*day + (1|pot), family=binomial)`
+#Run model and display summary as well as anova table for use of p-values.   
+
+#d7
+#Mort.df_NEW_D7_mod<-glmer(x7~Temp*Symbiont + (1|Pot), family=binomial)
+#summary(Mort.df_NEW_D7_mod)
+#Anova(Mort.df_NEW_D7_mod)
+
+ #d14
+#Mort.df_NEW_D7_mod<-glmer(x7~Temp*Symbiont + (1|Pot), family=binomial)
+#summary(Mort.df_NEW_D7_mod)
+#Anova(Mort.df_NEW_D7_mod)
+
+ #dALL
+Mort.df_NEW_mod<-glmer(x~Temp*Symbiont*Day + (1|Pot), family=binomial)
+summary(Mort.df_NEW_mod)
+Anova(Mort.df_NEW_mod)
+ 
+#dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
+
+#plot by tmep
+D.Summary_27<-subset(D.Summary, Temp==27)
+D.Summary_30<-subset(D.Summary, Temp==30)
+D.Summary_31<-subset(D.Summary, Temp==31)
+
+
+#Plot total survivorship
+#27C
+
+FigSurv_D.Summary_27 <- ggplot(data=D.Summary_27, aes(x=Day, y=mean, group=interaction(Symbiont), colour=Symbiont, linetype=Symbiont)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, linetype="solid", position=position_dodge(0.05)) +
+    geom_point(aes(color=Symbiont), position=position_dodge(0.05),size=4, show.legend = T)+ 
+  geom_line(aes(color=Symbiont),linetype="dotted")+
+    scale_color_manual(values=c('black', '#D43F3AFF','Grey','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+           geom_point(shape = 1,size = 4,colour = "black",position=position_dodge(0.05) )+
+  xlab(expression(bold("Day"))) +
+  ylab(expression(bold("Survivorship (%)"))) +
+  ylim(0,50) + 
+  ggtitle("")+
+  theme_classic() +
+  theme(panel.background = element_blank()) +
+  theme(text = element_text(size=20),
+        panel.border = element_blank(), 
+        plot.background =element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(size=18, colour="black"),
+        legend.title=element_text(),
+        legend.position=("right"),
+        plot.title=element_text(), #Justify the title to the top left
+        legend.text = element_text(size = 20),
+        axis.title.y=element_text(margin=margin(0,7,0,0)), 
+        axis.title.x=element_text(margin=margin(7,0,0,0)));FigSurv_D.Summary_27
+
+FigSurv_D.Summary_30 <- ggplot(data=D.Summary_30, aes(x=Day, y=mean, group=interaction(Symbiont), colour=Symbiont, linetype=Symbiont)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, linetype="solid", position=position_dodge(0.05)) +
+    geom_point(aes(color=Symbiont), position=position_dodge(0.05),size=4, show.legend = T)+ 
+  geom_line(aes(color=Symbiont),linetype="dotted")+
+    scale_color_manual(values=c('black', '#D43F3AFF','Grey','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+           geom_point(shape = 1,size = 4,colour = "black",position=position_dodge(0.05) )+
+  xlab(expression(bold("Day"))) +
+  ylab(expression(bold("Survivorship (%)"))) +
+  ylim(0,50) + 
+  ggtitle("")+
+  theme_classic() +
+  theme(panel.background = element_blank()) +
+  theme(text = element_text(size=20),
+        panel.border = element_blank(), 
+        plot.background =element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(size=18, colour="black"),
+        legend.title=element_text(),
+        legend.position=("right"),
+        plot.title=element_text(), #Justify the title to the top left
+        legend.text = element_text(size = 20),
+        axis.title.y=element_text(margin=margin(0,7,0,0)), 
+        axis.title.x=element_text(margin=margin(7,0,0,0)));FigSurv_D.Summary_30
+
+FigSurv_D.Summary_31 <- ggplot(data=D.Summary_31, aes(x=Day, y=mean, group=interaction(Symbiont), colour=Symbiont, linetype=Symbiont)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0, linetype="solid", position=position_dodge(0.05)) +
+    geom_point(aes(color=Symbiont), position=position_dodge(0.05),size=4, show.legend = T)+ 
+  geom_line(aes(color=Symbiont),linetype="dotted")+
+    scale_color_manual(values=c('black', '#D43F3AFF','Grey','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+         geom_point(shape = 1,size = 4,colour = "black",position=position_dodge(0.05) )+
+  xlab(expression(bold("Day"))) +
+  ylab(expression(bold("Survivorship (%)"))) +
+  ylim(0,50) + 
+  ggtitle("")+
+  theme_classic() +
+  theme(panel.background = element_blank()) +
+  theme(text = element_text(size=20),
+        panel.border = element_blank(), 
+        plot.background =element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(size=18, colour="black"),
+        legend.title=element_text(),
+        legend.position=("right"),
+        plot.title=element_text(), #Justify the title to the top left
+        legend.text = element_text(size = 20),
+        axis.title.y=element_text(margin=margin(0,7,0,0)), 
+        axis.title.x=element_text(margin=margin(7,0,0,0)));FigSurv_D.Summary_31
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  #try only plotting % decrease aka total mortality by pot
  mort_test<-subset(Mort.df, Day==1|Day==14)
  #write.csv(mort_test, "mort_test.csv")
@@ -805,8 +1010,8 @@ Mord.df2_mean_31<-subset(Mord.df2_mean, Temp=="31")
 Mord.df2$PercentSurv_log<-log10(Mord.df2$PercentSurv+1)
 hist(Mord.df2$PercentSurv_log)
 
-Mord.df2$PercentSurv_sqrt<-sqrt(Mord.df2$PercentSurv+1)
-hist(Mord.df2$PercentSurv_sqrt)
+#Mord.df2$PercentSurv_sqrt<-sqrt(Mord.df2$PercentSurv+1) #not better
+#hist(Mord.df2$PercentSurv_sqrt)
 
 Mord.df2$Temp<-as.factor(as.character(Mord.df2$Temp))
 Mord.df2$Pot<-as.factor(as.character(Mord.df2$Pot))
@@ -815,16 +1020,7 @@ Mort.df2_mod<-lmer(PercentSurv_log~Temp*Symbiont+(1|Pot), Mord.df2)
 anova(Mort.df2_mod)
 qqPlot(residuals(Mort.df2_mod))   #  meh 
 #post hoc
- emm<-emmeans(Mort.df2_mod,  ~ Symbiont, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
-#post hoc diff at each day
- emm<-emmeans(Mort.df2_mod,  ~ Temp|Symbiont, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
- emm<-emmeans(Mort.df2_mod,  ~ Temp, adjust="Tukey")
+ emm<-emmeans(Mort.df2_mod,  ~ Symbiont*Temp, adjust="Tukey")
 cld(emm, Letter="abcdefg")
 pairs(emm)
 
@@ -940,7 +1136,7 @@ qqPlot(residuals(Mort.df_31_modGLMER2))   #  meh
 
 
 #PLOTS
-#Raw means scope and hemo only
+# means (not transformed)
 Mort.mean<- ddply(Mort.df, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
                  N    = length(Total[!is.na(Total)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(Total, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -948,6 +1144,8 @@ Mort.mean<- ddply(Mort.df, c("Day", "Temp","Symbiont"), summarise, #summarize ce
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(Total, na.rm=TRUE) #calculate max, could also calculate min () if desired
 );Mort.mean #display table
+
+Mort.mean$Day<-as.numeric(Mort.mean$Day)
 
 Mort.mean_27<-subset(Mort.mean, Temp=="27")
 Mort.mean_30<-subset(Mort.mean, Temp=="30")
@@ -3228,7 +3426,7 @@ NumCladesB_numbonly_mean #display table
 
 
 Stats for Numclades~temp*time
-```{r}
+```{r} 
 # df RelA_CladeComp
 NumClades_stats<-RelA_CladeComp # make a copy
 NumClades_stats<-NumClades_stats[!(NumClades_stats$ALL.number=="115"),] #remove day 14 31C (single larva)
@@ -6037,7 +6235,7 @@ grid.arrange(aData4_1or2_31_D3_g2_plot, aData4_1or2_31_D7_g2_plot,aData4_1or2_31
 
 # C Who was the most dominant clade in larvave. Only larvae where all four genera amped
 This is in line plots: see below for waffles. 
-```{r}        
+```{r}         
 #df ALL_RelA  
  
 ALL_RelA2<-select(ALL_RelA, "ALL.number", "Temp", "Day","Pot","C1","D1" ,"F1","G3") #keep only cols you want
@@ -6203,6 +6401,8 @@ domAll_31_BARplot<-ggplot(Dom31mean, aes(y=mean, x=Day, fill=clade)) +
 #plot all together line
 domAll_27_plot<-domAll_27_plot+ theme(legend.position = "none") #remove legend
 domAll_30_plot<-domAll_30_plot+ theme(legend.position = "none") #remove legend
+domAll_31_plot<-domAll_31_plot+ theme(legend.position = "none") #remove legend
+
 grid.arrange(domAll_27_plot, domAll_30_plot,domAll_31_plot, nrow = 1)
 
 
@@ -6289,7 +6489,7 @@ DomAll_31_D7_waffle_plot<-DomAll_31_D7_waffle_plot+ theme(legend.position = "non
 grid.arrange(DomAll_31_D3_waffle_plot,DomAll_31_D7_waffle_plot,nrow =3 )
 ```
 stats: 
-```{r}    
+```{r}     
  #rename Pot interaction as a code: Pot_Temp
  DomAll$PotCode<-paste0(DomAll$Temp, DomAll$Pot,DomAll$clade )
  DomAll$PotCode<-as.factor(DomAll$PotCode) #make factor
@@ -6390,7 +6590,7 @@ Win_Num_31_D7 %>%
 #Fig  Competative-infection: Polycluture only, relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df    
-```{r}        
+```{r}         
 #calc relative abundance for each   (any non infected larvae will NA out here)
 ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
 ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
@@ -6408,7 +6608,7 @@ ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (d
   
 Stats: Relative abundance, df = ALL_RelA_b 
 ```{r}   
-   
+    
 #Full model  
 hist(ALL_RelA_b$cells.larvae)
 ALL_RelA_b$cells.larvae_log<-log10(ALL_RelA_b$cells.larvae+1)
