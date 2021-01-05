@@ -839,13 +839,13 @@ Mort.df_NEW_mod<-glmer(x~Temp*Symbiont*Day + (1|Pot), family=binomial)
 summary(Mort.df_NEW_mod)
 Anova(Mort.df_NEW_mod)
 
-emm<-emmeans(Mort.df_NEW_mod,  ~ Symbiont|Day|Temp, adjust="Tukey")
+ emm<-emmeans(Mort.df_NEW_mod,  ~ Symbiont|Temp|Day, adjust="Tukey")
 cld(emm, Letter="abcdefg")
 pairs(emm)
 #dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
 
 
-detach(Mort.df_NEW)
+
 
 
 
@@ -871,7 +871,7 @@ summary(Mort.df_NEW_MvP_mod)
 Anova(Mort.df_NEW_MvP_mod)
 
 
-detach(Mort.df_MvP_NEW)
+
 
 #New plot by temp (20210104)
 D.Summary_27<-subset(D.Summary, Temp==27)
