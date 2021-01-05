@@ -844,7 +844,7 @@ cld(emm, Letter="abcdefg")
 pairs(emm)
 #dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
 
-
+detach(Mort.df_NEW)
 
 
 
@@ -870,7 +870,7 @@ Mort.df_NEW_MvP_mod<-glmer(y~Temp*MonoPoly*Day + (1|Pot), family=binomial) #why 
 summary(Mort.df_NEW_MvP_mod)
 Anova(Mort.df_NEW_MvP_mod)
 
-
+detach(Mort.df_MvP_NEW)
 
 
 #New plot by temp (20210104)
