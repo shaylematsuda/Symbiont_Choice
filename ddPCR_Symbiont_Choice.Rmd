@@ -803,30 +803,7 @@ Mort.df_NEW$Day <- factor(Mort.df_NEW$Day, levels = c("1", "7", "14"))
 #calculation of survivorship by proportion
 Mort.df_NEW$Surv<-(Mort.df_NEW$Alive)/(Mort.df_NEW$Alive+Mort.df_NEW$Failures)
 
-#Mort.df_NEW_D7<-Mort.df_NEW[which(Mort.df_NEW$Day == "7"),] #subset d7 timepoint
-#Mort.df_NEW_D14<-Mort.df_NEW[which(Mort.df_NEW$Day == "14"),] #subset d14 timepoint
-
-
-#Summary of total survivorship at the end of the thermal stress test. Display survival as percentages (%).     
-#D7.Summary <- ddply(Mort.df_NEW_D7, c("Temp", "Symbiont"), summarise,
-#                        N    = length(Surv[!is.na(Surv)]),
-#                        mean = mean(Surv, na.rm=TRUE)*100,
-#                        sd   = sd(Surv, na.rm=TRUE)*100,
-#                        se   = sd / sqrt(N)
-#)
-
-#knitr::kable(D7.Summary)
-
-#D14.Summary <- ddply(Mort.df_NEW_D7, c("Temp", "Symbiont"), summarise,
-#                       N    = length(Surv[!is.na(Surv)]),
-#                        mean = mean(Surv, na.rm=TRUE)*100,
-#                        sd   = sd(Surv, na.rm=TRUE)*100,
-#                        se   = sd / sqrt(N)
-#)
-
-#knitr::kable(D14.Summary)
-
-#all
+#Summary
 D.Summary <- ddply(Mort.df_NEW, c("Temp", "Symbiont","Day"), summarise,
                         N    = length(Surv[!is.na(Surv)]),
                         mean = mean(Surv, na.rm=TRUE)*100,
@@ -862,6 +839,9 @@ Mort.df_NEW_mod<-glmer(x~Temp*Symbiont*Day + (1|Pot), family=binomial)
 summary(Mort.df_NEW_mod)
 Anova(Mort.df_NEW_mod)
 
+ emm<-emmeans(Mort.df_NEW_mod,  ~ Symbiont|Day|Temp, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
 #dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
 
 
@@ -893,7 +873,7 @@ Anova(Mort.df_NEW_MvP_mod)
 
 
 
-#plot by temp
+#New plot by temp (20210104)
 D.Summary_27<-subset(D.Summary, Temp==27)
 D.Summary_30<-subset(D.Summary, Temp==30)
 D.Summary_31<-subset(D.Summary, Temp==31)
@@ -998,7 +978,7 @@ grid.arrange(FigSurv_D.Summary_27, FigSurv_D.Summary_30,FigSurv_D.Summary_31, nr
 
 
 
-# I think you can delete all below
+# I think you can delete all below#############
 
 
  #try only plotting % decrease aka total mortality by pot
