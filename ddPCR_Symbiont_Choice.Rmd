@@ -864,7 +864,7 @@ Mort.df_MvP_NEW$MonoPoly<-as.factor(Mort.df_MvP_NEW$MonoPoly)
 Mort.df_MvP_NEW<-subset(Mort.df_MvP_NEW, MonoPoly=="Mono"|MonoPoly=="Poly") #remove controls 
 
 attach(Mort.df_MvP_NEW)
-y<-cbind(Alive, Failures)
+y<-cbind(Alive, Failures) 
 
 Mort.df_NEW_MvP_mod<-glmer(y~Temp*MonoPoly*Day + (1|Pot), family=binomial) #why isn't this running? I think it's in the "y"?
 summary(Mort.df_NEW_MvP_mod)
