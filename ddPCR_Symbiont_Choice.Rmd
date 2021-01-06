@@ -758,7 +758,7 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,ALLFull)
 
 MORTALITY
 # Larval Mortality
-```{r}      
+```{r}       
 Mort.df<-read.csv("SC_mortality_20200722.csv") #read mortality df
   hist(Mort.df$Total)
 Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
@@ -847,9 +847,6 @@ pairs(emm)
 detach(Mort.df_NEW)
 
 
-
-
-#AH CAN YOU HELP?????
 #model of mono vs poly with symbiont as nested
 
 Mort.df_MvP_NEW<-Mort.df_NEW                                                 #make a copy
@@ -864,9 +861,9 @@ Mort.df_MvP_NEW$MonoPoly<-as.factor(Mort.df_MvP_NEW$MonoPoly)
 Mort.df_MvP_NEW<-subset(Mort.df_MvP_NEW, MonoPoly=="Mono"|MonoPoly=="Poly") #remove controls 
 
 attach(Mort.df_MvP_NEW)
-y<-cbind(Alive, Failures) 
+x<-cbind(Alive, Failures) 
 
-Mort.df_NEW_MvP_mod<-glmer(y~Temp*MonoPoly*Day + (1|Pot), family=binomial) #why isn't this running? I think it's in the "y"?
+Mort.df_NEW_MvP_mod<-glmer(x~MonoPoly*Temp*Day + (1|Pot), family=binomial) #why isn't this running? I think it's in the "y"?
 summary(Mort.df_NEW_MvP_mod)
 Anova(Mort.df_NEW_MvP_mod)
 
@@ -969,8 +966,9 @@ FigSurv_D.Summary_31<-FigSurv_D.Summary_31+ theme(legend.position = "none") #rem
 grid.arrange(FigSurv_D.Summary_27, FigSurv_D.Summary_30,FigSurv_D.Summary_31, nrow = 1)
 
 
-
-
+#plot as a heatmap
+library(heatmaply)
+heatmaply(Mort.df_NEW)
 
 
 
@@ -1353,7 +1351,7 @@ Questions:
  
 FIRST make df for ALLs with proper binomial
 ORganize df: ddPCR and then combine with monoculture ALLs
-```{r}    
+```{r}     
 #ALLcast_9000_cast2a includes all samples even if not all clades amped
  
 #ALL
@@ -1432,7 +1430,7 @@ ALL_forCounts<-na.omit(ALL_forCounts)
 ```
 
 Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
-```{r}          
+```{r}           
 BinaryInfect<-Monoculture  # make new df for binary infection
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
@@ -1529,7 +1527,7 @@ Binary_31$Infect<-as.numeric(as.character(Binary_31$Infect)) #change back to num
 
 Plots:  
 27C
-```{r}         
+```{r}          
 Binary_27_mean <- ddply(Binary_27, c("Symbiont","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -1670,7 +1668,7 @@ Plots and comparison models singe v multi
   
 Did larvae with single clades infect more or less than larvae offered multiple clades: set up dfs
 ```{r}   
-#stats   
+#stats    
 #df for multi:RelA_binaryb, df for Individuals:  BinaryInfect
 
 # Set up to run models by GENUS ddPCR
@@ -2227,7 +2225,7 @@ CELL DENSITY
 ## Multi: Individual clade heatmaps, MUTLI INFECTION counts not relabund (with 0s for individual clades) 
 MultiCounts2=df (multi including all samples that amped (not trimmed))
 C1 
-```{r}
+```{r} 
 hist(MultiCounts2_C1$cells.larvae_log)
 hist(MultiCounts2_D1$cells.larvae_log)
 hist(MultiCounts2_F1$cells.larvae_log)
@@ -2267,7 +2265,7 @@ C1heatMult<-heatmap.2(C1mat_data2,
   notecol="black",      # change font color of cell labels to black
   density.info="none",  # turns off density plot inside color legend
   trace="none",         # turns off trace lines inside the heat map
-  margins =c(12,9),     # widens margins around plot
+  #margins =c(12,9),     # widens margins around plot
   col=my_palette,       # use on color palette defined earlier
   breaks=col_breaks,    # enable color transition at specified limits
   dendrogram="none",     # only draw a row dendrogram
@@ -2416,7 +2414,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 # Monoculture infection: Cell Counts Models and Plots (updated 20200822)
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
-```{r}           
+```{r}            
  
 #set up the All df for this specific model! use only poly larva with ddPCR for all genera/larva +hemoscope
 ALL_forCounts$cells.larvae_log<-log10(ALL_forCounts$cells.larvae+1) #log alls
@@ -2564,7 +2562,7 @@ Singles_no0_27_mean_plot<-ggplot(data=Singles_no0_27_mean, aes(x=Day.num, y=mean
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+      # scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2607,7 +2605,7 @@ Singles_no0_30_mean_plot<-ggplot(data=Singles_no0_30_mean, aes(x=Day.num, y=mean
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+      # scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2653,7 +2651,7 @@ Singles_no0_31_mean_plot<-ggplot(data=Singles_no0_31_mean, aes(x=Day.num, y=mean
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+   #    scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2688,7 +2686,7 @@ grid.arrange(Singles_no0_27_mean_plot, Singles_no0_30_mean_plot, Singles_no0_31_
 C1         
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected  
-```{r}   
+```{r}    
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(5:8)] #remove metadata
@@ -2771,7 +2769,7 @@ CountsCompare2_C1_plot27<-ggplot(data=CountsCompare2_C1_27, aes(x=Day, y=mean, g
     scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-      scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  
+   #   scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  
   xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
@@ -2791,7 +2789,7 @@ CountsCompare2_C1_plot27<-ggplot(data=CountsCompare2_C1_27, aes(x=Day, y=mean, g
 ```
 C1: 30C
 
-```{r} 
+```{r}  
 #Subset 30 
 CountsCompare2_C1_30<-subset(CountsCompare2_mean_30, Symbiont=="C1")
 
@@ -2804,7 +2802,7 @@ CountsCompare2_C1_plot30<-ggplot(data=CountsCompare2_C1_30, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
+   #    scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2822,7 +2820,7 @@ CountsCompare2_C1_plot30<-ggplot(data=CountsCompare2_C1_30, aes(x=Day, y=mean, g
 
 C1: 31C
 ```{r}  
-#Subset 31
+#Subset 31 - day 7 multi is only 2. see below for just day 3 comparison
 CountsCompare2_C1_31<-subset(CountsCompare2_mean_31, Symbiont=="C1")
  CountsCompare2_C1_31<-subset(CountsCompare2_C1_31, Day=="3" |Day=="7")
  
@@ -2835,7 +2833,7 @@ CountsCompare2_C1_plot31<-ggplot(data=CountsCompare2_C1_31, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+    #   scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2865,7 +2863,7 @@ CountsCompare2_D1_plot27<-ggplot(data=CountsCompare2_D1, aes(x=Day, y=mean, grou
      geom_point(shape = 1,size = 5,colour = "black")+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+   #    scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2895,7 +2893,7 @@ CountsCompare2_D1_plot30<-ggplot(data=CountsCompare2_D1_30, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
+  #     scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2926,7 +2924,7 @@ CountsCompare2_D1_plot31<-ggplot(data=CountsCompare2_D1_31, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-      scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+ #     scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   expand_limits(x = 14, y = 0)+
   theme_bw() + #Set the background color
@@ -2949,7 +2947,7 @@ F1: 27C
 ```{r} 
 #subset F1 
 CountsCompare2_F1<-subset(CountsCompare2_mean_27, Symbiont=="F1")
- 
+  
 
 CountsCompare2_F1_plot27<-ggplot(data=CountsCompare2_F1, aes(x=Day, y=mean, group=single.multi, color=single.multi)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -2960,7 +2958,7 @@ CountsCompare2_F1_plot27<-ggplot(data=CountsCompare2_F1, aes(x=Day, y=mean, grou
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+ #      scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2991,7 +2989,7 @@ CountsCompare2_F1_plot30<-ggplot(data=CountsCompare2_F1_30, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
+    #   scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") +
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3021,7 +3019,7 @@ CountsCompare2_F1_plot31<-ggplot(data=CountsCompare2_F1_31, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-      scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+   #   scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3053,7 +3051,7 @@ CountsCompare2_G3_plot27<-ggplot(data=CountsCompare2_G3, aes(x=Day, y=mean, grou
      geom_point(shape = 1,size = 5,colour = "black")+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+   #    scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3084,7 +3082,7 @@ CountsCompare2_G3_plot30<-ggplot(data=CountsCompare2_G3_30, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+     #  scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3116,7 +3114,7 @@ CountsCompare2_G3_plot31<-ggplot(data=CountsCompare2_G3_31, aes(x=Day, y=mean, g
       scale_linetype_manual(values=c("dotted", "solid"))+
   scale_color_manual(values=c( "turquoise3","deeppink3"))+
   xlab("") + #Label the X Axis
-       scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
+   #    scale_y_log10(breaks = c(-100,1,100,1000, 10000), limits=c(1,5000))+  xlab("") + 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -3134,33 +3132,36 @@ CountsCompare2_G3_plot31<-ggplot(data=CountsCompare2_G3_31, aes(x=Day, y=mean, g
 ```
 
 Figure x. Plot 3x4:
-```{r} 
+```{r}  
 #line plot 
 CountsCompare2_G3_plot27<-CountsCompare2_G3_plot27+ theme(legend.position = "none")
 CountsCompare2_G3_plot30<-CountsCompare2_G3_plot30+ theme(legend.position = "none")
 CountsCompare2_G3_plot31<-CountsCompare2_G3_plot31+ theme(legend.position = "none")
-#grid.arrange(CountsCompare2_C1_plot27, CountsCompare2_C1_plot30, CountsCompare2_C1_plot31, nrow=1)
+grid.arrange(CountsCompare2_G3_plot27, CountsCompare2_G3_plot30, CountsCompare2_G3_plot31, nrow=1)
+
   
 CountsCompare2_F1_plot27<-CountsCompare2_F1_plot27+ theme(legend.position = "none")
 CountsCompare2_F1_plot30<-CountsCompare2_F1_plot30+ theme(legend.position = "none")
 CountsCompare2_F1_plot31<-CountsCompare2_F1_plot31+ theme(legend.position = "none")
-#grid.arrange(CountsCompare2_D1_plot27, CountsCompare2_D1_plot30, CountsCompare2_D1_plot31, nrow=1)
-#
+grid.arrange(CountsCompare2_F1_plot27, CountsCompare2_F1_plot30, CountsCompare2_F1_plot31, nrow=1)
+
+
 CountsCompare2_D1_plot27<-CountsCompare2_D1_plot27+ theme(legend.position = "none")
 CountsCompare2_D1_plot30<-CountsCompare2_D1_plot30+ theme(legend.position = "none")
 CountsCompare2_D1_plot31<-CountsCompare2_D1_plot31+ theme(legend.position = "none")
-#grid.arrange(CountsCompare2_F1_plot27, CountsCompare2_F1_plot30, CountsCompare2_F1_plot31, nrow=1)
+grid.arrange(CountsCompare2_F1_plot27, CountsCompare2_F1_plot30, CountsCompare2_F1_plot31, nrow=1)
 
 CountsCompare2_C1_plot27<-CountsCompare2_C1_plot27+ theme(legend.position = "none")
 CountsCompare2_C1_plot30<-CountsCompare2_C1_plot30+ theme(legend.position = "none")
 CountsCompare2_C1_plot31<-CountsCompare2_C1_plot31+ theme(legend.position = "none")
-#grid.arrange(CountsCompare2_G3_plot27, CountsCompare2_G3_plot30, CountsCompare2_G3_plot31, nrow=1)
+grid.arrange(CountsCompare2_C1_plot27, CountsCompare2_C1_plot30, CountsCompare2_C1_plot31, nrow=1)
 
  
 grid.arrange(CountsCompare2_C1_plot27, CountsCompare2_C1_plot30, CountsCompare2_C1_plot31, CountsCompare2_D1_plot27,CountsCompare2_D1_plot30, CountsCompare2_D1_plot31,CountsCompare2_F1_plot27,CountsCompare2_F1_plot30,CountsCompare2_F1_plot31,CountsCompare2_G3_plot27,CountsCompare2_G3_plot30,CountsCompare2_G3_plot31, nrow = 4)
 
 
- 
+
+  
 ```
  
 Plot Single and Multi raw counts infection plots 4x2  
@@ -3181,8 +3182,9 @@ ggsave(filename="Figures/PinkblueCounts2.pdf", plot=InfectRaw_Fig1, dpi=300, wid
 ```
   
 # Monoculture vs polyculture: Pink and Blue Models by symbiont, 0s removed for multi within specific zoox. YOU need this 
-```{r}          
+```{r}           
 #stats, log10: Normal 
+CountsCompare2$PotCode<-as.factor(CountsCompare2$PotCode)
 hist(CountsCompare2$cells.larvae_round)
 CountsCompare2$cells.larvae_log<-log10(CountsCompare2$cells.larvae_round+1)
 hist(CountsCompare2$cells.larvae_log) #normal
@@ -3208,7 +3210,7 @@ hist(CountsCompare2_G3$cells.larvae_round) #
 hist(CountsCompare2_G3$cells.larvae_log)
  
 
-#Full model single v multi 
+#Full model single v multi  <- not necessary
 #remove day 14 31C 
 CountsCompare2_NoD1431C<-CountsCompare2
 CountsCompare2_NoD1431C$daytemp<-paste0(CountsCompare2$Day, CountsCompare2$Temp ) 
@@ -3220,11 +3222,11 @@ qqPlot(residuals(CountsCompare2_ALL_mod))   # good
   
 emm<-emmeans(CountsCompare2_ALL_mod,  ~ Temp*Day*single.multi|Symbiont, adjust="Tukey")
 cld(emm)
-pairs(emm)
+pairs(emm) 
 
 ``` 
 C1, full mod, then by temp   <- cut all the individual genus mods
-```{r}  
+```{r}    
 #C1    
 #full 
 CountsCompare2_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1)
@@ -3234,12 +3236,53 @@ qqPlot(residuals(CountsCompare2_C1_mod))   # good
 cld(emm)
 pairs(emm)
 
+
+
+#27C
+CountsCompare2_C1_27<-subset(CountsCompare2_C1, Temp=="27")
+CountsCompare2_C1_mod_27<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_C1_27)
+anova(CountsCompare2_C1_mod_27)
+qqPlot(residuals(CountsCompare2_C1_mod_27))   # good
+   emm<-emmeans(CountsCompare2_C1_mod_27,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#30C
+CountsCompare2_C1_30<-subset(CountsCompare2_C1, Temp=="30")
+CountsCompare2_C1_mod_30<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_C1_30)
+anova(CountsCompare2_C1_mod_30)
+qqPlot(residuals(CountsCompare2_C1_mod_30))   # good
+   emm<-emmeans(CountsCompare2_C1_mod_30,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#31C- JUST DAY 3
+CountsCompare2_C1_31<-subset(CountsCompare2_C1, Temp=="31"& Day=="3")
+CountsCompare2_C1_mod_31<-lmer(cells.larvae_log~single.multi+(1|PotCode),CountsCompare2_C1_31)
+anova(CountsCompare2_C1_mod_31)
+qqPlot(residuals(CountsCompare2_C1_mod_31))   # good
+   emm<-emmeans(CountsCompare2_C1_mod_31,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+
+
+
+
+
+
+
+
+
+
+
+
 #model just for 27 and 30
 CountsCompare2_C1_27C30C<-subset(CountsCompare2_C1, Temp=="27"|Temp=="30")
-CountsCompare2_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1_27C30C)
-anova(CountsCompare2_C1_mod)
-qqPlot(residuals(CountsCompare2_C1_27C30C))   # good
-  emm<-emmeans(CountsCompare2_C1_27C30C,  ~ single.multi|Temp|Day, adjust="Tukey") 
+CountsCompare2_C1_27C30C_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1_27C30C)
+anova(CountsCompare2_C1_27C30C_mod)
+qqPlot(residuals(CountsCompare2_C1_27C30C_mod))   # good
+  emm<-emmeans(CountsCompare2_C1_27C30C_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
@@ -3252,19 +3295,13 @@ qqPlot(residuals(CountsCompare2_C1_D3D7_mod))   # good
 cld(emm)
 pairs(emm)
 
-#model just for D3 
-CountsCompare2_C1_D3<-subset(CountsCompare2_C1, Day=="3")
-CountsCompare2_C1_D3_mod<-lmer(cells.larvae_log~Temp*single.multi+(1|PotCode),CountsCompare2_C1_D3)
-anova(CountsCompare2_C1_D3_mod)
-qqPlot(residuals(CountsCompare2_C1_D3_mod))   # good
-  emm<-emmeans(CountsCompare2_C1_D3_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
-cld(emm)
-pairs(emm)
+
 
 ```
 
 D1, full mod, then by temp 
 ```{r}
+
 #D1
 #full
 hist(CountsCompare2_D1$cells.larvae_log)
@@ -3275,12 +3312,43 @@ qqPlot(residuals(CountsCompare2_D1_mod))   # good
 cld(emm)
 pairs(emm)
 
+#27C
+CountsCompare2_D1_27<-subset(CountsCompare2_D1, Temp=="27")
+CountsCompare2_D1_mod_27<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_D1_27)
+anova(CountsCompare2_D1_mod_27)
+qqPlot(residuals(CountsCompare2_D1_mod_27))   # good
+   emm<-emmeans(CountsCompare2_D1_mod_27,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#30C
+CountsCompare2_D1_30<-subset(CountsCompare2_D1, Temp=="30")
+CountsCompare2_D1_mod_30<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_D1_30)
+anova(CountsCompare2_D1_mod_30)
+qqPlot(residuals(CountsCompare2_D1_mod_30))   # good
+   emm<-emmeans(CountsCompare2_D1_mod_30,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#31C
+CountsCompare2_D1_31<-subset(CountsCompare2_D1, Temp=="31")
+CountsCompare2_D1_mod_31<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_D1_31)
+anova(CountsCompare2_D1_mod_31)
+qqPlot(residuals(CountsCompare2_D1_mod_31))   # good
+   emm<-emmeans(CountsCompare2_D1_mod_31,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+
+
+
+
 #model just for 27 and 30
 CountsCompare2_D1_27C30C<-subset(CountsCompare2_D1, Temp=="27"|Temp=="30")
-CountsCompare2_D1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_D1_27C30C)
-anova(CountsCompare2_D1_mod)
-qqPlot(residuals(CountsCompare2_D1_mod))   # good
-  emm<-emmeans(CountsCompare2_D1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+CountsCompare2_D1_27C30C_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_D1_27C30C)
+anova(CountsCompare2_D1_27C30C_mod)
+qqPlot(residuals(CountsCompare2_D1_27C30C_mod))   # good
+  emm<-emmeans(CountsCompare2_D1_27C30C_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
@@ -3304,6 +3372,46 @@ qqPlot(residuals(CountsCompare2_F1_mod))   # ok
  emm<-emmeans(CountsCompare2_F1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
+
+
+#27C
+CountsCompare2_F1_27<-subset(CountsCompare2_F1, Temp=="27")
+CountsCompare2_F1_mod_27<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_F1_27)
+anova(CountsCompare2_F1_mod_27)
+qqPlot(residuals(CountsCompare2_F1_mod_27))   # good
+   emm<-emmeans(CountsCompare2_F1_mod_27,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#30C
+CountsCompare2_F1_30<-subset(CountsCompare2_F1, Temp=="30")
+CountsCompare2_F1_mod_30<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_F1_30)
+anova(CountsCompare2_F1_mod_30)
+qqPlot(residuals(CountsCompare2_F1_mod_30))   # good
+   emm<-emmeans(CountsCompare2_F1_mod_30,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#31C
+CountsCompare2_F1_31<-subset(CountsCompare2_F1, Temp=="31" )
+CountsCompare2_F1_31<-subset(CountsCompare2_F1_31, Day=="3"|Day=="7" )
+
+CountsCompare2_F1_mod_31<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_F1_31)
+anova(CountsCompare2_F1_mod_31)
+qqPlot(residuals(CountsCompare2_F1_mod_31))   # good
+   emm<-emmeans(CountsCompare2_F1_mod_31,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+
+
+
+
+
+
+
+
+
 
 #model just for 27 and 30
 CountsCompare2_F1_27C30C<-subset(CountsCompare2_F1, Temp=="27"|Temp=="30")
@@ -3336,12 +3444,52 @@ qqPlot(residuals(CountsCompare2_G3_mod))   # good
 cld(emm)
 pairs(emm)
 
+#27C
+CountsCompare2_G3_27<-subset(CountsCompare2_G3, Temp=="27")
+CountsCompare2_G3_mod_27<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_G3_27)
+anova(CountsCompare2_G3_mod_27)
+qqPlot(residuals(CountsCompare2_G3_mod_27))   # good
+   emm<-emmeans(CountsCompare2_G3_mod_27,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#30C
+CountsCompare2_G3_30<-subset(CountsCompare2_G3, Temp=="30")
+CountsCompare2_G3_mod_30<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_G3_30)
+anova(CountsCompare2_G3_mod_30)
+qqPlot(residuals(CountsCompare2_G3_mod_30))   # good
+   emm<-emmeans(CountsCompare2_G3_mod_30,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+#31C
+CountsCompare2_G3_31<-subset(CountsCompare2_G3, Temp=="31")
+CountsCompare2_G3_31<-subset(CountsCompare2_G3, Day=="3"|Day=="7")
+
+CountsCompare2_G3_mod_31<-lmer(cells.larvae_log~Day*single.multi+(1|PotCode),CountsCompare2_G3_31)
+anova(CountsCompare2_G3_mod_31)
+qqPlot(residuals(CountsCompare2_G3_mod_31))   # good
+   emm<-emmeans(CountsCompare2_G3_mod_31,  ~ single.multi|Temp|Day, adjust="Tukey") 
+cld(emm)
+pairs(emm)
+
+
+
+
+
+
+
+
+
+
+
+
 #model just for 27 and 30
 CountsCompare2_G3_27C30C<-subset(CountsCompare2_G3, Temp=="27"|Temp=="30")
-CountsCompare2_G3_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_G3_27C30C)
-anova(CountsCompare2_G3_mod)
-qqPlot(residuals(CountsCompare2_G3_mod))   # good
-  emm<-emmeans(CountsCompare2_G3_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
+CountsCompare2_G3_27C30C_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_G3_27C30C)
+anova(CountsCompare2_G3_27C30C_mod)
+qqPlot(residuals(CountsCompare2_G3_27C30C_mod))   # good
+  emm<-emmeans(CountsCompare2_G3_27C30C_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
 
@@ -10550,7 +10698,7 @@ cld(emm)
 
 
 #Monoculture Infection: Fig 1: Heat maps, by clade (temp x time)  
-https://sebastianraschka.com/Articles/heatmaps_in_r.html 
+   library(gplots)
 Individual clades heatmaps SINGLE, C1Full 0s NOT REMOVED, dfs: C1Full, D1Full, F1Full, G3Full  
 ```{r}   
 Hist1<-hist(C1Full$cells.larvae_log)
@@ -10584,6 +10732,14 @@ cols <- brewer.pal(6, "YlGn")
 cols
 my_palette <- colorRampPalette(cols)
 
+my_palette <- colorRampPalette(c("blue", "yellow", "green"))(n = 299)
+# (optional) defines the color breaks manually for a "skewed" color transition
+col_breaks = c(seq(0,1,length=100),  # for red
+  seq(1.01,2.0,length=100),           # for yellow
+  seq(2.1,3,length=100))             # for green
+
+
+dev.off()
 
 C1heat<-heatmap.2(C1mat_data,
   cellnote = C1mat_data,  # same data set for cell labels
@@ -10591,13 +10747,13 @@ C1heat<-heatmap.2(C1mat_data,
   notecol="black",      # change font color of cell labels to black
   density.info="none",  # turns off density plot inside color legend
   trace="none",         # turns off trace lines inside the heat map
-  margins =c(12,9),     # widens margins around plot
+  #margins =c(12,9),     # widens margins around plot
   col=my_palette,       # use on color palette defined earlier
   breaks=col_breaks,    # enable color transition at specified limits
   dendrogram="none",     # only draw a row dendrogram
   Rowv=FALSE,
   Colv="NA")            # turn off column clustering
-
+dev.off()
 #D1
 #D1Full
 D1Full_mean <- ddply(D1Full, c("Temp","Day"), summarise, #summarize cell count
@@ -10618,19 +10774,20 @@ D1rnames <- D1Full_mean3[,1]                            # assign labels in colum
 D1mat_data <- data.matrix(D1Full_mean3[,2:ncol(D1Full_mean3)])  # transform column 2-5 into a matrix
 rownames(D1mat_data) <- D1rnames                  # assign row names
 
+dev.off()
 D1heat<-heatmap.2(D1mat_data,
   cellnote = D1mat_data,  # same data set for cell labels
   main = "D1 ", # heat map title
   notecol="black",      # change font color of cell labels to black
   density.info="none",  # turns off density plot inside color legend
   trace="none",         # turns off trace lines inside the heat map
-  margins =c(12,9),     # widens margins around plot
+  #margins =c(12,9),     # widens margins around plot
   col=my_palette,       # use on color palette defined earlier
   breaks=col_breaks,    # enable color transition at specified limits
   dendrogram="none",     # only draw a row dendrogram
   Rowv=FALSE,
   Colv="NA"    )        # turn off column clustering
-
+dev.off()
 #F1
 #F1Full
 F1Full_mean <- ddply(F1Full, c("Temp","Day"), summarise, #summarize cell count
@@ -10651,6 +10808,7 @@ F1rnames2 <- F1Full_mean3[,1]                            # assign labels in colu
 F1mat_data2 <- data.matrix(F1Full_mean3[,2:ncol(F1Full_mean3)])  # transform column 2-5 into a matrix
 rownames(F1mat_data2) <- F1rnames2                  # assign row names
 
+dev.off()
 
 F1heat2<-heatmap.2(F1mat_data2,
   cellnote = F1mat_data2,  # same data set for cell labels
@@ -10658,7 +10816,7 @@ F1heat2<-heatmap.2(F1mat_data2,
   notecol="black",      # change font color of cell labels to black
   density.info="none",  # turns off density plot inside color legend
   trace="none",         # turns off trace lines inside the heat map
-  margins =c(12,9),     # widens margins around plot
+ # margins =c(12,9),     # widens margins around plot
   col=my_palette,       # use on color palette defined earlier
   breaks=col_breaks,    # enable color transition at specified limits
   dendrogram="none",     # only draw a row dendrogram
