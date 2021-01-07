@@ -677,31 +677,27 @@ theme_classic()+
    #geom_abline(intercept = 1.2, slope = .94, color = "red", linetype = "dashed")+
    geom_abline(intercept = 0, slope = 1.04, color = "red", linetype = "dashed")
 ```
-
+Monocultures and the polyculture 
 Apply hemo.scope conversion and remake df with raw counts
 ```{r}  
-
+ 
 #Convert Scope/hemo data, remake df with ddPCR data. Make new col with "raw" counts post conversion of logs
 #C1
 C1FullddPCR<-subset(C1Full, count.type=="ddPCR")
 C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
 #C1Fullscopehemo$cells.larvae_log_Pre<-C1Fullscopehemo$cells.larvae_log #save old to check then comment out
-C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*1.04) #convert and check
-#  plot(C1Fullscopehemo$cells.larvae_log, C1Fullscopehemo$cells.larvae_log) #check
+C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*0.96) #convert and check
 C1Full<-rbind(C1FullddPCR,C1Fullscopehemo) #rebind with ddPCR
-C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted all log back to Raw counts WHY
+C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted all log back to Raw counts to check
 #C1Full$cells.larvae_counts_round<-round(C1Full$cells.larvae_counts)
 
-
-#plot(C1Full$cells.larvae_log, C1Full$cells.larvae_log2) #check
 
 #D1
 D1FullddPCR<-subset(D1Full, count.type=="ddPCR")
 D1Fullscopehemo<-subset(D1Full, count.type=="hemo"|count.type=="scope")
 #D1Fullscopehemo$cells.larvae_log_Pre<-D1Fullscopehemo$cells.larvae_log #save old to check then comment out
-D1Fullscopehemo$cells.larvae_log<-(D1Fullscopehemo$cells.larvae_log*1.04) #convert and check
-  plot(D1Fullscopehemo$cells.larvae_log, D1Fullscopehemo$cells.larvae_log) #check
-
+D1Fullscopehemo$cells.larvae_log<-(D1Fullscopehemo$cells.larvae_log*0.96) #convert and check
+#plot(D1Fullscopehemo$cells.larvae_log, D1Fullscopehemo$cells.larvae_log) #check
 D1Full<-rbind(D1FullddPCR,D1Fullscopehemo) #rebind with ddPCR
 D1Full$cells.larvae_counts_unlog<-(10^D1Full$cells.larvae_log)-1  #converted all log back to Raw counts
 #D1Full$cells.larvae_counts_round<-round(D1Full$cells.larvae_counts)
@@ -711,7 +707,7 @@ D1Full$cells.larvae_counts_unlog<-(10^D1Full$cells.larvae_log)-1  #converted all
 F1FullddPCR<-subset(F1Full, count.type=="ddPCR")
 F1Fullscopehemo<-subset(F1Full, count.type=="hemo"|count.type=="scope")
 #F1Fullscopehemo$cells.larvae_log_Pre<-F1Fullscopehemo$cells.larvae_log #save old to check then comment out
-F1Fullscopehemo$cells.larvae_log<-(F1Fullscopehemo$cells.larvae_log*1.04) #convert and check
+F1Fullscopehemo$cells.larvae_log<-(F1Fullscopehemo$cells.larvae_log*0.97) #convert and check
 F1Full<-rbind(F1FullddPCR,F1Fullscopehemo) #rebind with ddPCR
 F1Full$cells.larvae_counts_unlog<-(10^F1Full$cells.larvae_log)-1  #converted all log back to Raw counts
 #F1Full$cells.larvae_counts_round<-round(F1Full$cells.larvae_counts)
@@ -721,66 +717,34 @@ F1Full$cells.larvae_counts_unlog<-(10^F1Full$cells.larvae_log)-1  #converted all
 G3FullddPCR<-subset(G3Full, count.type=="ddPCR")
 G3Fullscopehemo<-subset(G3Full, count.type=="hemo"|count.type=="scope")
 #G3Fullscopehemo$cells.larvae_log_Pre<-G3Fullscopehemo$cells.larvae_log #save old to check then comment out
-G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*1.04) #convert and check
+G3Fullscopehemo$cells.larvae_log<-(G3Fullscopehemo$cells.larvae_log*0.96) #convert and check
 G3Full<-rbind(G3FullddPCR,G3Fullscopehemo) #rebind with ddPCR
 G3Full$cells.larvae_counts_unlog<-(10^G3Full$cells.larvae_log)-1  #converted all log back to Raw counts
 #G3Full$cells.larvae_counts_round<-round(G3Full$cells.larvae_counts)
 #plot(G3Full$cells.larvae, G3Full$cells.larvae_counts_round) #check
 
 
-#ALL
-ALLFullddPCR<-subset(ALLFull, count.type=="ddPCR")
-ALLFullscopehemo<-subset(ALLFull, count.type=="hemo"|count.type=="scope")
-#ALLFullscopehemo$cells.larvae_log_Pre<-ALLFullscopehemo$cells.larvae_log #save old to check then comment out
-ALLFullscopehemo$cells.larvae_log<-(ALLFullscopehemo$cells.larvae_log*1.04) #convert and check
-ALLFull<-rbind(ALLFullddPCR,ALLFullscopehemo) #rebind with ddPCR
-ALLFull$cells.larvae_counts_unlog<-(10^ALLFull$cells.larvae_log)-1  #converted all log back to Raw counts
-#ALLFull$cells.larvae_counts_round<-round(ALLFull$cells.larvae_counts)
+#Poly
+PolyFullddPCR<-subset(PolyFull, count.type=="ddPCR")
+PolyFullscopehemo<-subset(PolyFull, count.type=="hemo"|count.type=="scope")
+#PolyFullscopehemo$cells.larvae_log_Pre<-PolyFullscopehemo$cells.larvae_log #save old to check then comment out
+PolyFullscopehemo$cells.larvae_log<-(PolyFullscopehemo$cells.larvae_log*0.96) #convert and check
+PolyFull<-rbind(PolyFullddPCR,PolyFullscopehemo) #rebind with ddPCR
+PolyFull$cells.larvae_counts_unlog<-(10^PolyFull$cells.larvae_log)-1  #converted Poly log back to Raw counts
+#PolyFull$cells.larvae_counts_round<-round(PolyFull$cells.larvae_counts)
 
-#plot(ALLFull$cells.larvae, ALLFull$cells.larvae_counts_round) #check
+#plot(PolyFull$cells.larvae, PolyFull$cells.larvae_counts_round) #check
 
 Monoculture<-rbind(C1Full,D1Full, F1Full, G3Full)
-MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,ALLFull)
+MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull)
 
 ```
 
 MORTALITY
 # Larval Mortality
 ```{r}       
-Mort.df<-read.csv("SC_mortality_20200722.csv") #read mortality df
-  hist(Mort.df$Total)
-Mort.df$Total_log<-log10(Mort.df$Total+1) #transform log10
-  hist(Mort.df$Total_log) #use log
-Mort.df$Total_sqrt<-sqrt(Mort.df$Total) #transform log10
-  hist(Mort.df$Total_sqrt) #
-
-  
-Mort.df$Pot<-as.factor(as.character(Mort.df$Pot))
-  Mort.df$Temp<-as.factor(as.character(Mort.df$Temp))
- Mort.df$Day<-as.factor(as.character(Mort.df$Day))
- 
-  Mort.df_mean<- ddply(Mort.df, c( "Temp","Symbiont","Day"), summarise, #summarize cell counts
-                 N    = length(Total_log[!is.na(Total_log)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(Total_log, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(Total_log, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(Total_log, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);Mort.df_mean #display table
-
- 
- Mort.df_mod<-lmer(Total_sqrt~Temp*Symbiont*Day+(1|Pot), Mort.df)
-anova(Mort.df_mod)
-qqPlot(residuals(Mort.df_mod))   #  meh 
-#post hoc
- emm<-emmeans(Mort.df_mod,  ~ Symbiont*Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
- 
- 
-
-
-#### AH binomial mixed effects model
-#stressFINALmod<-glmer(x~Stress.Temp*Rear.Temp*Nutrition + (1|Stress.Tank) + (1|Cohort), family=binomial)
+# Monos and the poly (remove control)
+ # binomial mixed effects model
 Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
 Mort.df_NEW$Temp<-as.factor(as.character(Mort.df_NEW$Temp))
 Mort.df_NEW$Pot<-as.factor(as.character(Mort.df_NEW$Pot))
@@ -800,32 +764,30 @@ D.Summary <- ddply(Mort.df_NEW, c("Temp", "Symbiont","Day"), summarise,
 )
 
 knitr::kable(D.Summary)
-#remove day1
+#remove day1 and remove COntrols (no rep)
 D.Summary<-subset(D.Summary, Day==7|Day==14)
 
+#remove control due to no replication 
+Mort.df_NEW<-subset(Mort.df_NEW, Symbiont=="C1"|Symbiont=="D1"|Symbiont=="F1"|Symbiont=="G3"|Symbiont=="All")
 
-
+#full model
 ##create binomial vector
-
-#attach(Mort.df_NEW_D7)
-#x7<-cbind(Alive, Failures) 
-
-
 attach(Mort.df_NEW)
 x<-cbind(Alive, Failures)
 
-
 #Analyze survivorship at the end of the thermal stress using a binomial mixed effects model.  
-#Main effects: temperature, Symbiont treatment, time?  
+#Main effects: temperature, Symbiont treatment, time
 #Random effects: Pot  
 #`stressFINALmod<-glmer(x~temp*symbiont*day + (1|pot), family=binomial)`
 #Run model and display summary as well as anova table for use of p-values.   
-
 
 #ALL model
 Mort.df_NEW_mod<-glmer(x~Temp*Symbiont*Day + (1|Pot), family=binomial)
 summary(Mort.df_NEW_mod)
 Anova(Mort.df_NEW_mod)
+ emm<-emmeans(Mort.df_NEW_mod,  ~Temp*Day|Symbiont, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
 
  emm<-emmeans(Mort.df_NEW_mod,  ~ Symbiont|Temp|Day, adjust="Tukey")
 cld(emm, Letter="abcdefg")
@@ -835,29 +797,40 @@ pairs(emm)
 detach(Mort.df_NEW)
 
 
-#model of mono vs poly with symbiont as nested
 
-Mort.df_MvP_NEW<-Mort.df_NEW                                                 #make a copy
-Mort.df_MvP_NEW$Symbiont<-as.character(Mort.df_MvP_NEW$Symbiont)             # change to character
-Mort.df_MvP_NEW$MonoPoly<-Mort.df_MvP_NEW$Symbiont                           #duplicate
-Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "C1" ] <- "Mono"        #change monos to mono
-Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "D1" ] <- "Mono"
-Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "F1" ] <- "Mono"
-Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "G3" ] <- "Mono"
-Mort.df_MvP_NEW$MonoPoly[Mort.df_MvP_NEW$MonoPoly == "All" ] <- "Poly"
-Mort.df_MvP_NEW$MonoPoly<-as.factor(Mort.df_MvP_NEW$MonoPoly)
-Mort.df_MvP_NEW<-subset(Mort.df_MvP_NEW, MonoPoly=="Mono"|MonoPoly=="Poly") #remove controls 
+#monoculture only model
+Mort.df_NEW_mono<-subset(Mort.df_NEW, Symbiont=="C1"|Symbiont=="D1"|Symbiont=="F1"|Symbiont=="G3")
 
-attach(Mort.df_MvP_NEW)
-x<-cbind(Alive, Failures) 
+##create binomial vector
+attach(Mort.df_NEW_mono)
+y<-cbind(Alive, Failures)
 
-Mort.df_NEW_MvP_mod<-glmer(x~MonoPoly*Temp*Day + (1|Pot), family=binomial) #why isn't this running? I think it's in the "y"?
-summary(Mort.df_NEW_MvP_mod)
-Anova(Mort.df_NEW_MvP_mod)
+#Analyze survivorship at the end of the thermal stress using a binomial mixed effects model.  
+#Main effects: temperature, Symbiont treatment, time
+#Random effects: Pot  
+#`stressFINALmod<-glmer(x~temp*symbiont*day + (1|pot), family=binomial)`
+#Run model and display summary as well as anova table for use of p-values.   
 
-detach(Mort.df_MvP_NEW)
+#ALL model
+Mort.df_NEW_mono_mod<-glmer(y~Temp*Symbiont*Day + (1|Pot), family=binomial)
+summary(Mort.df_NEW_mono_mod)
+Anova(Mort.df_NEW_mono_mod)
 
+#Tukey posthoc
+ emm<-emmeans(Mort.df_NEW_mono_mod,  ~ Symbiont|Temp|Day, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
 
+ emm<-emmeans(Mort.df_NEW_mono_mod,  ~ Temp|Day*Symbiont, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+detach(Mort.df_NEW_mono)
+
+```
+
+Plots of Mortality by TEMP
+```{r}
 #New plot by temp (20210104)
 D.Summary_27<-subset(D.Summary, Temp==27)
 D.Summary_30<-subset(D.Summary, Temp==30)
@@ -953,404 +926,25 @@ FigSurv_D.Summary_31<-FigSurv_D.Summary_31+ theme(legend.position = "none") #rem
 
 grid.arrange(FigSurv_D.Summary_27, FigSurv_D.Summary_30,FigSurv_D.Summary_31, nrow = 1)
 
-
-#plot as a heatmap
-library(heatmaply)
-heatmaply(Mort.df_NEW)
-
-
-
-
-
-
-
-# I think you can delete all below#############
-
-
- #try only plotting % decrease aka total mortality by pot
- mort_test<-subset(Mort.df, Day==1|Day==14)
- #write.csv(mort_test, "mort_test.csv")
- Mord.df2<-read.csv("mort_test.csv")
- 
- Mord.df2_mean<- ddply(Mord.df2, c( "Temp","Symbiont"), summarise, #summarize cell counts
-                 N    = length(PercentSurv[!is.na(PercentSurv)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(PercentSurv, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(PercentSurv, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(PercentSurv, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);Mord.df2_mean #display table
-
-Mord.df2_mean_27<-subset(Mord.df2_mean, Temp=="27")
-Mord.df2_mean_30<-subset(Mord.df2_mean, Temp=="30")
-Mord.df2_mean_31<-subset(Mord.df2_mean, Temp=="31")
-
-
-#mort mean by temp
- Mord.df2_temp_mean<- ddply(Mord.df2, c( "Temp"), summarise, #summarize cell counts
-                 N    = length(PercentSurv[!is.na(PercentSurv)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(PercentSurv, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(PercentSurv, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(PercentSurv, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);Mord.df2_temp_mean #display table
-
-
-
-
- 
- 
- #test stats for this:
- hist(Mord.df2$PercentSurv)
-Mord.df2$PercentSurv_log<-log10(Mord.df2$PercentSurv+1)
-hist(Mord.df2$PercentSurv_log)
-
-#Mord.df2$PercentSurv_sqrt<-sqrt(Mord.df2$PercentSurv+1) #not better
-#hist(Mord.df2$PercentSurv_sqrt)
-
-Mord.df2$Temp<-as.factor(as.character(Mord.df2$Temp))
-Mord.df2$Pot<-as.factor(as.character(Mord.df2$Pot))
-
-Mort.df2_mod<-lmer(PercentSurv_log~Temp*Symbiont+(1|Pot), Mord.df2)
-anova(Mort.df2_mod)
-qqPlot(residuals(Mort.df2_mod))   #  meh 
-#post hoc
- emm<-emmeans(Mort.df2_mod,  ~ Symbiont*Temp, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
- 
-Mord.df2_mean$Temp<-as.factor(as.character(Mord.df2_mean$Temp))
-Mord.df2_mean$Symbiont <- factor(Mord.df2_mean$Symbiont, levels = c("C1", "D1", "F1","G3","All","Control"))
-
-Mort_plot2<-ggplot(data=Mord.df2_mean, aes(x=Temp, y=mean, group = Symbiont, colour=Symbiont)) +
-scale_colour_manual(values=c( "#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF","black","grey"))+
-geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.3, position=position_dodge(0.3))+
-  geom_point(aes(group=Symbiont), size = 4,position=position_dodge(0.3))+
-     geom_point(shape = 1,size = 4,colour = "black",position=position_dodge(0.3))+
-xlab("Temp") + #Label the X Axis 
- # scale_x_discrete(limits=c("27","30","31"))+
-theme_bw() + #Set the background color
-theme(axis.line = element_line(color = 'black'), #Set the axes color
-axis.title=element_text(size=14,face="bold"), #Set axis format
-panel.border = element_blank(), #Set the border
-panel.grid.major = element_blank(), #Set the major gridlines
-panel.grid.minor = element_blank(), #Set the minor gridlines
-text = element_text(size=18),# set element text
-plot.background =element_blank(), #Set the plot background
-legend.key = element_blank()) + #Set plot legend key
-ylab(expression(paste("% Surviorship"))) +
-ggtitle("Percent survivorship at day 14")+
-theme(plot.title = element_text(size=20));Mort_plot2
-
-
- 
- #### DELETE
- #lets try GLMER poisson
-Mort.df_modGLMER1<-glmer(Total ~ Temp*Symbiont*Day+(1|Pot), data = Mort.df, family = poisson(link = "log"))
-Anova(Mort.df_modGLMER1)
-qqPlot(residuals(Mort.df_modGLMER1))   #  meh 
-
-Mort.df_27_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "identity"))
-Anova(Mort.df_27_modGLMER2)
-qqPlot(residuals(Mort.df_27_modGLMER2))   #  meh 
-
-
-#Stats
-Mort.df_27<-subset(Mort.df, Temp==27) #subset by temp
-Mort.df_30<-subset(Mort.df, Temp==30)
-Mort.df_31<-subset(Mort.df, Temp==31)
-
-#27
-#models 
-hist(Mort.df_27$Total_log)
-Mort.df_27_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_27)
-anova(Mort.df_27_mod)
-qqPlot(residuals(Mort.df_27_mod))   #  meh 
-#post hoc diff at each day
- emm<-emmeans(Mort.df_27_mod,  ~ Symbiont|Day, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
-#lets try GLMER poisson
-Mort.df_27_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "log"))
-Anova(Mort.df_27_modGLMER1)
-qqPlot(residuals(Mort.df_27_modGLMER1))   #  meh 
-
-Mort.df_27_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_27, family = poisson(link = "identity"))
-Anova(Mort.df_27_modGLMER2)
-qqPlot(residuals(Mort.df_27_modGLMER2))   #  meh 
-
-
-
-hist(Mort.df_30$Total_log) #not great
-
-Mort.df_30_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_30)
-anova(Mort.df_30_mod)
-qqPlot(residuals(Mort.df_30_mod))   #  this is awful 
-#post hoc diff at each day
- emm<-emmeans(Mort.df_30_mod,  ~ Symbiont|Day, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
-Mort.df_30_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_30, family = poisson(link="log"))
-Anova(Mort.df_30_modGLMER1)
-qqPlot(residuals(Mort.df_30_modGLMER1))   #  meh 
-
-Mort.df_30_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_30, family = poisson(link="identity"))
-Anova(Mort.df_30_modGLMER2)
-qqPlot(residuals(Mort.df_30_modGLMER2))   #  meh 
-
-#31
-hist(Mort.df_31$Total_log) #not great
-
-
-hist(Mort.df_31$Total_log) #not great
-
-Mort.df_31_mod<-lmer(Total_log~Day*Symbiont+(1|Pot), Mort.df_31)
-anova(Mort.df_31_mod)
-qqPlot(residuals(Mort.df_31_mod))   #  this is awful 
-#post hoc diff at each day
- emm<-emmeans(Mort.df_31_mod,  ~ Symbiont|Day, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-pairs(emm)
-
-Mort.df_31_modGLMER1<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_31, family = poisson(link="log"))
-Anova(Mort.df_31_modGLMER1)
-qqPlot(residuals(Mort.df_31_modGLMER1))   #  meh 
-
-Mort.df_31_modGLMER2<-glmer(Total ~ Symbiont*Day+(1|Pot), data = Mort.df_31, family = poisson(link="identity"))
-Anova(Mort.df_31_modGLMER2)
-qqPlot(residuals(Mort.df_31_modGLMER2))   #  meh 
-
-
-
-
-
-
-
-
-#PLOTS
-# means (not transformed)
-Mort.mean<- ddply(Mort.df, c("Day", "Temp","Symbiont"), summarise, #summarize cell counts
-                 N    = length(Total[!is.na(Total)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(Total, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(Total, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(Total, na.rm=TRUE) #calculate max, could also calculate min () if desired
-);Mort.mean #display table
-
-Mort.mean$Day<-as.numeric(Mort.mean$Day)
-
-Mort.mean_27<-subset(Mort.mean, Temp=="27")
-Mort.mean_30<-subset(Mort.mean, Temp=="30")
-Mort.mean_31<-subset(Mort.mean, Temp=="31")
-
-
-
-#27
- Mort27_plot<-ggplot(data=Mort.mean_27, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("27C Mortality")+
-  theme(plot.title = element_text(size=20));Mort27_plot
- 
- #30
- Mort30_plot<-ggplot(data=Mort.mean_30, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("30C Mortality")+
-  theme(plot.title = element_text(size=20));Mort30_plot
- 
- #31
- Mort31_plot<-ggplot(data=Mort.mean_31, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("31C Mortality")+
-  theme(plot.title = element_text(size=20));Mort31_plot
-
- 
-Mort27_plot<-Mort27_plot+ theme(legend.position = "none") #remove legend
-Mort30_plot<-Mort30_plot+ theme(legend.position = "none") #remove legend
-#Mort31_plot<-Mort31_plot+ theme(legend.position = "none") #remove legend
-grid.arrange(Mort27_plot, Mort30_plot, Mort31_plot, nrow = 1) 
-
-
-#redo with Day 1 gone
-Mort.mean_27_noD1<-subset(Mort.mean_27, Day=="7"|Day=="14")
-Mort.mean_30_noD1<-subset(Mort.mean_30, Day=="7"|Day=="14")
-Mort.mean_31_noD1<-subset(Mort.mean_31, Day=="7"|Day=="14")
-
-#27
- Mort.mean_27_noD1_plot<-ggplot(data=Mort.mean_27_noD1, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 200) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("27C Mortality")+
-  theme(plot.title = element_text(size=20));Mort.mean_27_noD1_plot
- 
- #30
- Mort.mean_30_noD1_plot<-ggplot(data=Mort.mean_30_noD1, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 200) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("30C Mortality")+
-  theme(plot.title = element_text(size=20));Mort.mean_30_noD1_plot
- 
- #31
- Mort.mean_31_noD1_plot<-ggplot(data=Mort.mean_31_noD1, aes(x=Day, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c("black", "#D43F3AFF","grey","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 50) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("# Larvae"))) +
-  ggtitle("31C Mortality")+
-  theme(plot.title = element_text(size=20));Mort.mean_31_noD1_plot
-
- 
-Mort.mean_27_noD1_plot<-Mort.mean_27_noD1_plot+ theme(legend.position = "none") #remove legend
-Mort.mean_30_noD1_plot<-Mort.mean_30_noD1_plot+ theme(legend.position = "none") #remove legend
-Mort.mean_31_noD1_plot<-Mort.mean_31_noD1_plot+ theme(legend.position = "none") #remove legend
-grid.arrange(Mort.mean_27_noD1_plot, Mort.mean_30_noD1_plot, Mort.mean_31_noD1_plot, nrow = 1) 
-
-
-
-
-
-
-
 ```
 
 
+# Binomial: Did a larvae infect (Y/N) modeles and plots
+dfs: C1Full, D1Full, F1Full, G3Full, Poly
 
-
-
-
-DID LARVAE INFECT OR NOT (binomial)
-
-BINOMIAL DID IT INFECT
-BINOMIAL
-
-
-
-# Monoculture: Binomial: Did a larvae infect (Y/N) modeles and plots
-dfs: C1Full, D1Full, F1Full, G3Full
-Questions: 
-1. Within each genus, what is the effect of temp and time on what percent of larvae infect with at leaste one symbiont?
-- I predict that within each genus, infected larvae will increase over time, and decrease at high temperatures.  
-2. At each temperature, which clades infects more successfully, over time? 
-- At ambient temperature, I hypothesize that C1 will be the most successful, and D1 at high temps. I predict that within each genus, infection rate will grow over time.  
  
-FIRST make df for ALLs with proper binomial
-ORganize df: ddPCR and then combine with monoculture ALLs
-```{r}     
-#ALLcast_9000_cast2a includes all samples even if not all clades amped
+Make binomial dfs
+Organize df for Polyculture: ddPCR and hemo./scope
+```{r}      
+#ALLcast_9000_cast2a includes all good ddpcrs even if not all genera amped for each larva
  
-#ALL
+#polyculture df: create binary df, if at least one genus had at least 1 cell, designate "1"
 #organize the ddPCR data 
- ALL_RelAb<-ALLcast_9000_cast2a #copy ddPCR df
+ALL_RelAb<-ALLcast_9000_cast2a #copy ddPCR df
 drops <- c("C1","D1","F1","G3") #get rid of cell.larvae col
 ALL_RelAb<-ALL_RelAb[ , !(names(ALL_RelAb) %in% drops)]
 
-#ALL_RelAb<-dcast(ALL_RelAb, ALL.number+Temp+Day+Pot~Primer, value.var = "cell.larvae_round") # cast()
-
-#make "infect or not"" binary
+#make "infect or not"" binary df
 RelA_binaryb<-ALL_RelAb 
 
  # 1 and 0 for each clade 
@@ -1366,7 +960,7 @@ RelA_binaryb$G3[RelA_binaryb$G3==0]<-0
 
 #new col sum of each clade in a larvae (Check to make sure NA are not changed to 0)
 RelA_binaryb$numclade<-rowSums(RelA_binaryb[,c("C1", "D1","F1","G3")], na.rm=TRUE)
-#remove the single row with only 0s and NAs to be conservative
+#remove the single row with only 0s and NAs to be conservative (rows with four 0s are 0)
 RelA_binaryb<-RelA_binaryb[!(RelA_binaryb$ALL.number=="231"),]
 #Create infect binary column 0 or 1
 
@@ -1376,70 +970,65 @@ RelA_binaryb$Infect<-as.factor(RelA_binaryb$Infect) #make factor
 
 RelA_CladeComp<-RelA_binaryb #make a copy for the nextsection
 
-#rename Pot interaction as a code: Pot_Temp
-# RelA_binaryb$PotCode<-paste0(RelA_binaryb$Temp, RelA_binaryb$Pot)
-# RelA_binaryb$PotCode<-as.factor(RelA_binaryb$PotCode) #make factor
- 
- 
-
-
 # Combine ddPCR data with ALL scope/hemo converted counts for the BINOMIAL only df
   RelAvars<-c("Temp","Day","Pot","Infect")
 RelA_binaryb_2<-RelA_binaryb[RelAvars]
 RelA_binaryb_2$count.type<-"ddPCR"
 
-AllCountvars<-c("Temp","Day","cells.larvae","Pot","count.type") #hemoscope prep
-ALLFullscopehemo2<-ALLFullscopehemo[AllCountvars]
-ALLFullscopehemo2$Infect[ALLFullscopehemo2$cells.larvae>0]<-1  
-ALLFullscopehemo2$Infect[ALLFullscopehemo2$cells.larvae==0]<-0
-ALLFullscopehemo3<-subset(ALLFullscopehemo2, select = -c(cells.larvae))# drop cells.larvae col
+PolyCountvars<-c("Temp","Day","cells.larvae","Pot","count.type") #hemoscope prep
+PolyFullscopehemo2<-PolyFullscopehemo[PolyCountvars]
+PolyFullscopehemo2$Infect[PolyFullscopehemo2$cells.larvae>0]<-1  
+PolyFullscopehemo2$Infect[PolyFullscopehemo2$cells.larvae==0]<-0
+PolyFullscopehemo3<-subset(PolyFullscopehemo2, select = -c(cells.larvae))# drop cells.larvae col
 
-All_binomial<-rbind(ALLFullscopehemo3,RelA_binaryb_2) #combine for the ALL BINOMIAL ONLY DF
-All_binomial$Symbiont<-"All" #create symbiont col
+Poly_binomial<-rbind(PolyFullscopehemo3,RelA_binaryb_2) #combine for the Poly BINOMIAL ONLY DF
+Poly_binomial$Symbiont<-"Poly" #create symbiont col
 
-All_binomial$Infect<-as.factor(All_binomial$Infect)
-  All_binomial$count.type<-as.factor(All_binomial$count.type)
+Poly_binomial$Infect<-as.factor(Poly_binomial$Infect)
+  Poly_binomial$count.type<-as.factor(Poly_binomial$count.type)
   
-
-#make DF for All cell densities for COUNTS (not binomial)
+#make DF for Poly cell densities for COUNTS (not binomial) (ALL =Poly)
 #ALLcast_9000_cast2b  ALL df only larva with 4 genera, add this to the scopecounts stuff: ALLFullscopehemo2
   ALLcast_9000_cast2c<-ALLcast_9000_cast2b
   ALLcast_9000_cast2c<- ALLcast_9000_cast2c %>% mutate(sumrow= C1 + D1 + F1 + G3) #create sum for larva
 names(ALLcast_9000_cast2c)[names(ALLcast_9000_cast2c)=="sumrow"] <- "cells.larvae" #rename col
 ALLcast_9000_cast2c$count.type<-"ddPCR"
-
 ALLcast_9000_cast2cAvars<-c("Temp","Day","cells.larvae","Pot","count.type") #select cols to keep
 ALLcast_9000_cast3<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars] # new df
   
-  ALLFullscopehemo4<-subset(ALLFullscopehemo2, select = -c(Infect)) #prep scope hemo df
+  PolyFullscopehemo4<-subset(PolyFullscopehemo2, select = -c(Infect)) #prep scope hemo df (with cells.lar still there)
   
-ALL_forCounts<-rbind(ALLFullscopehemo4,ALLcast_9000_cast3)
-ALL_forCounts<-na.omit(ALL_forCounts) 
+Poly_forCounts<-rbind(PolyFullscopehemo4,ALLcast_9000_cast3) # combine scope/hemo with ddPCR for Poly
+Poly_forCounts<-na.omit(ALL_forCounts) 
 ```
 
-Model:  `glmer(Infect~Symbiont*Day*Temp+(1|potCode)`, family=binomial)
+Create binomial for monocultures
 ```{r}           
 BinaryInfect<-Monoculture  # make new df for binary infection
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
  BinaryInfect$Infect<-as.character(BinaryInfect$Infect)
   BinaryInfect$Infect<-as.numeric(BinaryInfect$Infect)
- BinaryInfect$count.type<-as.factor(BinaryInfect$count.type) #make factor
 
 Binaryvars<-c("Temp","Day","Infect","Pot","count.type","Symbiont") #keep vars you need
 BinaryInfect<-BinaryInfect[Binaryvars]
  
 #combine Mono with Poly infect or not
-BinaryInfect<-rbind(BinaryInfect, All_binomial) #add the ALLLS for JUST this assay in here (calc above)
+BinaryInfect<-rbind(BinaryInfect, Poly_binomial) #add the Polys for JUST this assay in here (calc above chunk)
  
  #rename Pot interaction as a code: Pot_Temp
  BinaryInfect$PotCode<-paste0(BinaryInfect$Temp, BinaryInfect$Pot,BinaryInfect$Symbiont )
  BinaryInfect$PotCode<-as.factor(BinaryInfect$PotCode) #make factor
 
- BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
- 
+
+```
+Binomial Models
+```{r}
 #Full model including all clades/temp/time:
- Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect) #
+BinaryInfect<-na.omit(BinaryInfect) #remove nas
+
+ ##########WHY ISN"T IT WORKING NOW. I literally didn't change anything. ugh. Individual genera work and the 27+30C only works
+ Binary_mod<-glmer(Infect~Temp*Day*Symbiont+(1|PotCode), family="binomial", BinaryInfect)
   Anova(Binary_mod)
 dispersion_glmer(Binary_mod) # no overdispersion  .77
   emm<-emmeans(Binary_mod,  ~ Symbiont*Temp*Day)
@@ -1453,25 +1042,11 @@ cld(emm)
 BinaryInfect_C1<-subset(BinaryInfect, Symbiont=="C1")
  Binary_mod_C1<-glmer(Infect~Temp*Day+(1|PotCode), family="binomial", BinaryInfect_C1) #
   Anova(Binary_mod_C1)
-dispersion_glmer(Binary_mod_C1) # no overdispersion  .77
+dispersion_glmer(Binary_mod_C1) # no overdispersion  .77, also this no longer runs thanks to R update issue with package.
   emm<-emmeans(Binary_mod_C1,  ~ Day|Temp)
   pairs(emm)
   cld(emm) 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1650,7 +1225,7 @@ grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_mean_plot, nrow
 ```
 
 
-# Monoculture vs Polyculture by clade: Binomial TAKE 2 -PINK and BLUE binomial: 20200824  
+# Binomial: Monoculture vs Polyculture by clade: Binomial TAKE 2 -PINK and BLUE binomial: 20200824  
 all amplifications= ALLcast_9000_cast2a (includes NAs)
 Plots and comparison models singe v multi 
   
