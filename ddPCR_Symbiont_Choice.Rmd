@@ -25,19 +25,19 @@ require("knitr")
 
 Load in libraries 
 ```{r}  
-#rm(list=ls()) # Clear workspace
+rm(list=ls()) # Clear workspace
 
 # Set up workspace: I def do not use all these
-library(devtools) 
-library(RColorBrewer) #colors
-library(ggbiplot)
-library(ggfortify)
+#library(devtools) 
+#library(RColorBrewer) #colors
+#library(ggbiplot)
+#library(ggfortify)
 library(vegan)
-library("factoextra")
+#library("factoextra")
 library(lmodel2) 
-library(gplots)
+#library(gplots)
 library(MASS)
-library(scales)
+#library(scales)
 library(reshape) #for cast
 library(lattice)
 library(dplyr)
@@ -46,9 +46,9 @@ library(ggplot2)
 library(cowplot)
 library("gridExtra") #arrange plots for output
 library(reshape2)
-library("ggsci")#set bar colors
-library("qqplotr")
-library("blmeco") #this isn't loading
+#library("ggsci")#set bar colors
+#library("qqplotr")
+#library("blmeco") #this isn't loading
 library("plotrix") #functions in tapply
 library("pscl")
 library("car") #levenes test
@@ -56,34 +56,32 @@ library("lsmeans")
 library(effects)
 library("multcomp") 
 library("multcompView")
-library("coefplot") #coefficient plotting
-library("seacarb") #seawater carbonate chemistry
+#library("coefplot") #coefficient plotting
 library("vegan") #calculating distance matrices
-library(pscl) 
-library(boot)
-library(betareg)
-library(coin)
-library(exactRankTests)
-library(mvtnorm)
-library(DTK)
-library(PMCMR)
+#library(boot)
+#library(betareg)
+#library(coin)
+#library(exactRankTests)
+#library(mvtnorm)
+#library(DTK)
+#library(PMCMR)
 library(MuMIn)
-library(glmmTMB)
+#library(glmmTMB)
 library(lme4)
 library(lmerTest)
-library(ggsignif)
-library(HH) #not loading
+#library(ggsignif)
+#library(HH) #not loading
 library(PMCMR)
 library(tidyverse)
-library(arm) #not loading
+#library(arm) #not loading
 library(jtools)
 library(broom)
-library(ggstance)
-library(officer)
-library(huxtable)
-library(flextable)
-library(survival)
-library(survminer)
+#library(ggstance)
+#library(officer)
+#library(huxtable)
+#library(flextable)
+#library(survival)
+#library(survminer)
 library(emmeans)
 
 ```
@@ -999,7 +997,7 @@ ALLcast_9000_cast3<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars] # new df
   PolyFullscopehemo4<-subset(PolyFullscopehemo2, select = -c(Infect)) #prep scope hemo df (with cells.lar still there)
   
 Poly_forCounts<-rbind(PolyFullscopehemo4,ALLcast_9000_cast3) # combine scope/hemo with ddPCR for Poly
-Poly_forCounts<-na.omit(ALL_forCounts) 
+Poly_forCounts<-na.omit(Poly_forCounts) 
 ```
 
 Create binomial for monocultures
@@ -1026,12 +1024,12 @@ Binomial Models
 ```{r}
 #Full model including all clades/temp/time:
 BinaryInfect<-na.omit(BinaryInfect) #remove nas
+BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
 
- ##########WHY ISN"T IT WORKING NOW. I literally didn't change anything. ugh. Individual genera work and the 27+30C only works
- Binary_mod<-glmer(Infect~Temp*Day*Symbiont+(1|PotCode), family="binomial", BinaryInfect)
+ Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect)
   Anova(Binary_mod)
-dispersion_glmer(Binary_mod) # no overdispersion  .77
-  emm<-emmeans(Binary_mod,  ~ Symbiont*Temp*Day)
+dispersion_glmer(Binary_mod) # no overdispersion  .77  <- apparently this isn't working blmec not loading
+  emm<-emmeans(Binary_mod,  ~ Symbiont|Temp|Day)
   pairs(emm)
   cld(emm) 
   
