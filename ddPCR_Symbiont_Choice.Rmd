@@ -1029,7 +1029,7 @@ BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
  Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect)
   Anova(Binary_mod)
 dispersion_glmer(Binary_mod) # no overdispersion  .77  <- apparently this isn't working blmec not loading
-  emm<-emmeans(Binary_mod,  ~ Symbiont|Temp|Day)
+  emm<-emmeans(Binary_mod,  ~ Symbiont|Temp*Day)
   pairs(emm)
   cld(emm) 
   
@@ -1313,10 +1313,12 @@ C1 Single v Multi by GENUS
 #######################################NOT WORKING WHY ALL THE OTHERS WORK
 #model SINGLE vs MULTI 
 C1_binaryb_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", C1_binaryb_SinMul) 
-Anova(C1_binaryb_SinMul_mod)
-dispersion_glmer(C1_binaryb_SinMul_mod) # no overdispersion 1.00 
+Anova(C1_binaryb_SinMul_mod)   #variance-covariance issues
+#dispersion_glmer(C1_binaryb_SinMul_mod) # no overdispersion 1.00 
 emm<-emmeans(C1_binaryb_SinMul_mod,  ~ infectType*Temp*Day, adjust="Tukey")
 cld(emm)
+
+
 
 #mean
 C1_binaryb_SinMul$Infect<-as.character(C1_binaryb_SinMul$Infect) #change infect back to a number for mean
@@ -1798,6 +1800,7 @@ binarybInfect_Figb<-grid.arrange(arrangeGrob(binarybInfect_Fig, left = y.grob, b
 
 CELL DENSITY
 ## Polyculture: Individual clade heatmaps, Poly INFECTION counts not relabund (with 0s for individual clades) 
+This code isn't with the right DF but you are going to delete it unless you use heat maps then you gotta fix
 MultiCounts2=df (multi including all samples that amped (not trimmed))
 C1 
 ```{r}  
@@ -1990,25 +1993,10 @@ G3heatMult<-heatmap.2(G3mat_data2,
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
 ```{r}            
- 
 
-START HERE IN MORNING: Check dataframe building. 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#set up the All df for this specific model! use only poly larva with ddPCR for all genera/larva +hemoscope
-ALL_forCounts$cells.larvae_log<-log10(ALL_forCounts$cells.larvae+1) #log alls
-ALL_forCounts$Symbiont<-"Poly" #add symbiont col
+#set up the Poly df for this specific model! use only poly larva with ddPCR for Poly genera/larva +hemoscope
+Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
+Poly_forCounts$Symbiont<-"Poly" #add symbiont col
 
 #remove 0s
 C1Full_no0<-subset(C1Full, cells.larvae>0)
@@ -2016,55 +2004,63 @@ D1Full_no0<-subset(D1Full, cells.larvae>0)
 F1Full_no0<-subset(F1Full, cells.larvae>0)
 G3Full_no0<-subset(G3Full, cells.larvae>0)
 
-PolyFull_no0<-subset(ALL_forCounts, cells.larvae>0)
-  ALLFull_no0$Symbiont<-as.factor(ALLFull_no0$Symbiont)
-  ALLFull_no0$count.type<-as.factor(ALLFull_no0$count.type)
+PolyFull_no0<-subset(Poly_forCounts, cells.larvae>0)
+  PolyFull_no0$Symbiont<-as.factor(PolyFull_no0$Symbiont)
+  PolyFull_no0$count.type<-as.factor(PolyFull_no0$count.type)
 
 
 hist(C1Full_no0$cells.larvae_log) # normal
 hist(D1Full_no0$cells.larvae_log) # normal
 hist(F1Full_no0$cells.larvae_log) # normal
 hist(G3Full_no0$cells.larvae_log) # normal
-hist(ALLFull_no0$cells.larvae_log) # normal
+hist(PolyFull_no0$cells.larvae_log) # normal
 
-Singles_Mono<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0) #combine mono df
-Singles_Mono<-subset(Singles_Mono, select = -c(Replicate, cells.larvae) ) #get rid of original cells.larvae, keep new counts
-names(Singles_Mono)[names(Singles_Mono)=="cells.larvae_counts_unlog"] <- "cells.larvae" #rename the new counts cells.larvae for consistency
-Singles_Mono$count.type<-as.factor(Singles_Mono$count.type)
+Poly_Mono<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0) #combine mono df
+Poly_Mono<-subset(Poly_Mono, select = -c( cells.larvae) ) #get rid of original cells.larvae, keep new counts
+names(Poly_Mono)[names(Poly_Mono)=="cells.larvae_counts_unlog"] <- "cells.larvae" #rename the new counts cells.larvae for consistency
+Poly_Mono$count.type<-as.factor(Poly_Mono$count.type)
 
-Singles_no0<-rbind(Singles_Mono,ALLFull_no0)  ####THis is the df for Cell Densities! 20200822
-hist(Singles_no0$cells.larvae_log) # normal 
+Poly_no0<-rbind(Poly_Mono,PolyFull_no0)  ####THis is the df for Cell Densities! 20200822
+hist(Poly_no0$cells.larvae_log) # normal 
 
 #rename Pot interaction as a code: Pot_Temp
- Singles_no0$PotCode<-paste0(Singles_no0$Temp, Singles_no0$Pot,Singles_no0$Symbiont )
- Singles_no0$PotCode<-as.factor(Singles_no0$PotCode) #make factor
-
- 
- 
-Models same as above with day 14 31C removed
- 
+ Poly_no0$PotCode<-paste0(Poly_no0$Temp, Poly_no0$Pot,Poly_no0$Symbiont )
+ Poly_no0$PotCode<-as.factor(Poly_no0$PotCode) #make factor
 
 #Full model    
-Singles_no0$daytemp<-paste0(Singles_no0$Day, Singles_no0$Temp )  #create tag
-Singles_no0_NOD1431C<-subset(Singles_no0, daytemp !=1431)       #remove 1431
+Poly_no0$daytemp<-paste0(Poly_no0$Day, Poly_no0$Temp )  #create tag
+Poly_no0_NOD1431C<-subset(Poly_no0, daytemp !=1431)       #remove 1431
 
 
 ## lmer  symbionts*days*temp
-Single_no0_all_mod_noD1431<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Singles_no0_NOD1431C)
-anova(Single_no0_all_mod_noD1431) 
-qqPlot(residuals(Single_no0_all_mod_noD1431))   # good
+Counts_no0_all_mod_noD1431<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Poly_no0_NOD1431C)
+anova(Counts_no0_all_mod_noD1431) 
+qqPlot(residuals(Counts_no0_all_mod_noD1431))   # good
 
-  emm<-emmeans(Single_no0_all_mod_noD1431,  ~ Symbiont|Temp *Day, adjust="Tukey")
+  emm<-emmeans(Counts_no0_all_mod_noD1431,  ~ Symbiont|Temp *Day, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
-emm<-emmeans(Single_no0_all_mod_noD1431,  ~ Temp*Day|Symbiont , adjust="Tukey")
+emm<-emmeans(Counts_no0_all_mod_noD1431,  ~ Temp*Day|Symbiont , adjust="Tukey")
 cld(emm)
 pairs(emm)
 
-emm<-emmeans(Single_no0_all_mod_noD1431,  ~ Symbiont*Day|Temp , adjust="Tukey")
+emm<-emmeans(Counts_no0_all_mod_noD1431,  ~ Symbiont*Day|Temp , adjust="Tukey")
 cld(emm)
 pairs(emm)
+
+
+# since we get the tukey -> sidak issue does it work to split the models <- still switching to sidak?????WTF
+CellCounts_27<-subset(Poly_no0_NOD1431C, Temp=="27")
+Counts_mod_temp<-lmer(cells.larvae_log~Symbiont*Day+(1|PotCode), CellCounts_27)
+anova(Counts_mod_temp) 
+qqPlot(residuals(Counts_mod_temp))   # good
+
+  emm<-emmeans(Counts_mod_temp,  ~ Symbiont *Day, adjust="Tukey")
+cld(emm)
+pairs(emm)
+
+
 
 
 ```
@@ -2073,25 +2069,25 @@ pairs(emm)
 Plots By temp
 27C
 ```{r}     
-Singles_no0_27<-subset(Singles_no0, Temp=="27")
+Poly_no0_27<-subset(Poly_no0, Temp=="27")
 
-Singles_no0_27_mean <- ddply(Singles_no0_27, c("Day", "Symbiont"), summarise, #summarize cell counts
+Poly_no0_27_mean <- ddply(Poly_no0_27, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
  
-Singles_no0_27_mean #display table
+Poly_no0_27_mean #display table
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
-Singles_no0_27_mean$Day.num<-as.numeric(Singles_no0_27_mean$Day)
-Singles_no0_27_mean$Day.num[Singles_no0_27_mean$Day.num == 2] =7
-Singles_no0_27_mean$Day.num[Singles_no0_27_mean$Day.num == 3] =14
-Singles_no0_27_mean$Day.num[Singles_no0_27_mean$Day.num == 1] =3
+Poly_no0_27_mean$Day.num<-as.numeric(Poly_no0_27_mean$Day)
+Poly_no0_27_mean$Day.num[Poly_no0_27_mean$Day.num == 2] =7
+Poly_no0_27_mean$Day.num[Poly_no0_27_mean$Day.num == 3] =14
+Poly_no0_27_mean$Day.num[Poly_no0_27_mean$Day.num == 1] =3
  
 #plot with yaxis log10, real data (not transformed)
-Singles_no0_27_mean_plot<-ggplot(data=Singles_no0_27_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
+Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Symbiont), size=4, show.legend = T)+  
@@ -2113,29 +2109,29 @@ Singles_no0_27_mean_plot<-ggplot(data=Singles_no0_27_mean, aes(x=Day.num, y=mean
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
   ggtitle("27C Cell Counts")+
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_27_mean_plot
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_27_mean_plot
 ``` 
 30C
 ```{r}      
-Singles_no0_30<-subset(Singles_no0, Temp=="30")
+Poly_no0_30<-subset(Poly_no0, Temp=="30")
 
-Singles_no0_30_mean <- ddply(Singles_no0_30, c("Day", "Symbiont"), summarise, #summarize cell counts
+Poly_no0_30_mean <- ddply(Poly_no0_30, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
  
-Singles_no0_30_mean #display table
+Poly_no0_30_mean #display table
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
-Singles_no0_30_mean$Day.num<-as.numeric(Singles_no0_30_mean$Day)
-Singles_no0_30_mean$Day.num[Singles_no0_30_mean$Day.num == 2] =7
-Singles_no0_30_mean$Day.num[Singles_no0_30_mean$Day.num == 3] =14
-Singles_no0_30_mean$Day.num[Singles_no0_30_mean$Day.num == 1] =3
+Poly_no0_30_mean$Day.num<-as.numeric(Poly_no0_30_mean$Day)
+Poly_no0_30_mean$Day.num[Poly_no0_30_mean$Day.num == 2] =7
+Poly_no0_30_mean$Day.num[Poly_no0_30_mean$Day.num == 3] =14
+Poly_no0_30_mean$Day.num[Poly_no0_30_mean$Day.num == 1] =3
   
 #plot with yaxis log10, real data (not transformed)
-Singles_no0_30_mean_plot<-ggplot(data=Singles_no0_30_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
+Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Symbiont), size=4, show.legend = T)+  
@@ -2157,32 +2153,32 @@ Singles_no0_30_mean_plot<-ggplot(data=Singles_no0_30_mean, aes(x=Day.num, y=mean
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
   ggtitle("30C Cell Counts")+
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_30_mean_plot
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_30_mean_plot
 ``` 
 31C
 ```{r}      
-Singles_no0_31<-subset(Singles_no0, Temp=="31")
+Poly_no0_31<-subset(Poly_no0, Temp=="31")
 
-Singles_no0_31_mean <- ddply(Singles_no0_31, c("Day", "Symbiont"), summarise, #summarize cell counts
+Poly_no0_31_mean <- ddply(Poly_no0_31, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
  
-Singles_no0_31_mean #display table
+Poly_no0_31_mean #display table
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
-Singles_no0_31_mean$Day.num<-as.numeric(Singles_no0_31_mean$Day)
-Singles_no0_31_mean$Day.num[Singles_no0_31_mean$Day.num == 2] =7
-Singles_no0_31_mean$Day.num[Singles_no0_31_mean$Day.num == 3] =14
-Singles_no0_31_mean$Day.num[Singles_no0_31_mean$Day.num == 1] =3
+Poly_no0_31_mean$Day.num<-as.numeric(Poly_no0_31_mean$Day)
+Poly_no0_31_mean$Day.num[Poly_no0_31_mean$Day.num == 2] =7
+Poly_no0_31_mean$Day.num[Poly_no0_31_mean$Day.num == 3] =14
+Poly_no0_31_mean$Day.num[Poly_no0_31_mean$Day.num == 1] =3
 
 #remove Day 14 due to low ns
-Singles_no0_31_mean<-subset(Singles_no0_31_mean, Day=="3"|Day=="7")
+Poly_no0_31_mean<-subset(Poly_no0_31_mean, Day=="3"|Day=="7")
 
 #plot with yaxis log10, real data (not transformed)
-Singles_no0_31_mean_plot<-ggplot(data=Singles_no0_31_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
+Poly_no0_31_mean_plot<-ggplot(data=Poly_no0_31_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point(aes(color=Symbiont), size=4, show.legend = T)+  
@@ -2204,16 +2200,16 @@ Singles_no0_31_mean_plot<-ggplot(data=Singles_no0_31_mean, aes(x=Day.num, y=mean
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
   ggtitle("31C Cell Counts")+
-  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_31_mean_plot
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_31_mean_plot
 ``` 
 
 Plot all four SINGLE INFECTION together: Figure 1 20200822
 ```{r} 
 #log scale axis only   
-Singles_no0_27_mean_plot<-Singles_no0_27_mean_plot+ theme(legend.position = "none") #remove legend
-Singles_no0_30_mean_plot<-Singles_no0_30_mean_plot+ theme(legend.position = "none") #remove legend
-Singles_no0_31_mean_plot<-Singles_no0_31_mean_plot+ theme(legend.position = "none") #remove legend
-grid.arrange(Singles_no0_27_mean_plot, Singles_no0_30_mean_plot, Singles_no0_31_mean_plot, nrow = 1) 
+Poly_no0_27_mean_plot<-Poly_no0_27_mean_plot+ theme(legend.position = "none") #remove legend
+Poly_no0_30_mean_plot<-Poly_no0_30_mean_plot+ theme(legend.position = "none") #remove legend
+Poly_no0_31_mean_plot<-Poly_no0_31_mean_plot+ theme(legend.position = "none") #remove legend
+grid.arrange(Poly_no0_27_mean_plot, Poly_no0_30_mean_plot, Poly_no0_31_mean_plot, nrow = 1) 
 ```
 
 Plots By genus for your own benefit
