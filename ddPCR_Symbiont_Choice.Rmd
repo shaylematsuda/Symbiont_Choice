@@ -2020,20 +2020,20 @@ Poly_Mono<-subset(Poly_Mono, select = -c( cells.larvae) ) #get rid of original c
 names(Poly_Mono)[names(Poly_Mono)=="cells.larvae_counts_unlog"] <- "cells.larvae" #rename the new counts cells.larvae for consistency
 Poly_Mono$count.type<-as.factor(Poly_Mono$count.type)
 
-Poly_no0<-rbind(Poly_Mono,PolyFull_no0)  ####THis is the df for Cell Densities! 20200822
-hist(Poly_no0$cells.larvae_log) # normal 
+CellCounts_no0<-rbind(Poly_Mono,PolyFull_no0)  ####THis is the df for Cell Densities! 20200822
+hist(CellCounts_no0$cells.larvae_log) # normal 
 
 #rename Pot interaction as a code: Pot_Temp
- Poly_no0$PotCode<-paste0(Poly_no0$Temp, Poly_no0$Pot,Poly_no0$Symbiont )
- Poly_no0$PotCode<-as.factor(Poly_no0$PotCode) #make factor
+ CellCounts_no0$PotCode<-paste0(CellCounts_no0$Temp, CellCounts_no0$Pot,CellCounts_no0$Symbiont )
+ CellCounts_no0$PotCode<-as.factor(CellCounts_no0$PotCode) #make factor
 
 #Full model    
-Poly_no0$daytemp<-paste0(Poly_no0$Day, Poly_no0$Temp )  #create tag
-Poly_no0_NOD1431C<-subset(Poly_no0, daytemp !=1431)       #remove 1431
+CellCounts_no0$daytemp<-paste0(CellCounts_no0$Day, CellCounts_no0$Temp )  #create tag
+CellCounts_no0_NOD1431C<-subset(CellCounts_no0, daytemp !=1431)       #remove 1431
 
 
 ## lmer  symbionts*days*temp
-Counts_no0_all_mod_noD1431<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), Poly_no0_NOD1431C)
+Counts_no0_all_mod_noD1431<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|PotCode), CellCounts_no0_NOD1431C)
 anova(Counts_no0_all_mod_noD1431) 
 qqPlot(residuals(Counts_no0_all_mod_noD1431))   # good
 
@@ -2051,6 +2051,7 @@ pairs(emm)
 
 
 # since we get the tukey -> sidak issue does it work to split the models <- still switching to sidak?????WTF
+#27C
 CellCounts_27<-subset(Poly_no0_NOD1431C, Temp=="27")
 Counts_mod_temp<-lmer(cells.larvae_log~Symbiont*Day+(1|PotCode), CellCounts_27)
 anova(Counts_mod_temp) 
@@ -2215,7 +2216,7 @@ grid.arrange(Poly_no0_27_mean_plot, Poly_no0_30_mean_plot, Poly_no0_31_mean_plot
 Plots By genus for your own benefit
 C1
 ```{r}     
-Singles_no0_C1<-subset(Singles_no0, Symbiont=="C1")
+Singles_no0_C1<-subset(CellCounts_no0_NOD1431C, Symbiont=="C1")
 
 Singles_no0_C1_mean <- ddply(Singles_no0_C1, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2264,7 +2265,7 @@ Singles_no0_C1_mean_plot<-ggplot(data=Singles_no0_C1_mean_remove31D14, aes(x=Day
 ``` 
 D1
 ```{r}     
-Singles_no0_D1<-subset(Singles_no0, Symbiont=="D1")
+Singles_no0_D1<-subset(CellCounts_no0_NOD1431C, Symbiont=="D1")
 
 Singles_no0_D1_mean <- ddply(Singles_no0_D1, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2308,7 +2309,7 @@ Singles_no0_D1_mean_plot<-ggplot(data=Singles_no0_D1_mean, aes(x=Day.num, y=mean
 ```
 F1
 ```{r}     
-Singles_no0_F1<-subset(Singles_no0, Symbiont=="F1")
+Singles_no0_F1<-subset(CellCounts_no0_NOD1431C, Symbiont=="F1")
 
 Singles_no0_F1_mean <- ddply(Singles_no0_F1, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2352,7 +2353,7 @@ Singles_no0_F1_mean_plot<-ggplot(data=Singles_no0_F1_mean, aes(x=Day.num, y=mean
 ```
 G3
 ```{r}     
-Singles_no0_G3<-subset(Singles_no0, Symbiont=="G3")
+Singles_no0_G3<-subset(CellCounts_no0_NOD1431C, Symbiont=="G3")
 
 Singles_no0_G3_mean <- ddply(Singles_no0_G3, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2396,7 +2397,7 @@ Singles_no0_G3_mean_plot<-ggplot(data=Singles_no0_G3_mean, aes(x=Day.num, y=mean
 ```
 ALL
 ```{r}     
-Singles_no0_ALL<-subset(Singles_no0, Symbiont=="All")
+Singles_no0_ALL<-subset(CellCounts_no0_NOD1431C, Symbiont=="Poly")
 
 Singles_no0_ALL_mean <- ddply(Singles_no0_ALL, c("Day", "Temp"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2479,7 +2480,7 @@ colnames(MultiCounts2)[colnames(MultiCounts2)=="variable"]<-"Symbiont" #rename v
 
 
 SingleCounts<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0)
-SingleCounts<-SingleCounts[-c(5:8)] #remove metadata
+SingleCounts<-SingleCounts[-c(5:7)] #remove metadata
 SingleCounts$cells.larvae_round<-SingleCounts$cells.larvae_counts_unlog #rename
 SingleCounts$cells.larvae_round<-round(SingleCounts$cells.larvae_round)
 SingleCounts<-SingleCounts[-c(5)] #remove duplicate col
@@ -2510,7 +2511,7 @@ CountsCompare2_mean<-na.omit(CountsCompare2_mean)
 
 
 CountsCompare2_mean
-#######C1 31C day 7 only has 2 larva with non-0s. you should note it or cut it. 
+#######C1 31C day 7 only has 2 larva with non-0s. you should  remove
 
 
 #change Day back to Numeric from Factor, reapply the actual numeric dates
@@ -2526,7 +2527,7 @@ CountsCompare2_mean_31<-subset(CountsCompare2_mean, Temp=="31")
 ```
 
 subset by Symbiont plots
-C1: 27C 
+C1: 27C  
 ```{r}           
 #subset C1 
 CountsCompare2_C1_27<-subset(CountsCompare2_mean_27, Symbiont=="C1")
