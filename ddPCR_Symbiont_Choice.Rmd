@@ -46,7 +46,7 @@ library(ggplot2)
 library(cowplot)
 library("gridExtra") #arrange plots for output
 library(reshape2)
-#library("ggsci")#set bar colors
+library("ggsci")#set bar colors for locustzoom
 #library("qqplotr")
 #library("blmeco") #this isn't loading
 library("plotrix") #functions in tapply
@@ -3274,25 +3274,10 @@ pairs(emm)
 ```
 
 
-
-
-
-
-
-
-
-
 # B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
-```{r}           
-ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
-ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
+```{r}             
 
-ALL_RelA_Infect2<-na.omit(ALL_RelA_Infect) #remove larva with not all 4 amped
-ALL_RelA_Infect2$numclade<-as.factor(as.character(ALL_RelA_Infect2$numclade))
-#write.csv(ALL_RelA_Infect2,"ALL_RelA_Infect2_20200824.csv")
-
-
-NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #you couldn't do this in R so you did in excel and are reuploading....ugh. 
+NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
 
 #you are trying this new again (old is saved below incase) 20200824 relative abundance of numclade bygrouping
 NumClades$T0_relA<-NumClades$T0/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
@@ -3320,7 +3305,9 @@ NumCladesB_mean <- ddply(NumCladesB, c("Temp","Day","Number"), summarise, #summa
 ) 
 NumCladesB_mean #display table
 
-#write.csv(NumCladesB_mean,"NumCladesB_mean20201014.csv")
+NumCladesB_mean$Day <- factor(NumCladesB_mean$Day, levels = c("3", "7", "14")) #reorder factor
+
+
 
 #do only by Number of clades (no temp time) for how many larvae with 3 or 4 genera
 NumCladesB_numbonly_mean <- ddply(NumCladesB, c("Number"), summarise, #summarize cell count
@@ -3331,34 +3318,25 @@ NumCladesB_numbonly_mean <- ddply(NumCladesB, c("Number"), summarise, #summarize
                   max = max(NumGenera, na.rm=TRUE) #calculate max, could also calculate min () if desired
 ) 
 NumCladesB_numbonly_mean #display table
-
-
-
-# old file NumClades<-read.csv("SC18_numberofcladesinfect_20200625.csv") #you couldn't do this in R so you did in excel and are reuploading....ugh.NumberofGeneraperLarva_20200824.xlsx
-#if you have ideas on how to do this in R, I just couldn't figure it out :(
-#NumClades<-select(NumClades, "Day", "Temp", "RA_0","RA_1","RA_2","RA_3" ,"RA_4") #keep only cols you want
-#NumClades3<-NumClades
-
-#NumClades3<-melt(NumClades3,  id=c("Temp","Day"))
-#NumClades3$Temp<-as.factor(NumClades3$Temp)
-#NumClades3$Day<-as.factor(NumClades3$Day)
-
-
-
-
-
-
 ```
 
 
-Stats for Numclades~temp*time
+Stats for Numclades~temp*time (polyculture only)
+I think Krustal is the way to go?
 ```{r} 
+ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
+ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
+
+ALL_RelA_Infect2<-na.omit(ALL_RelA_Infect) #remove larva with not all 4 amped
+ALL_RelA_Infect2$numclade<-as.factor(as.character(ALL_RelA_Infect2$numclade))
+
 # df RelA_CladeComp
-NumClades_stats<-RelA_CladeComp # make a copy
+NumClades_stats<-ALL_RelA_Infect2 # make a copy 
 NumClades_stats<-NumClades_stats[!(NumClades_stats$ALL.number=="115"),] #remove day 14 31C (single larva)
 
 #make PotCode
 NumClades_stats$PotCode<-paste0(NumClades_stats$Temp, NumClades_stats$Pot)
+NumClades_stats$PotCode<-as.factor(as.character(NumClades_stats$PotCode))
 hist(NumClades_stats$numclade)
 
 library(moments)
@@ -3367,6 +3345,7 @@ library(ggpubr)
 skewness(NumClades_stats$numclade, na.rm = TRUE) #-1.11889 neg skew
 
 NumClades_stats$numclade_log2<-log10(NumClades_stats$numclade+1) #this doesn't help
+hist(NumClades_stats$numclade_log2)
 
 # Distribution of numclade variable
 ggdensity(NumClades_stats, x = "numclade", fill = "lightgray", title = "number of clades") +
@@ -3385,7 +3364,8 @@ anova(NumClades_stats_mod)
 qqPlot(residuals(NumClades_stats_mod))   # poor 
 
 #try with numclade as factor
-#NumClades_stats$numclade<-as.factor(as.character(NumClades_stats$numclade)) won't run lmer
+NumClades_stats$numclade_fact<-NumClades_stats$numclade
+NumClades_stats$numclade_fact<-as.factor(as.character(NumClades_stats$numclade_fact)) 
 
 # Chi Sq non-parametric <-NOPE
 NumClades_stats_mod<-glmer(numclade~Day*Temp+(1|PotCode), family="poisson", NumClades_stats)
@@ -3393,10 +3373,6 @@ Anova(NumClades_stats_mod)
 qqPlot(residuals(NumClades_stats_mod))   # poor 
 
 #Kruskal test - try by creating day-temp code and by running by day
-  #by code <- do NOT use this
-  NumClades_stats$DTCode<-paste0(NumClades_stats$Temp, NumClades_stats$Day)
-  NumClades_stats$DTCode<-as.factor(NumClades_stats$DTCode)
-  kruskal.test(numclade~DTCode, data=NumClades_stats)
 
   #by day <- USE THIS
   NumClades_stats_D3<-subset(NumClades_stats, Day==3)
@@ -3407,19 +3383,11 @@ qqPlot(residuals(NumClades_stats_mod))   # poor
     
      NumClades_stats_D14<-subset(NumClades_stats, Day==14)
     kruskal.test(numclade~Temp, data=NumClades_stats_D14)
-
-  
   
 ```
 
-
-
-
-
-
-
-
-Plots new bar plots Grey scale, FIND THE OTHER ONES inthe script. 
+Plots new bar plots (not stacked) Grey scale, FIND THE OTHER ONES in the script. 
+You likely don't need this so delete but make sure you move the subset info to next section
 ```{r}
 ### STACKED BAR PLOTS 
 #27C 
@@ -3442,9 +3410,6 @@ Infect27_plot<-ggplot(NumCladesB_mean_27, aes(y=mean, x=Day, fill=Number)) +
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("# of types of symbionts"))) +
   ggtitle("27C");Infect27_plot   
-
-
-
 
 #30C
 NumCladesB_mean_30<-subset(NumCladesB_mean, Temp==30)
@@ -3501,10 +3466,8 @@ Stacked bar plot old
 ```{r}
 ### STACKED BAR PLOTS 
 #27C  
-NumClades_27<-subset(NumClades3, Temp==27)
-
 # barplot 
-Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) + 
+Infect27_plot<-ggplot(NumCladesB_mean_27, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
             #scale_fill_locuszoom()+
@@ -3521,14 +3484,10 @@ Infect27_plot<-ggplot(NumClades_27, aes(y=value, x=Day, fill=variable)) +
   ylab(expression(paste("# of types of symbionts"))) +
   ggtitle("27C");Infect27_plot   
 
-
-
-
 #30C
-NumClades_30<-subset(NumClades3, Temp==30)
 
 #plot
-Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) + 
+Infect30_plot<-ggplot(NumCladesB_mean_30, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
    xlab("Day")+
@@ -3545,10 +3504,9 @@ Infect30_plot<-ggplot(NumClades_30, aes(y=value, x=Day, fill=variable)) +
   ggtitle("30C");Infect30_plot  
 
 #31C
-NumClades_31<-subset(NumClades3, Temp==31)
 
 #plot
-Infect31_plot<-ggplot(NumClades_31, aes(y=value, x=Day, fill=variable)) + 
+Infect31_plot<-ggplot(NumCladesB_mean_31, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
    xlab("Day")+
@@ -3573,26 +3531,8 @@ grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
  
 ```
 
-Stats? prob delete. 
-```{r}
-#stats   CHECK THIS! you may need to transform data better!  HEY you don't really want to do this. just talk about as %s
-hist(ALL_RelA_Infect$numclade)
-ALL_RelA_Infect$numclade_log<-log10(ALL_RelA_Infect$numclade)
-hist(ALL_RelA_Infect$numclade_log)
 
-ALL_RelA_Infect_mod<-lm(numclade~Temp*Day, ALL_RelA_Infect) 
-  summary(ALL_RelA_Infect_mod)
-dispersion_glmer(ALL_RelA_Infect_mod)
-
-emm<-emmeans(ALL_RelA_Infect_mod,  ~ Temp*Day)
-  pairs(emm)
-  cld(emm)  
-
-  
-  
-```
-
-PLOT: This is waffle with relative abundance - NOTE you need to go back and edit this bc the rounding is off, but if you use the other waffle, don't waste your time dude. 
+#waffle PLOT: This is waffle with relative abundance - NOTE you need to go back and edit this bc the rounding is off, but if you use the other waffle, don't waste your time dude. 
 Waffle chart showing the average number of infected clades/larvae
 ```{r}  
 NumClades_27<-subset(NumClades3, Temp==27)
@@ -3763,7 +3703,7 @@ THIS MIGHt be the issue: 20201019 figure this out
 NumWinner<-read.csv("SC18_numGeneraInfect.csv")
 #remove 0s (code called C1 'winner' for 0s C1 by default)
 NumWinner<-NumWinner[NumWinner$NumGenera != 0, ]
-
+ 
 T27_D<-subset(NumWinner, Temp=="27")
 T27_D3<-subset(T27_D, Day=="3")
 T27_D7<-subset(T27_D, Day=="7")
@@ -3790,7 +3730,7 @@ T27_D3_rel_plot<-ggplot(T27_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)
 geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3801,14 +3741,14 @@ geom_bar(stat="identity", width = .6)+
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("RelAbund"))) +
-  ggtitle("27C day 3");T27_D3_rel_plot   
+  ggtitle("27C D3 RelA of most dom genus");T27_D3_rel_plot   
 
 # barplot 27 D7
 T27_D7_rel_plot<-ggplot(T27_D7_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)) + 
 geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3826,7 +3766,7 @@ T27_D14_rel_plot<-ggplot(T27_D14_rel, aes(y=RelA, x=NumGenera, fill=NumberWinner
 geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3866,7 +3806,7 @@ T30_D3_rel_plot<-ggplot(T30_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)
            geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3883,7 +3823,7 @@ T30_D3_rel_plot<-ggplot(T30_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)
 T30_D7_rel_plot<-ggplot(T30_D7_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)) + 
            geom_bar(stat="identity", width = .6)+
   scale_fill_manual(values=c("#EEA236FF","#46B8DAFF"))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
          scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
 
  theme_bw() + #Set the background color
@@ -3903,7 +3843,7 @@ T30_D14_rel_plot<-ggplot(T30_D14_rel, aes(y=RelA, x=NumGenera, fill=NumberWinner
            geom_bar(stat="identity", width = .4)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(1,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3940,7 +3880,7 @@ T31_D3_rel_plot<-ggplot(T31_D3_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)
 geom_bar(stat="identity", width = .6)+  
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(0,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3958,7 +3898,7 @@ T31_D7_rel_plot<-ggplot(T31_D7_rel, aes(y=RelA, x=NumGenera, fill=NumberWinners)
 geom_bar(stat="identity", width = .6)+ 
   scale_fill_manual(values=c("#EEA236FF","#5CB85CFF","#46B8DAFF"))+
        scale_x_continuous(breaks=seq(1, 4, 1), limits =c(1,5))+
-   xlab("Number of General")+
+   xlab("Number of Genera")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -4347,10 +4287,7 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 ```
 
 
-
-
-
-#THIS SECTION IS RELATIVE ABUNDANCE OF LARVAE INFECTED WITH 3 OR 4 GENERA BY dom GENERA :
+#THIS SECTION IS RELATIVE ABUNDANCE OF LARVAE INFECTED WITH 3 OR 4 GENERA BY dom GENERA :IF YOU KEEP THIS SI only
 YOU are here!  Separeated out 3 and 4 genra groups. made mean table. figure out stats and new plots. note the single larvae with 4-genera in d7 31, do you want to include only groups with 3+. working: do all genera
 Now figure out relA by genus-infection group dom genus:
 ```{r} 
@@ -6125,35 +6062,7 @@ grid.arrange(aData4_1or2_31_D3_g2_plot, aData4_1or2_31_D7_g2_plot,aData4_1or2_31
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -6164,7 +6073,7 @@ This is in line plots: see below for waffles.
 ```{r}         
 #df ALL_RelA  
  
-ALL_RelA2<-select(ALL_RelA, "ALL.number", "Temp", "Day","Pot","C1","D1" ,"F1","G3") #keep only cols you want
+ALL_RelA2<-select(ALL_RelAb, "ALL.number", "Temp", "Day","Pot","C1_round","D1_round" ,"F1_round","G3_round") #keep only cols you want
 
 Dom<-ALL_RelA2%>%gather(clade,count,-Pot,-Day,-Temp,-ALL.number)%>%group_by(ALL.number)%>%arrange(desc(count))%>%slice(1)
 #new col with 1 for winner
@@ -6192,7 +6101,10 @@ DomAll_mean <- ddply(DomAll, c("Day", "Temp","clade"), summarise, #summarize cel
 
 DomAll_mean #display table 
 DomAll_mean<-na.omit(DomAll_mean)
+```
 
+Plot dominant genus/larva 
+```{r}
 #27C
 Dom27mean<-subset(DomAll_mean, Temp==27)
 #plot
@@ -6414,7 +6326,7 @@ DomAll_31_D3_waffle_plot<-DomAll_31_D3_waffle_plot+ theme(legend.position = "non
 DomAll_31_D7_waffle_plot<-DomAll_31_D7_waffle_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(DomAll_31_D3_waffle_plot,DomAll_31_D7_waffle_plot,nrow =3 )
 ```
-stats: 
+stats for dominant genus: Models not running right AND I don't think we want to run any models on this anyway can talk in %S
 ```{r}     
  #rename Pot interaction as a code: Pot_Temp
  DomAll$PotCode<-paste0(DomAll$Temp, DomAll$Pot,DomAll$clade )
@@ -6453,7 +6365,7 @@ Dom31<-subset(DomAll, Temp==31)
  
 Plot: Made in Affinity! This plot shows each square = 1 larvae and the blue scale represents how many clades infected it, the small color square indicates the dominant clade in the larvae. 
 
-Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect. 
+Delete if not needed :Make new plot of dominant clade but organize waffle squares to coorespond to the numb clades infect. 
 ```{r}
 #numb clades df:ALL_RelA_Infect
 ALL_RelA_Infect_2<-select(ALL_RelA_Infect, "ALL.number","numclade") #keep only cols you want
@@ -6462,7 +6374,7 @@ ALL_RelA_Infect_2<-select(ALL_RelA_Infect, "ALL.number","numclade") #keep only c
 Dom_2<-select(Dom, "Day", "Temp", "ALL.number","Pot","clade") #keep only cols you want
 
 #combine
-Win_Num<- merge(ALL_RelA_Infect_2,Dom_2, by="ALL.number")
+Win_Num<- merge(ALL_RelA_Infect_2,Dom_2, by="ALL.number") #merge for meta
  
 #Subset into Day/temp groups
 Win_Num_27<-subset(Win_Num, Temp==27)
@@ -6518,153 +6430,156 @@ What is the rel abund of each clade infected in each larvae, over time and at am
 setup df    
 ```{r}         
 #calc relative abundance for each   (any non infected larvae will NA out here)
-ALL_RelA$Cladocopium<-ALL_RelA$C1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Durusdinium<-ALL_RelA$D1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Fugacium<-ALL_RelA$F1/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
-ALL_RelA$Gerakladium<-ALL_RelA$G3/(ALL_RelA$C1+ALL_RelA$D1+ALL_RelA$F1+ALL_RelA$G3)
+ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Durusdinium<-ALL_RelAb$D1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Fugacium<-ALL_RelAb$F1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Gerakladium<-ALL_RelAb$G3/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
  
-ALL_RelAvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
-ALL_RelA_a<-ALL_RelA[ALL_RelAvar]
-ALL_RelA_b<-melt(ALL_RelA_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
-colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_RelA_b)[colnames(ALL_RelA_b)=="variable"]<-"Symbiont" #rename value col
-ALL_RelA_b<-na.omit(ALL_RelA_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
-#write.csv(ALL_RelA_b,"ALL_RelA_b.csv")
+ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
+ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
+ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
+#write.csv(ALL_RelAb_b,"ALL_RelAb_b.csv")
 ``` 
   
-Stats: Relative abundance, df = ALL_RelA_b 
+Stats: Relative abundance, df = ALL_RelAb_b 
 ```{r}   
-    
+### CN says either is fine but arcsinsqrt has less heteroscedasticity
+
 #Full model  
-hist(ALL_RelA_b$cells.larvae)
-ALL_RelA_b$cells.larvae_log<-log10(ALL_RelA_b$cells.larvae+1)
-hist(ALL_RelA_b$cells.larvae_log)
-ALL_RelA_b$cells.larvae_arc<-asin(sqrt(ALL_RelA_b$cells.larvae))
-hist(ALL_RelA_b$cells.larvae_arc)
-qqnorm(ALL_RelA_b$cells.larvae_arc) #
-ALL_RelA_b$cells.larvae_sq<-sqrt(ALL_RelA_b$cells.larvae)
-hist(ALL_RelA_b$cells.larvae_sq)
-qqnorm(ALL_RelA_b$cells.larvae_sq) # 
- 
- 
- ALL_RelA_b$PotCode<-paste0(ALL_RelA_b$Temp, ALL_RelA_b$Pot,ALL_RelA_b$clade )
- ALL_RelA_b$PotCode<-as.factor(ALL_RelA_b$PotCode) #make factor#none are good 
+hist(ALL_RelAb_b$cells.larvae)
+ALL_RelAb_b$cells.larvae_log<-log10(ALL_RelAb_b$cells.larvae+1)
+hist(ALL_RelAb_b$cells.larvae_log)
+qqnorm(ALL_RelAb_b$cells.larvae_log) #
+
+ALL_RelAb_b$cells.larvae_arc<-asin(sqrt(ALL_RelAb_b$cells.larvae))
+hist(ALL_RelAb_b$cells.larvae_arc)
+qqnorm(ALL_RelAb_b$cells.larvae_arc) #
+
+ ALL_RelAb_b$PotCode<-paste0(ALL_RelAb_b$Temp, ALL_RelAb_b$Pot,ALL_RelAb_b$clade )
+ ALL_RelAb_b$PotCode<-as.factor(ALL_RelAb_b$PotCode) #make factor#none are good 
 
  
 # FULL MODEL lmer  symbionts*days*temp
-ALL_RelA_b_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelA_b)
-anova(ALL_RelA_b_mod)
-qqPlot(residuals(ALL_RelA_b_mod))   # good
+#log shows no diff from arcsin stats
+#ALL_RelAb_b_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b)
+#anova(ALL_RelAb_b_mod)
+#qqPlot(residuals(ALL_RelAb_b_mod))   # good
 
-  emm<-emmeans(ALL_RelA_b_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
+ALL_RelAb_b_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b)
+anova(ALL_RelAb_b_mod)
+qqPlot(residuals(ALL_RelAb_b_mod))
+
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
-  emm<-emmeans(ALL_RelA_b_mod,  ~ Day*Temp|Symbiont, adjust="Tukey")
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Symbiont |Day*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
+emm<-emmeans(ALL_RelAb_b_mod,  ~ Temp |Day*Symbiont, adjust="Tukey")
+cld(emm)
+pairs(emm)
 
 ##Subset 27 and 30C
-ALL_RelA_b_27C30C<-subset(ALL_RelA_b, Temp=="27"|Temp=="30")
+ALL_RelAb_b_27C30C<-subset(ALL_RelAb_b, Temp=="27"|Temp=="30")
 
-ALL_RelA_b_27C30C_mod<-lmer(cells.larvae_log~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelA_b_27C30C)
-anova(ALL_RelA_b_27C30C_mod)
-qqPlot(residuals(ALL_RelA_b_27C30C_mod))   # meh
+ALL_RelAb_b_27C30C_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_27C30C)
+anova(ALL_RelAb_b_27C30C_mod)
+qqPlot(residuals(ALL_RelAb_b_27C30C_mod))   # meh
 
-  emm<-emmeans(ALL_RelA_b_27C30C_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
+  emm<-emmeans(ALL_RelAb_b_27C30C_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
 ##Subset Day 3 and D7
-ALL_RelA_b_D3D7<-subset(ALL_RelA_b, Day=="3"|Day=="7")
+ALL_RelAb_b_D3D7<-subset(ALL_RelAb_b, Day=="3"|Day=="7")
 
-ALL_RelA_b_D3D7_mod<-lmer(cells.larvae_log~Symbiont*Temp*Day+(1|ALL.number)+(1|Pot), ALL_RelA_b_D3D7)
-anova(ALL_RelA_b_D3D7_mod)
-qqPlot(residuals(ALL_RelA_b_D3D7_mod))   # meh
+ALL_RelAb_b_D3D7_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_D3D7)
+anova(ALL_RelAb_b_D3D7_mod)
+qqPlot(residuals(ALL_RelAb_b_D3D7_mod))   # meh
 
-  emm<-emmeans(ALL_RelA_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
+  emm<-emmeans(ALL_RelAb_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
 
-
-
-
-
-
-
-
-
 #by Temp:
-Temp27_RelA<-subset(ALL_RelA_b, Temp=="27")
-Temp30_RelA<-subset(ALL_RelA_b, Temp=="30")
-Temp31_RelA<-subset(ALL_RelA_b, Temp=="31")
+Temp27_RelA<-subset(ALL_RelAb_b, Temp=="27")
+hist(Temp27_RelA$cells.larvae_log)
+Temp30_RelA<-subset(ALL_RelAb_b, Temp=="30")
+hist(Temp30_RelA$cells.larvae_log)
+Temp31_RelA<-subset(ALL_RelAb_b, Temp=="31")
+hist(Temp31_RelA$cells.larvae_log)
+
 ```
 Plot RA as stacked bar plots by Day and then by temp 
  
-By temps - weird boxplot chart good AND BAR chart (used)
+By temps - weird boxplot chart (not used) AND BAR chart (used)
 ```{r}    
 library(RColorBrewer)
 display.brewer.pal(n = 9, name = 'YlOrBr')
 brewer.pal(9, 'YlOrBr')
  
-
+ 
 #Blue #1D91C0" 
 #Green "#41AB5D"
 #Yellow "#FEC44F"
 #Red "#993404"
 
-ALL_RelA_b$Day2<-ALL_RelA_b$Day #change Day to numeric for plots
-ALL_RelA_b$Day2<-as.character(ALL_RelA_b$Day2)
-ALL_RelA_b$Day2<-as.numeric(ALL_RelA_b$Day2)
+ALL_RelAb_b$Day2<-ALL_RelAb_b$Day #change Day to numeric for plots
+ALL_RelAb_b$Day2<-as.character(ALL_RelAb_b$Day2)
+ALL_RelAb_b$Day2<-as.numeric(ALL_RelAb_b$Day2)
 
-relabund_27<-subset(ALL_RelA_b, Temp=="27")
-relabund_30<-subset(ALL_RelA_b, Temp=="30")
-relabund_31<-subset(ALL_RelA_b, Temp=="31")
+relabund_27<-subset(ALL_RelAb_b, Temp=="27")
+relabund_30<-subset(ALL_RelAb_b, Temp=="30")
+relabund_31<-subset(ALL_RelAb_b, Temp=="31")
  
 #27 
-ALL_RelA_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
+ALL_RelAb_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 ) 
-ALL_RelA_27_mean #display table
+ALL_RelAb_27_mean #display table
 
 #round to nearest integer
-ALL_RelA_27_mean$mean100<-ALL_RelA_27_mean$mean*100
-ALL_RelA_27_mean$mean100r<-round(ALL_RelA_27_mean$mean100, digits = 0)
+ALL_RelAb_27_mean$mean100<-ALL_RelAb_27_mean$mean*100
+ALL_RelAb_27_mean$mean100r<-round(ALL_RelAb_27_mean$mean100, digits = 0)
  
  #30C means  
-ALL_RelA_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
+ALL_RelAb_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-ALL_RelA_30_mean #display table
+ALL_RelAb_30_mean #display table
 
 #round to nearest integer
-ALL_RelA_30_mean$mean100<-ALL_RelA_30_mean$mean*100
-ALL_RelA_30_mean$mean100r<-round(ALL_RelA_30_mean$mean100, digits = 1)
+ALL_RelAb_30_mean$mean100<-ALL_RelAb_30_mean$mean*100
+ALL_RelAb_30_mean$mean100r<-round(ALL_RelAb_30_mean$mean100, digits = 1)
 
 
 #31C
-ALL_RelA_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
+ALL_RelAb_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                   mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-ALL_RelA_31_mean #display table
+ALL_RelAb_31_mean #display table
 
 #round to nearest integer
-ALL_RelA_31_mean$mean100<-ALL_RelA_31_mean$mean*100
-ALL_RelA_31_mean$mean100r<-round(ALL_RelA_31_mean$mean100, digits = 0)  
+ALL_RelAb_31_mean$mean100<-ALL_RelAb_31_mean$mean*100
+ALL_RelAb_31_mean$mean100r<-round(ALL_RelAb_31_mean$mean100, digits = 0)  
  
  #stacked bar plots
  #27
@@ -6706,7 +6621,7 @@ grid.arrange(relabund_27_D3_plot, relabund_30_D3_plot,relabund_31_D3_plot, nrow 
 ### same but stacked bar 
 
 # barplot 
-RelAbund27_plot<-ggplot(ALL_RelA_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+RelAbund27_plot<-ggplot(ALL_RelAb_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -6723,7 +6638,7 @@ RelAbund27_plot<-ggplot(ALL_RelA_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) +
   ylab(expression(paste("RelAbund"))) +
   ggtitle("27C");RelAbund27_plot   
 
-RelAbund30_plot<-ggplot(ALL_RelA_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+RelAbund30_plot<-ggplot(ALL_RelAb_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -6740,7 +6655,7 @@ RelAbund30_plot<-ggplot(ALL_RelA_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) +
   ylab(expression(paste("RelAbund"))) +
   ggtitle("27C");RelAbund30_plot
 
-RelAbund31_plot<-ggplot(ALL_RelA_31_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+RelAbund31_plot<-ggplot(ALL_RelAb_31_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -6771,7 +6686,7 @@ ALL relative abundance Line plots
 ```{r}    
  
 #27C line plot
- ALL_STP_27_line<-ggplot(data=ALL_RelA_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+ ALL_STP_27_line<-ggplot(data=ALL_RelAb_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
@@ -6795,7 +6710,7 @@ ALL relative abundance Line plots
   theme(plot.title = element_text(size=20));ALL_STP_27_line
 
 #30C line plot
- ALL_STP_30_line<-ggplot(data=ALL_RelA_30_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+ ALL_STP_30_line<-ggplot(data=ALL_RelAb_30_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
@@ -6819,7 +6734,7 @@ ALL relative abundance Line plots
   theme(plot.title = element_text(size=20));ALL_STP_30_line
  
  #31C line plot
- ALL_STP_31_line<-ggplot(data=ALL_RelA_31_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+ ALL_STP_31_line<-ggplot(data=ALL_RelAb_31_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1, show.legend = T)+
   geom_point( size=4, show.legend = T)+ 
@@ -6827,7 +6742,7 @@ ALL relative abundance Line plots
        geom_point(shape = 1,size = 4,colour = "black")+
   geom_line(linetype="dotted")+
   xlab("Days") + #Label the X Axis 
-  ylim(-10, 1) + #set Y limits 
+  ylim(0, 1) + #set Y limits 
   theme_bw() + #Set the background color
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -6869,11 +6784,11 @@ grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 DELETE: Relative abundance: bubble plot
 ```{r}
 #27C
-ALL_RelA_27_mean$Day.num<-ALL_RelA_27_mean$Day
-ALL_RelA_27_mean$Day.num<-as.character(ALL_RelA_27_mean$Day.num)
-ALL_RelA_27_mean$Day.num<-as.numeric(ALL_RelA_27_mean$Day.num)
+ALL_RelAb_27_mean$Day.num<-ALL_RelAb_27_mean$Day
+ALL_RelAb_27_mean$Day.num<-as.character(ALL_RelAb_27_mean$Day)
+ALL_RelAb_27_mean$Day.num<-as.numeric(ALL_RelAb_27_mean$Day.num)
 
-RelA_mult_27 <- ggplot(ALL_RelA_27_mean, aes(x = Day.num, y = Symbiont, size = mean, color = Symbiont)) +
+RelA_mult_27 <- ggplot(ALL_RelAb_27_mean, aes(x = Day.num, y = Symbiont, size = mean, color = Symbiont)) +
   geom_point() +
               scale_color_locuszoom()+
     scale_x_continuous(breaks=seq(0, 14, 2))+
@@ -6883,11 +6798,11 @@ RelA_mult_27 <- ggplot(ALL_RelA_27_mean, aes(x = Day.num, y = Symbiont, size = m
 panel.background = element_blank(), axis.line = element_line(colour = "black"));RelA_mult_27
 
 #30C
-ALL_RelA_30_mean$Day.num<-ALL_RelA_30_mean$Day
-ALL_RelA_30_mean$Day.num<-as.character(ALL_RelA_30_mean$Day.num)
-ALL_RelA_30_mean$Day.num<-as.numeric(ALL_RelA_30_mean$Day.num)
+ALL_RelAb_30_mean$Day.num<-ALL_RelAb_30_mean$Day
+ALL_RelAb_30_mean$Day.num<-as.character(ALL_RelAb_30_mean$Day.num)
+ALL_RelAb_30_mean$Day.num<-as.numeric(ALL_RelAb_30_mean$Day.num)
 
-RelA_mult_30 <- ggplot(ALL_RelA_30_mean, aes(x = Day, y = Symbiont, size = mean, color = Symbiont)) +
+RelA_mult_30 <- ggplot(ALL_RelAb_30_mean, aes(x = Day, y = Symbiont, size = mean, color = Symbiont)) +
   geom_point() +
       #scale_x_continuous(breaks=seq(0, 14, 2))+
               scale_color_locuszoom()+
@@ -6897,10 +6812,10 @@ RelA_mult_30 <- ggplot(ALL_RelA_30_mean, aes(x = Day, y = Symbiont, size = mean,
 panel.background = element_blank(), axis.line = element_line(colour = "black"));RelA_mult_30
 
 #31C
-ALL_RelA_31_mean$Day.num<-ALL_RelA_31_mean$Day
-ALL_RelA_31_mean$Day.num<-as.character(ALL_RelA_31_mean$Day.num)
-ALL_RelA_31_mean$Day.num<-as.numeric(ALL_RelA_31_mean$Day.num)
-RelA_mult_31 <- ggplot(ALL_RelA_31_mean, aes(x = Day, y = Symbiont, size = mean, color = Symbiont)) +
+ALL_RelAb_31_mean$Day.num<-ALL_RelAb_31_mean$Day
+ALL_RelAb_31_mean$Day.num<-as.character(ALL_RelAb_31_mean$Day.num)
+ALL_RelAb_31_mean$Day.num<-as.numeric(ALL_RelAb_31_mean$Day.num)
+RelA_mult_31 <- ggplot(ALL_RelAb_31_mean, aes(x = Day, y = Symbiont, size = mean, color = Symbiont)) +
   geom_point() +
     #  scale_x_continuous(breaks=seq(0, 14, 2))+
               scale_color_locuszoom()+
@@ -6932,7 +6847,7 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 ```
 
 # Table H: NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
-```{r}
+```{r} 
 #ALL_RelA_Infect2  ALLnumb and number of clades df
 #ALLcast_9000_cast2c <- df for 
 
@@ -6941,7 +6856,7 @@ ALLcast_9000_cast2cAvars2<-c("ALL.number","Temp","Day","cells.larvae","Pot") #se
 ALLcast_9000_cast4<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars2] # new df
 
 #merge 2 dfs
-CellsByNum<-merge(ALL_RelA_Infect2,ALLcast_9000_cast4, by="ALL.number")
+CellsByNum<-merge(ALL_RelA_Infect2,ALLcast_9000_cast4, by=c("ALL.number", "Temp", "Day", "Pot")) 
 CellsByNum$ALL.number<-as.factor(CellsByNum$ALL.number)
 #CellsByNum$numclade<-as.factor(CellsByNum$numclade)
 CellsByNum$cells.larvae_log<-log10(CellsByNum$cells.larvae+1)
@@ -7039,7 +6954,7 @@ grid.arrange(CellsByNum_plot27, CellsByNum_plot30,CellsByNum_plot31, nrow = 1)
 
 
 #MODELS
-
+hist(CellsByNum$cells.larvae_log) #normal
 
 CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
 anova(CellsByNum_model)
