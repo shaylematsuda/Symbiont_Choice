@@ -6956,13 +6956,13 @@ grid.arrange(CellsByNum_plot27, CellsByNum_plot30,CellsByNum_plot31, nrow = 1)
 #MODELS
 hist(CellsByNum$cells.larvae_log) #normal
 
-CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
-anova(CellsByNum_model)
-qqPlot(residuals(CellsByNum_model))   # good
+#CellsByNum_model<-lmer(cells.larvae_log~numclade*Day*Temp+(1|Pot), CellsByNum)
+#anova(CellsByNum_model)
+#qqPlot(residuals(CellsByNum_model))   # good
 
-  emm<-emmeans(CellsByNum_model,  ~ numclade, adjust="Tukey")
-cld(emm)
-pairs(emm)
+ # emm<-emmeans(CellsByNum_model,  ~ numclade, adjust="Tukey")
+#cld(emm)
+#pairs(emm)
 
 #if numclade is factor  YES??????
 CellsByNum$numclade<-as.factor(as.character(CellsByNum$numclade))
