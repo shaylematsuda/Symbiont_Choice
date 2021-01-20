@@ -24,7 +24,7 @@ require("knitr")
 
 
 Load in libraries 
-```{r}  
+```{r}   
 rm(list=ls()) # Clear workspace
 
 # Set up workspace: I def do not use all these
@@ -83,6 +83,16 @@ library(broom)
 #library(survival)
 #library(survminer)
 library(emmeans)
+
+#Overdispersion check
+  overdisp_fun <- function(model) {
+    rdf <- df.residual(model)
+    rp <- residuals(model,type="pearson")
+    Pearson.chisq <- sum(rp^2)
+    prat <- Pearson.chisq/rdf
+    pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+    c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
 
 ```
 
@@ -740,7 +750,7 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull)
 
 MORTALITY
 # Larval Mortality
-```{r}       
+```{r}        
 # Monos and the poly (remove control)
  # binomial mixed effects model
 Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
@@ -761,6 +771,13 @@ D.Summary <- ddply(Mort.df_NEW, c("Temp", "Symbiont","Day"), summarise,
                         se   = sd / sqrt(N)
 )
 
+D.Summary_2 <- ddply(Mort.df_NEW, c("Temp","Day"), summarise,
+                        N    = length(Surv[!is.na(Surv)]),
+                        mean = mean(Surv, na.rm=TRUE)*100,
+                        sd   = sd(Surv, na.rm=TRUE)*100,
+                        se   = sd / sqrt(N)
+)
+ 
 knitr::kable(D.Summary)
 #remove day1 and remove COntrols (no rep)
 D.Summary<-subset(D.Summary, Day==7|Day==14)
@@ -933,7 +950,7 @@ dfs: C1Full, D1Full, F1Full, G3Full, Poly
  
 Make binomial dfs
 Organize df for Polyculture: ddPCR and hemo./scope
-```{r}       
+```{r}        
 #ALLcast_9000_cast2a includes all good ddpcrs even if not all genera amped for each larva
  
 #polyculture df: create binary df, if at least one genus had at least 1 cell, designate "1"
@@ -1026,6 +1043,10 @@ Binomial Models
 BinaryInfect<-na.omit(BinaryInfect) #remove nas
 BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
 
+  #Full model remove day 14 at 31   
+BinaryInfect$daytemp<-paste0(BinaryInfect$Day, BinaryInfect$Temp )  #create tag
+BinaryInfect<-subset(BinaryInfect, daytemp !=1431)       #remove 1431
+  
  Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect)
   Anova(Binary_mod)
   summary(Binary_mod)
@@ -1034,7 +1055,7 @@ dispersion_glmer(Binary_mod) # no overdispersion  .77  <- apparently this isn't 
   pairs(emm)
   cld(emm) 
   
-    emm<-emmeans(Binary_mod,  ~ Temp*Day|Symbiont)
+    emm<-emmeans(Binary_mod,  ~ Symbiont)
 cld(emm)
   
 #C1 only
@@ -1089,7 +1110,7 @@ Binary_31$Infect<-as.numeric(as.character(Binary_31$Infect)) #change back to num
 
 Plots:  
 27C
-```{r}          
+```{r}           
 Binary_27_mean <- ddply(Binary_27, c("Symbiont","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
@@ -1434,14 +1455,21 @@ C1_binaryb_SinMul_plot_31<-C1_binaryb_SinMul_plot_31+ theme(legend.position = "n
 grid.arrange(C1_binaryb_SinMul_plot_27, C1_binaryb_SinMul_plot_30, C1_binaryb_SinMul_plot_31, nrow = 1)
 ```
 D1 mono v poly 
-```{r} 
-
+```{r}  
+ 
 #model 
 D1_binaryb_SinMul_no14<-subset(D1_binaryb_SinMul, Day=="3"|Day=="7")
 D1_binaryb_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", D1_binaryb_SinMul_no14) 
 Anova(D1_binaryb_SinMul_mod)
 dispersion_glmer(D1_binaryb_SinMul_mod) # no overdispersion .91
 emm<-emmeans(D1_binaryb_SinMul_mod,  ~ infectType*Temp*Day, adjust="Tukey")
+cld(emm)
+
+#all days. we dont have data for day 14 31. but that shoudl be ok. Why did oyu only do day 3 and 7 above?
+D1_binaryb_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", D1_binaryb_SinMul) 
+Anova(D1_binaryb_SinMul_mod)
+dispersion_glmer(D1_binaryb_SinMul_mod) # no overdispersion .91
+emm<-emmeans(D1_binaryb_SinMul_mod,  ~ infectType, adjust="Tukey")
 cld(emm)
 
 #mean
@@ -1994,7 +2022,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
 ```{r}             
-
+ 
 #set up the Poly df for this specific model! use only poly larva with ddPCR for Poly genera/larva +hemoscope
 Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
 Poly_forCounts$Symbiont<-"Poly" #add symbiont col
@@ -2018,7 +2046,7 @@ hist(PolyFull_no0$cells.larvae_log) # normal
 
 Poly_Mono<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0) #combine mono df
 Poly_Mono<-subset(Poly_Mono, select = -c( cells.larvae) ) #get rid of original cells.larvae, keep new counts
-names(Poly_Mono)[names(Poly_Mono)=="cells.larvae_counts_unlog"] <- "cells.larvae" #rename the new counts cells.larvae for consistency
+names(Poly_Mono)[names(Poly_Mono)=="cells.larvae_counts_unlog"] <- "cells.larvae" #rename the new counts cells.larvae for consistency 
 Poly_Mono$count.type<-as.factor(Poly_Mono$count.type)
 
 CellCounts_no0<-rbind(Poly_Mono,PolyFull_no0)  ####THis is the df for Cell Densities! 20200822
@@ -2027,7 +2055,7 @@ hist(CellCounts_no0$cells.larvae_log) # normal
 #rename Pot interaction as a code: Pot_Temp
  CellCounts_no0$PotCode<-paste0(CellCounts_no0$Temp, CellCounts_no0$Pot,CellCounts_no0$Symbiont )
  CellCounts_no0$PotCode<-as.factor(CellCounts_no0$PotCode) #make factor
-
+ 
 #Full model    
 CellCounts_no0$daytemp<-paste0(CellCounts_no0$Day, CellCounts_no0$Temp )  #create tag
 CellCounts_no0_NOD1431C<-subset(CellCounts_no0, daytemp !=1431)       #remove 1431
@@ -2049,7 +2077,7 @@ pairs(emm)
 emm<-emmeans(Counts_no0_all_mod_noD1431,  ~ Symbiont*Day|Temp , adjust="Tukey")
 cld(emm)
 pairs(emm)
-
+ 
 
 # since we get the tukey -> sidak issue does it work to split the models <- still switching to sidak?????WTF
 #27C
@@ -2070,8 +2098,8 @@ pairs(emm)
 
 Plots By temp
 27C
-```{r}     
-Poly_no0_27<-subset(Poly_no0, Temp=="27")
+```{r}      
+Poly_no0_27<-subset(CellCounts_no0_NOD1431C, Temp=="27")
 
 Poly_no0_27_mean <- ddply(Poly_no0_27, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2099,7 +2127,7 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
   ylim(0,3200)+
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-      # scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2115,7 +2143,7 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
 ``` 
 30C
 ```{r}      
-Poly_no0_30<-subset(Poly_no0, Temp=="30")
+Poly_no0_30<-subset(CellCounts_no0_NOD1431C, Temp=="30")
 
 Poly_no0_30_mean <- ddply(Poly_no0_30, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2143,7 +2171,7 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
     ylim(0,3200)+
-      # scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2159,7 +2187,7 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
 ``` 
 31C
 ```{r}      
-Poly_no0_31<-subset(Poly_no0, Temp=="31")
+Poly_no0_31<-subset(CellCounts_no0_NOD1431C, Temp=="31")
 
 Poly_no0_31_mean <- ddply(Poly_no0_31, c("Day", "Symbiont"), summarise, #summarize cell counts
                   N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
@@ -2190,7 +2218,7 @@ Poly_no0_31_mean_plot<-ggplot(data=Poly_no0_31_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
     ylim(0,3200)+
-   #    scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+     scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2459,7 +2487,7 @@ grid.arrange(Singles_no0_C1_mean_plot, Singles_no0_D1_mean_plot, Singles_no0_F1_
 C1          
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected  
-```{r}     
+```{r}      
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(5:8)] #remove metadata
@@ -3010,14 +3038,14 @@ CountsCompare2_C1<-CountsCompare2_C1[CountsCompare2_C1$REMOVE != "C1_31_3_7", ]
 CountsCompare2_C1<-CountsCompare2_C1[CountsCompare2_C1$REMOVE != "C1_31_1_14", ] 
 CountsCompare2_C1<-CountsCompare2_C1[CountsCompare2_C1$REMOVE != "C1_31_2_14", ] 
 CountsCompare2_C1<-CountsCompare2_C1[CountsCompare2_C1$REMOVE != "C1_31_3_14", ] 
-
+ 
 CountsCompare2_C1_mod<-lmer(cells.larvae_log~Temp*Day*single.multi+(1|PotCode),CountsCompare2_C1)
 anova(CountsCompare2_C1_mod)
 qqPlot(residuals(CountsCompare2_C1_mod))   # good
   emm<-emmeans(CountsCompare2_C1_mod,  ~ single.multi|Temp|Day, adjust="Tukey") 
 cld(emm)
 pairs(emm)
-
+ 
 
 
 
@@ -3321,6 +3349,11 @@ pairs(emm)
 # B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
 ```{r}              
  
+##########@AH: Is this the best way to set up the mean table. I turn it into relative abundance, and then for each jar, I get the means per infection group (0,1,2,3,4). But for some reason, I'm just not sure this is right for the Mean and s.e. 
+
+
+
+
 NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
 
 #you are trying this new again (old is saved below incase) 20200824 relative abundance of numclade bygrouping
@@ -3367,12 +3400,13 @@ NumCladesB_numbonly_mean #display table
 
 Stats for Numclades~temp*time (polyculture only)
 I think Krustal is the way to go?
-```{r} 
+```{r}  
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 
 ALL_RelA_Infect2<-na.omit(ALL_RelA_Infect) #remove larva with not all 4 amped
 ALL_RelA_Infect2$numclade<-as.factor(as.character(ALL_RelA_Infect2$numclade))
+#summary(ALL_RelA_Infect2)
 
 # df RelA_CladeComp
 NumClades_stats<-ALL_RelA_Infect2 # make a copy 
@@ -3384,7 +3418,7 @@ NumClades_stats$PotCode<-as.factor(as.character(NumClades_stats$PotCode))
 NumClades_stats$numclade<-as.numeric(as.character(NumClades_stats$numclade))
 
 #NumClades_stats$PotCode<-as.factor(as.character(NumClades_stats$PotCode))
-hist(NumClades_stats$numclade)
+hist(NumClades_stats$numclade)  #is this actually better?
 
 library(moments)
 library(ggpubr)
@@ -3428,29 +3462,48 @@ qqPlot(residuals(NumClades_stats_mod))   # poor
 #27
 NumClades_stats_27<-subset(NumClades_stats, Temp==27)
     kruskal.test(numclade~Day, data=NumClades_stats_27)
+     
 #30
 NumClades_stats_30<-subset(NumClades_stats, Temp==30)
     kruskal.test(numclade~Day, data=NumClades_stats_30)
-    
+     DT = dunnTest(numclade~Day,
+              data=NumClades_stats_30,
+              method="bh")      # Adjusts p-values for multiple comparisons;
+                                # See ?dunnTest for options
 #31
 NumClades_stats_31<-subset(NumClades_stats, Temp==31)
     kruskal.test(numclade~Day, data=NumClades_stats_31)
+  
 
-
+#day 3
 NumClades_stats_D3<-subset(NumClades_stats, Day==3)
     kruskal.test(numclade~Temp, data=NumClades_stats_D3)
-    
+    #Dunn test Post hoc   
+    DT = dunnTest(numclade~Temp,
+              data=NumClades_stats_D3,
+              method="bh")      # Adjusts p-values for multiple comparisons;
+                                # See ?dunnTest for options
+#day 7    
     NumClades_stats_D7<-subset(NumClades_stats, Day==7)
     kruskal.test(numclade~Temp, data=NumClades_stats_D7)
-    
+ #day 14   
      NumClades_stats_D14<-subset(NumClades_stats, Day==14)
     kruskal.test(numclade~Temp, data=NumClades_stats_D14)
-  
+    
+ library(psych)   
+library(FSA) 
+library(lattice)  
+ library(multcompView) 
+    library(rcompanion)
+    
+
+    
+ 
 ```
 
 Plots new bar plots (not stacked) Grey scale, FIND THE OTHER ONES in the script. 
 You likely don't need this so delete but make sure you move the subset info to next section
-```{r}
+```{r} 
 ### STACKED BAR PLOTS 
 #27C 
 NumCladesB_mean_27<-subset(NumCladesB_mean, Temp==27)
@@ -3758,7 +3811,7 @@ grid.arrange(NumClades2a_27_D3_wafflePLOT,NumClades2a_27_D7_wafflePLOT,NumClades
 
 
 
-Ok do you actually need this or can you use the rel abound for 3 and 4 to pull out the winner genera?
+#Ok do you actually need this or can you use the rel abound for 3 and 4 to pull out the winner genera?
 THIS MIGHt be the issue: 20201019 figure this out
 ** WHICH Clade winners: which genus was dominant in larvae on avg in each infection number group?
 ```{r} 
@@ -4002,7 +4055,7 @@ GeneraWinners<-rbind(T27_D3_relc, T27_D7_relc,T27_D14_relc,T30_D3_relc, T30_D7_r
 
 Now lets do relA for each grouping of number of genera/larva  - this may be unnecessary
 df: ALL_RelA_binaryb (relative abundance, the cells.larvae=Rel abund)
-```{r}  
+```{r}   
 aData<-RelA_binaryb
 aData<-na.omit(aData) #remove larae with values not present for all 4 genera
 
@@ -4026,7 +4079,6 @@ aData3<-merge(aData2,ALL_RelAb_b, by="ALL.number")
 
 
 
-
 ## THIS IS RELATIVE ABUNDANCES FOR 3 AND 4 GENERA LARVA (NOT DOMINANT CLADE)
 #27C
 NumWinner_27RelA<-subset(aData3, Temp==27) #subset temp 27
@@ -4036,7 +4088,7 @@ NumWinner_27RelA_D3<-subset(NumWinner_27RelA, Day==3) #subset day 3
 NumWinner_27RelA_D3a<-NumWinner_27RelA_D3[c("numclade","Symbiont","cells.larvae")] #keep only cols you need, btw cells. larvae is actually relative abundance
 NumWinner_27RelA_D3a_agg<-aggregate(.~Symbiont+numclade, data=NumWinner_27RelA_D3a, mean) #aggregate by symbiont + numclade
 
-  #27 Day 3 by 3  <- use to make new spreadsheet with relA for 3-gen and 4-gen
+  #27 Day 3 by 3gen  <- use to make new spreadsheet with relA for 3-gen and 4-gen
   NumWinner_27RelA_D3b<-NumWinner_27RelA_D3[c("numclade","Symbiont","cells.larvae")]
   NumWinner_27RelA_D3b_3gen<-subset(NumWinner_27RelA_D3b, numclade=="3")
   NumWinner_27RelA_D3b_3gen_agg<-aggregate(.~Symbiont+numclade, data=NumWinner_27RelA_D3b_3gen, mean)
@@ -4044,8 +4096,7 @@ NumWinner_27RelA_D3a_agg<-aggregate(.~Symbiont+numclade, data=NumWinner_27RelA_D
     NumWinner_27RelA_D3b_3gen$Temp<-27
     NumWinner_27RelA_D3b_3gen$genera<-3
 
-  
-   #27 Day 3 by 4
+   #27 Day 3 by 4gen
   NumWinner_27RelA_D3b_4gen<-subset(NumWinner_27RelA_D3b, numclade=="4")
   NumWinner_27RelA_D3b_4gen_agg<-aggregate(.~Symbiont+numclade, data=NumWinner_27RelA_D3b_4gen, mean)
 NumWinner_27RelA_D3b_4gen$Day<-3
@@ -4354,7 +4405,7 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 #THIS SECTION IS RELATIVE ABUNDANCE OF LARVAE INFECTED WITH 3 OR 4 GENERA BY dom GENERA :IF YOU KEEP THIS SI only
 YOU are here!  Separeated out 3 and 4 genra groups. made mean table. figure out stats and new plots. note the single larvae with 4-genera in d7 31, do you want to include only groups with 3+. working: do all genera
 Now figure out relA by genus-infection group dom genus:
-```{r}  
+```{r}   
 # gives the relative abundance of larvae within 1, 2, 3 or 4 genera infected larvae. manually plotted by dom genus. 
 #3gen
 aData4<-aData3  #make copy
@@ -4427,9 +4478,9 @@ aData4_31_D7<-subset(aData4_31, Day==7)
     aData4_31_D7_g1<-subset(aData4_31_D7, numclade==1)
 ```
 
- stacked bar - INDIVIDUAL LARVAE
+#stacked bar - INDIVIDUAL LARVAE
     #testing to plot them all in one go by temp 27
-```{R}
+```{R} 
 #27C
   aData4_27$NumGen_ID<-paste(aData4_27$numclade,aData4_27$ALL.number)#new col combing num clade and ID
   
@@ -4515,7 +4566,7 @@ space = "free_x"# Let the width of facets vary and force all bars to have the sa
 
 BY TEMP AND DAY (delete if you decide)   
     
-```{r}
+```{r} 
 #27C 
 #Day3 3gen
 aData4_27_D3_g3_plot<-ggplot(aData4_27_D3_g3, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
@@ -4569,7 +4620,7 @@ aData4_27_D14_g3_plot<-ggplot(aData4_27_D14_g3, aes(y=cells.larvae, x=ALL.number
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("27C_D14_3gen");aData4_27_D3_g3_plot
+  ggtitle("27C_D14_3gen");aData4_27_D14_g3_plot
 
 aData4_27_D3_g3_plot<-aData4_27_D3_g3_plot+ theme(legend.position = "none") #remove legend
 aData4_27_D7_g3_plot<-aData4_27_D7_g3_plot+ theme(legend.position = "none") #remove legend
@@ -4644,7 +4695,7 @@ grid.arrange(aData4_27_D3_g3_plot, aData4_27_D7_g3_plot,aData4_27_D14_g3_plot,aD
 #2 genera
 
 #D3 2gen
-aData4_1or2_27_D3_g2_plot<-ggplot(aData4_1or2_27_D3_g4, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+aData4_27_D3_g2_plot<-ggplot(aData4_27_D3_g2, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
            geom_bar(stat="identity", width=.8)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -4659,10 +4710,10 @@ aData4_1or2_27_D3_g2_plot<-ggplot(aData4_1or2_27_D3_g4, aes(y=cells.larvae, x=AL
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("27C_D3_2gen");aData4_1or2_27_D3_g2_plot
+  ggtitle("27C_D3_2gen");aData4_27_D3_g2_plot
 
 #day7  2gen
-aData4_1or2_27_D7_g2_plot<-ggplot(aData4_1or2_27_D7_g2, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+aData4_27_D7_g2_plot<-ggplot(aData4_27_D7_g2, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
            geom_bar(stat="identity", width=0.8)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -4677,10 +4728,10 @@ aData4_1or2_27_D7_g2_plot<-ggplot(aData4_1or2_27_D7_g2, aes(y=cells.larvae, x=AL
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("27C_D7_2gen");aData4_1or2_27_D7_g2_plot
+  ggtitle("27C_D7_2gen");aData4_27_D7_g2_plot
 
 #day 14 2gen
-aData4_1or2_27_D14_g2_plot<-ggplot(aData4_1or2_27_D14_g2, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+#aData4_1or2_27_D14_g2_plot<-ggplot(aData4_1or2_27_D14_g2, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
            geom_bar(stat="identity", width=0.8)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -4705,7 +4756,7 @@ aData4_1or2_27_D14_g2_plot<-aData4_1or2_27_D14_g2_plot+ theme(legend.position = 
 #1 genera
 
 #D3 1gen
-aData4_1or2_27_D3_g1_plot<-ggplot(aData4_1or2_27_D3_g1, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
+aData4_27_D7_g1_plot<-ggplot(aData4_27_D7_g1, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
            geom_bar(stat="identity", width=.8)+
   scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
             #scale_fill_locuszoom()+
@@ -4720,7 +4771,7 @@ aData4_1or2_27_D3_g1_plot<-ggplot(aData4_1or2_27_D3_g1, aes(y=cells.larvae, x=AL
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste(""))) +
-  ggtitle("27C_D3_1gen");aData4_1or2_27_D3_g1_plot
+  ggtitle("27C_D3_1gen");aData4_27_D7_g1_plot
 
 #day7  2gen
 aData4_1or2_27_D7_g1_plot<-ggplot(aData4_1or2_27_D7_g1, aes(y=cells.larvae, x=ALL.number, fill=Symbiont),width=0.5) + 
@@ -5524,7 +5575,7 @@ DomAll_31_D3_waffle_plot<-DomAll_31_D3_waffle_plot+ theme(legend.position = "non
 DomAll_31_D7_waffle_plot<-DomAll_31_D7_waffle_plot+ theme(legend.position = "none") #remove legend
 grid.arrange(DomAll_31_D3_waffle_plot,DomAll_31_D7_waffle_plot,nrow =3 )
 ```
-stats for dominant genus: Models not running right AND I don't think we want to run any models on this anyway can talk in %S
+stats for dominant genus: Models not running right AND I don't think we want to run any models on this anyway can talk in %S 
 ```{r}     
  #rename Pot interaction as a code: Pot_Temp
  DomAll$PotCode<-paste0(DomAll$Temp, DomAll$Pot,DomAll$clade )
@@ -5537,7 +5588,7 @@ stats for dominant genus: Models not running right AND I don't think we want to 
 Dom27<-subset(DomAll, Temp==27)
   Dom27_mod<-glmer(Win.lose~clade*Day+(1|PotCode), family="binomial", Dom27) 
   Anova(Dom27_mod)
-  dispersion_glmer(Dom27_mod)  #no overdispersion
+  overdisp_fun(Dom27_mod)
    emm<-emmeans(Dom27_mod,  ~ clade|Day)
   pairs(emm)
   cld(emm)  
@@ -5547,7 +5598,7 @@ Dom30<-subset(DomAll, Temp==30)
 
   Dom30_mod<-glmer(Win.lose~clade*Day+(1|PotCode), family="binomial", Dom30) 
   Anova(Dom30_mod)
-  dispersion_glmer(Dom30_mod)  #no overdispersion
+    overdisp_fun(Dom30_mod)
    emm<-emmeans(Dom30_mod,  ~ clade)
   pairs(emm)
   cld(emm) 
@@ -5627,7 +5678,7 @@ Win_Num_31_D7 %>%
 
 #Fig  Competative-infection: Polycluture only, relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
-setup df    
+setup df     
 ```{r}           
 #calc relative abundance for each   (any non infected larvae will NA out here)
 ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
@@ -5645,7 +5696,7 @@ ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae 
 ``` 
   
 Stats: Relative abundance, df = ALL_RelAb_b 
-```{r}   
+```{r}    
 ### CN says either is fine but arcsinsqrt has less heteroscedasticity
 
 #Full model  
@@ -5680,7 +5731,7 @@ pairs(emm)
 cld(emm)
 pairs(emm)
 
-emm<-emmeans(ALL_RelAb_b_mod,  ~ Temp |Day*Symbiont, adjust="Tukey")
+emm<-emmeans(ALL_RelAb_b_mod,  ~ Day |Temp*Symbiont, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -5719,7 +5770,7 @@ hist(Temp31_RelA$cells.larvae_log)
 Plot RA as stacked bar plots by Day and then by temp 
  
 By temps - weird boxplot chart (not used) AND BAR chart (used)
-```{r}    
+```{r}     
 library(RColorBrewer)
 display.brewer.pal(n = 9, name = 'YlOrBr')
 brewer.pal(9, 'YlOrBr')
@@ -5882,7 +5933,7 @@ grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
 
 ``` 
 
-ALL relative abundance Line plots
+ALL relative abundance Line plots 
 ```{r}     
  
 #27C line plot
@@ -6173,7 +6224,7 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 ```
 
 # Table H: NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
-```{r}  
+```{r}   
 #ALL_RelA_Infect2  ALLnumb and number of clades df
 #ALLcast_9000_cast2c <- df for 
 
@@ -6345,7 +6396,7 @@ qqPlot(residuals(CountsCompare_multi_G3_mod))   # good
 #POLYCULTURE data, ALL1 data (cutoff 9000)   
 THIS IS THE SAME AS THE ABOVE BUT THOSE FIGURES IN MY PPT AFTER THE 'END' WITH THE SINGLE ON LEFT AND MULTI ON RIGHT. 
 Expected vs observed infections, all and by clade
-```{r}    
+```{r}     
 #ALL everything (this is way too big) 
 Allmod<-lmer(log(cells.larvae+1)~Day*Temp*Primer+(1|Pot), ALL1)  #All.number is the larvae ID
 #summary(Allmod)
@@ -8246,8 +8297,62 @@ Counts_compare_singmult<-grid.arrange(arrangeGrob(Counts_compare_singmult, left 
 
 
 
-#NMDS
+#NMDS try again
 ```{r}
+
+
+ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a
+ALLcast_9000_cast2a_NMDS<-na.omit(ALLcast_9000_cast2a_NMDS)
+ALLcast_9000_cast2a_NMDS<-subset(ALLcast_9000_cast2a_NMDS, select=-c(C1_round,D1_round,F1_round,G3_round))
+#removerows with 0s all across
+#ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a_NMDS[-c(8),]
+
+ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a_NMDS[ALLcast_9000_cast2a_NMDS$ALL.number != "105" & ALLcast_9000_cast2a_NMDS$ALL.number != "134"& ALLcast_9000_cast2a_NMDS$ALL.number != "156"& ALLcast_9000_cast2a_NMDS$ALL.number != "195"& ALLcast_9000_cast2a_NMDS$ALL.number != "200", ] 
+
+#make community matrix - extract columns with abundance information
+com = ALLcast_9000_cast2a_NMDS[,5:ncol(ALLcast_9000_cast2a_NMDS)]
+#turn abundance data frame into a matrix
+m_com = as.matrix(com)
+
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+plot(nmds)
+
+#extract NMDS scores (x and y coordinates)
+data.scores = as.data.frame(scores(nmds))
+#add columns to data frame 
+data.scores$ALL.number = ALLcast_9000_cast2a_NMDS$ALL.number
+data.scores$Temp = ALLcast_9000_cast2a_NMDS$Temp
+data.scores$Day = ALLcast_9000_cast2a_NMDS$Day
+ 
+head(data.scores)
+
+
+
+xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 2, aes( shape = Day, colour = Temp))+ 
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
+    scale_colour_manual(values = c("blue", "orange","red"))+
+  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+
+ 
+xx
+
+#ggsave("NMDS.svg")
+
+```
+
+```{r}
+#example
 set.seed(2)
 community_matrix=matrix(
    sample(1:100,300,replace=T),nrow=10,
@@ -8258,17 +8363,17 @@ example_NMDS=metaMDS(community_matrix, # Our community-by-species matrix
 ```
 
 #PCA: Let's try to make a PCA  
-```{r}
+```{r} 
 
 
-#hist ALL_RelA_b df is right format to check
-hist(ALL_RelA_b$cells.larvae) #transform
-ALL_RelA_b$cells.larvae_arc<-asin(sqrt(ALL_RelA_b$cells.larvae))
-hist(ALL_RelA_b$cells.larvae_arc) #beter (check to see if that is ok)
-ALL_RelA_b$cells.larvae_log<-log10(ALL_RelA_b$cells.larvae+1)
-hist(ALL_RelA_b$cells.larvae_log) #not as good
+#hist ALL_RelAb_b df is right format to check
+hist(ALL_RelAb_b$cells.larvae) #transform
+ALL_RelAb_b$cells.larvae_arc<-asin(sqrt(ALL_RelAb_b$cells.larvae))
+hist(ALL_RelAb_b$cells.larvae_arc) #beter (check to see if that is ok)
+ALL_RelAb_b$cells.larvae_log<-log10(ALL_RelAb_b$cells.larvae+1)
+hist(ALL_RelAb_b$cells.larvae_log) #not as good
 
-RelA_PCA<-ALL_RelA_a #keep only cols you need USE _a for the right shape of data (_b is melted, _a cast)
+RelA_PCA<-ALL_RelAb_a #keep only cols you need USE _a for the right shape of data (_b is melted, _a cast)
 RelA_PCA<-na.omit(RelA_PCA)# remove NA
 
 #arcsine transform
@@ -8282,6 +8387,8 @@ Here is the PCA script from AH:
  
 Generate results of (1) eigen values,  (2) coordinates, (3) contributions to the PCA, (4) and quality of representation.    
 ```{r, results=TRUE} 
+
+library("factoextra")
 # Everything 
 multi.pca <- prcomp(RelA_PCA[,5:8], scale=F)
 multi.pca
@@ -8347,7 +8454,7 @@ pca.plot2 <- autoplot(multi.pca, data = RelA_PCA, colour = 'Day', shape="Temp",l
 
 ###PCA by Day   
 Day 3
-```{r, results=TRUE} 
+```{r, results=TRUE}  
 
 RelA_PCA_D3<-subset(RelA_PCA, Day==3)  #subset day 3
 
