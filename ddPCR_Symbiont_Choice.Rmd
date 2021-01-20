@@ -8327,8 +8327,8 @@ data.scores$Temp = ALLcast_9000_cast2a_NMDS$Temp
 data.scores$Day = ALLcast_9000_cast2a_NMDS$Day
  
 head(data.scores)
-
-
+#write.csv(data.scores, "data.scores.csv")
+#write.csv(ALLcast_9000_cast2a_NMDS, "ALLcast_9000_cast2a_NMDS.csv")
 
 xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
     geom_point(size = 2, aes( shape = Day, colour = Temp))+ 
@@ -8346,6 +8346,68 @@ xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
 
  
 xx
+data.scores_d3<-subset(data.scores, Day==3)
+# day 3 only
+xday3 = ggplot(data.scores_d3, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 2, aes( shape = Temp, colour = Temp))+ 
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
+    scale_colour_manual(values = c("blue", "orange","red"))+
+  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+
+xday3
+
+data.scores_d7<-subset(data.scores, Day==7)
+# day 7 only
+xday7 = ggplot(data.scores_d7, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 2, aes( shape = Temp, colour = Temp))+ 
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
+    scale_colour_manual(values = c("blue", "orange","red"))+
+  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+
+xday7
+
+
+
+data.scores_d14<-subset(data.scores, Day==14)
+# day 14 only
+xday14 = ggplot(data.scores_d14, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 2, aes( shape = Temp, colour = Temp))+ 
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
+    scale_colour_manual(values = c("blue", "orange","red"))+
+  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+
+xday14
+
+xday3<-xday3+ theme(legend.position = "none") #remove legend
+xday7<-xday7+ theme(legend.position = "none") #remove legend
+xday14<-xday14+ theme(legend.position = "none") #remove legend
+
+
+grid.arrange(xday3, xday7, xday14, nrow = 2) 
 
 #ggsave("NMDS.svg")
 
