@@ -7355,7 +7355,7 @@ ggplot(ALLdata.nmds_xy, aes(MDS1, MDS2, color=code))+
 
 ```
 
-nmds by temp 
+nmds by temp  
 ```{r} 
 ##### subset by Temp
 #27C
@@ -8300,17 +8300,21 @@ Counts_compare_singmult<-grid.arrange(arrangeGrob(Counts_compare_singmult, left 
 #NMDS try again
 ```{r}
 
+#df: ALL_RelAb_a this is relA
+ALL_RelAb_a_NMDS<-ALL_RelAb_a #make copy
+ALL_RelAb_a_NMDS<-na.omit(ALL_RelAb_a_NMDS) #remove NAs
+ALL_RelAb_a_NMDS$Cladocopium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Cladocopium))
+ALL_RelAb_a_NMDS$Durusdinium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Durusdinium))
+ALL_RelAb_a_NMDS$Fugacium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Fugacium))
+ALL_RelAb_a_NMDS$Gerakladium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Gerakladium))
 
-ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a
-ALLcast_9000_cast2a_NMDS<-na.omit(ALLcast_9000_cast2a_NMDS)
-ALLcast_9000_cast2a_NMDS<-subset(ALLcast_9000_cast2a_NMDS, select=-c(C1_round,D1_round,F1_round,G3_round))
-#removerows with 0s all across
-#ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a_NMDS[-c(8),]
 
-ALLcast_9000_cast2a_NMDS<-ALLcast_9000_cast2a_NMDS[ALLcast_9000_cast2a_NMDS$ALL.number != "105" & ALLcast_9000_cast2a_NMDS$ALL.number != "134"& ALLcast_9000_cast2a_NMDS$ALL.number != "156"& ALLcast_9000_cast2a_NMDS$ALL.number != "195"& ALLcast_9000_cast2a_NMDS$ALL.number != "200", ] 
+ALL_RelAb_a_NMDS<-subset(ALL_RelAb_a_NMDS, select=-c(Cladocopium,Durusdinium,Fugacium,Gerakladium))
+
+#ALL_RelAb_a_NMDS<-ALL_RelAb_a_NMDS[ALL_RelAb_a_NMDS$ALL.number != "105" & ALL_RelAb_a_NMDS$ALL.number != "134"& ALL_RelAb_a_NMDS$ALL.number != "156"& ALL_RelAb_a_NMDS$ALL.number != "195"& ALL_RelAb_a_NMDS$ALL.number != "200", ] 
 
 #make community matrix - extract columns with abundance information
-com = ALLcast_9000_cast2a_NMDS[,5:ncol(ALLcast_9000_cast2a_NMDS)]
+com = ALL_RelAb_a_NMDS[,5:ncol(ALL_RelAb_a_NMDS)]
 #turn abundance data frame into a matrix
 m_com = as.matrix(com)
 
@@ -8322,13 +8326,16 @@ plot(nmds)
 #extract NMDS scores (x and y coordinates)
 data.scores = as.data.frame(scores(nmds))
 #add columns to data frame 
-data.scores$ALL.number = ALLcast_9000_cast2a_NMDS$ALL.number
-data.scores$Temp = ALLcast_9000_cast2a_NMDS$Temp
-data.scores$Day = ALLcast_9000_cast2a_NMDS$Day
+data.scores$ALL.number = ALL_RelAb_a_NMDS$ALL.number
+data.scores$Temp = ALL_RelAb_a_NMDS$Temp
+data.scores$Day = ALL_RelAb_a_NMDS$Day
  
 head(data.scores)
 #write.csv(data.scores, "data.scores.csv")
-#write.csv(ALLcast_9000_cast2a_NMDS, "ALLcast_9000_cast2a_NMDS.csv")
+#write.csv(ALL_RelAb_a_NMDS, "ALL_RelAb_a_NMDS.csv")
+
+Palette1<- c("blue", "orange","red")
+
 
 xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
     geom_point(size = 2, aes( shape = Day, colour = Temp))+ 
@@ -8341,11 +8348,17 @@ xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
     panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
-    scale_colour_manual(values = c("blue", "orange","red"))+
-  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+  scale_fill_manual(values=Palette1) +  
+  scale_colour_manual(values=Palette1)+
+ # stat_ellipse(level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
+  #stat_ellipse(geom="polygon",level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
 
- 
+
 xx
+
+
 data.scores_d3<-subset(data.scores, Day==3)
 # day 3 only
 xday3 = ggplot(data.scores_d3, aes(x = NMDS1, y = NMDS2)) + 
@@ -8359,9 +8372,9 @@ xday3 = ggplot(data.scores_d3, aes(x = NMDS1, y = NMDS2)) +
     panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
-    scale_colour_manual(values = c("blue", "orange","red"))+
-  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
-
+scale_fill_manual(values=Palette1) +  
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
 xday3
 
 data.scores_d7<-subset(data.scores, Day==7)
@@ -8377,8 +8390,9 @@ xday7 = ggplot(data.scores_d7, aes(x = NMDS1, y = NMDS2)) +
     panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
-    scale_colour_manual(values = c("blue", "orange","red"))+
-  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+    scale_fill_manual(values=Palette1) +  
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
 
 xday7
 
@@ -8397,8 +8411,9 @@ xday14 = ggplot(data.scores_d14, aes(x = NMDS1, y = NMDS2)) +
     panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
-    scale_colour_manual(values = c("blue", "orange","red"))+
-  stat_ellipse(aes(x=NMDS1, y=NMDS2,color=Temp)) 
+    scale_fill_manual(values=Palette1) +  
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
 
 xday14
 
@@ -8413,16 +8428,13 @@ grid.arrange(xday3, xday7, xday14, nrow = 2)
 
 ```
 
+PERMANOVA df: ALL_RelAb_b
 ```{r}
-#example
-set.seed(2)
-community_matrix=matrix(
-   sample(1:100,300,replace=T),nrow=10,
-   dimnames=list(paste("community",1:10,sep=""),paste("sp",1:30,sep="")))
+#ALL_RelAb_b 
+adonis2(dune ~ Management*A1, data = )
 
-example_NMDS=metaMDS(community_matrix, # Our community-by-species matrix
-                     k=2) # The number of reduced dimensions
 ```
+
 
 #PCA: Let's try to make a PCA  
 ```{r} 
