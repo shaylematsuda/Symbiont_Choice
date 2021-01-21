@@ -8333,7 +8333,9 @@ data.scores$Day = ALL_RelAb_a_NMDS$Day
 head(data.scores)
 #write.csv(data.scores, "data.scores.csv")
 #write.csv(ALL_RelAb_a_NMDS, "ALL_RelAb_a_NMDS.csv")
-
+```
+Plots
+```{r}
 Palette1<- c("blue", "orange","red")
 
 
@@ -8353,9 +8355,12 @@ xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
  # stat_ellipse(level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
   #stat_ellipse(geom="polygon",level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
   stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))+
 
-
+geom_segment(data = data.scores, aes(x = 0, xend=NMDS1, y=0, yend=NMDS2), arrow = arrow(length = unit(0.25, "cm")), colour = "grey10", lwd=0.3) + #add vector arrows of significant env variables
+  ggrepel::geom_text_repel(data = data.scores, aes(x=NMDS1, y=NMDS2, label = Day), cex = 4, direction = "both", segment.size = 0.25) #add labels for env variables
+  
+  
 xx
 
 
@@ -8430,9 +8435,41 @@ grid.arrange(xday3, xday7, xday14, nrow = 2)
 
 PERMANOVA df: ALL_RelAb_b
 ```{r}
-#ALL_RelAb_b 
-adonis2(dune ~ Management*A1, data = )
+#my matrix is m_com
+#full 
+m_com.dist<-vegdist(m_com, method='bray') #make dissimilarity matrix
+set.seed(36) #reproducible results
+polyculture.div<-adonis2(m_com.dist~Temp*Day, data=ALL_RelAb_a_NMDS, permutations = 999, method="bray")
 
+polyculture.div
+
+#lets try for each day, subset df: ALL_RelAb_a_NMDS
+#D3
+ALL_RelAb_a_NMDS_D3<-subset(ALL_RelAb_a_NMDS, Day=="3")
+com_D3 = ALL_RelAb_a_NMDS_D3[,5:ncol(ALL_RelAb_a_NMDS_D3)]
+#turn abundance data frame into a matrix
+m_com_D3 = as.matrix(com_D3)
+m_com_D3.dist<-vegdist(m_com_D3, method='bray') #make dissimilarity matrix
+set.seed(36) #reproducible results
+polyculture.div<-adonis2(m_com_D3.dist~Temp, data=ALL_RelAb_a_NMDS_D3, permutations = 999, method="bray")
+
+#D7
+ALL_RelAb_a_NMDS_D7<-subset(ALL_RelAb_a_NMDS, Day=="7")
+com_D7 = ALL_RelAb_a_NMDS_D7[,5:ncol(ALL_RelAb_a_NMDS_D7)]
+#turn abundance data frame into a matrix
+m_com_D7 = as.matrix(com_D7)
+m_com_D7.dist<-vegdist(m_com_D7, method='bray') #make dissimilarity matrix
+set.seed(76) #reproducible results
+polyculture.div<-adonis2(m_com_D7.dist~Temp, data=ALL_RelAb_a_NMDS_D7, permutations = 999, method="bray")
+
+#D14
+ALL_RelAb_a_NMDS_D14<-subset(ALL_RelAb_a_NMDS, Day=="14")
+com_D14 = ALL_RelAb_a_NMDS_D14[,5:ncol(ALL_RelAb_a_NMDS_D14)]
+#turn abundance data frame into a matrix
+m_com_D14 = as.matrix(com_D14)
+m_com_D14.dist<-vegdist(m_com_D14, method='bray') #make dissimilarity matrix
+set.seed(146) #reproducible results
+polyculture.div<-adonis2(m_com_D14.dist~Temp, data=ALL_RelAb_a_NMDS_D14, permutations = 999, method="bray")
 ```
 
 
