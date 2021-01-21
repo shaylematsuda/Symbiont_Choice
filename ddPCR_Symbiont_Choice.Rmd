@@ -8337,6 +8337,7 @@ head(data.scores)
 Plots
 ```{r}
 Palette1<- c("blue", "orange","red")
+Palette2<- c("green", "magenta","cyan")
 
 
 xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
@@ -8352,17 +8353,32 @@ xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
   scale_fill_manual(values=Palette1) +  
   scale_colour_manual(values=Palette1)+
- # stat_ellipse(level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
-  #stat_ellipse(geom="polygon",level=.5,aes(x=NMDS1, y=NMDS2,color=Temp)) 
-  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))+
+ stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
+  #stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Day))+
+ # stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Day))
 
-geom_segment(data = data.scores, aes(x = 0, xend=NMDS1, y=0, yend=NMDS2), arrow = arrow(length = unit(0.25, "cm")), colour = "grey10", lwd=0.3) + #add vector arrows of significant env variables
-  ggrepel::geom_text_repel(data = data.scores, aes(x=NMDS1, y=NMDS2, label = Day), cex = 4, direction = "both", segment.size = 0.25) #add labels for env variables
+ xx 
   
+#Day ellip
+xxDay = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 2, aes(shape = Temp, colour = Day))+ 
+    theme(axis.text.y = element_text(colour = "black", size = 12, face = "bold"), 
+    axis.text.x = element_text(colour = "black", face = "bold", size = 12), 
+    legend.text = element_text(size = 12, face ="bold", colour ="black"), 
+    legend.position = "right", axis.title.y = element_text(face = "bold", size = 14), 
+    axis.title.x = element_text(face = "bold", size = 14, colour = "black"), 
+    legend.title = element_text(size = 14, colour = "black", face = "bold"), 
+    panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
+    legend.key=element_blank()) + 
+    labs(x = "NMDS1", colour = "Day", y = "NMDS2", shape = "Temp")  + 
+  scale_fill_manual(values=Palette2) +  
+  scale_colour_manual(values=Palette2)+
+ stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Day))+
+  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2, color=Day))
   
-xx
 
+ xxDay
 
 data.scores_d3<-subset(data.scores, Day==3)
 # day 3 only
@@ -8442,6 +8458,11 @@ set.seed(36) #reproducible results
 polyculture.div<-adonis2(m_com.dist~Temp*Day, data=ALL_RelAb_a_NMDS, permutations = 999, method="bray")
 
 polyculture.div
+
+library(remotes)
+library(funfuns)
+#pairwise.adonis(m_com.dist ~ Temp*Day, data = polyculture.div)  This isn't working but maybe you dno't care. 
+
 
 #lets try for each day, subset df: ALL_RelAb_a_NMDS
 #D3
