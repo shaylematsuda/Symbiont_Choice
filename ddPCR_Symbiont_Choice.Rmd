@@ -25,7 +25,7 @@ require("knitr")
 
 Load in libraries 
 ```{r}   
-rm(list=ls()) # Clear workspace
+#rm(list=ls()) # Clear workspace
 
 # Set up workspace: I def do not use all these
 #library(devtools) 
@@ -2022,7 +2022,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
 ```{r}             
- 
+  
 #set up the Poly df for this specific model! use only poly larva with ddPCR for Poly genera/larva +hemoscope
 Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
 Poly_forCounts$Symbiont<-"Poly" #add symbiont col
@@ -5727,7 +5727,7 @@ qqPlot(residuals(ALL_RelAb_b_mod))
 cld(emm)
 pairs(emm)
 
-  emm<-emmeans(ALL_RelAb_b_mod,  ~ Symbiont |Day*Temp, adjust="Tukey")
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Day *Temp|Symbiont, adjust="Tukey")
 cld(emm)
 pairs(emm)
 
@@ -6358,7 +6358,7 @@ pairs(emm)
 
 
 #Competition-Infection: Models, full and by-clade for comparison (you said you don't want to use for main analysis)
-```{r}   
+```{r}    
 #Full model MULTI only 
 CountsCompare_multi<-subset(CountsCompare, single.multi=="multi")
 CountsCompare_multi_mod<-lmer(cells.larvae_log~Temp*Day*Symbiont+(1|PotCode),CountsCompare_multi)
@@ -8459,9 +8459,6 @@ polyculture.div<-adonis2(m_com.dist~Temp*Day, data=ALL_RelAb_a_NMDS, permutation
 
 polyculture.div
 
-library(remotes)
-library(funfuns)
-#pairwise.adonis(m_com.dist ~ Temp*Day, data = polyculture.div)  This isn't working but maybe you dno't care. 
 
 
 #lets try for each day, subset df: ALL_RelAb_a_NMDS
@@ -8474,6 +8471,17 @@ m_com_D3.dist<-vegdist(m_com_D3, method='bray') #make dissimilarity matrix
 set.seed(36) #reproducible results
 polyculture.div<-adonis2(m_com_D3.dist~Temp, data=ALL_RelAb_a_NMDS_D3, permutations = 999, method="bray")
 
+#To check for homogeneity of dispersions, first create a betadisper object
+disp <- betadisper(m_com_D3.dist, ALL_RelAb_a_NMDS_D3$Temp, type = "centroid")
+#The following runs the test, default is 999 permuations
+permutest(disp)
+#visualise it using a boxplot
+par(pty = 's')
+boxplot(disp)
+plot(disp, hull=FALSE, ellipse=TRUE) ##sd ellipse
+
+
+
 #D7
 ALL_RelAb_a_NMDS_D7<-subset(ALL_RelAb_a_NMDS, Day=="7")
 com_D7 = ALL_RelAb_a_NMDS_D7[,5:ncol(ALL_RelAb_a_NMDS_D7)]
@@ -8483,6 +8491,15 @@ m_com_D7.dist<-vegdist(m_com_D7, method='bray') #make dissimilarity matrix
 set.seed(76) #reproducible results
 polyculture.div<-adonis2(m_com_D7.dist~Temp, data=ALL_RelAb_a_NMDS_D7, permutations = 999, method="bray")
 
+#To check for homogeneity of dispersions, first create a betadisper object
+disp <- betadisper(m_com_D7.dist, ALL_RelAb_a_NMDS_D7$Temp, type = "centroid")
+#The following runs the test, default is 999 permuations
+permutest(disp)
+#visualise it using a boxplot
+par(pty = 's')
+boxplot(disp)
+plot(disp, hull=FALSE, ellipse=TRUE) ##sd ellipse
+
 #D14
 ALL_RelAb_a_NMDS_D14<-subset(ALL_RelAb_a_NMDS, Day=="14")
 com_D14 = ALL_RelAb_a_NMDS_D14[,5:ncol(ALL_RelAb_a_NMDS_D14)]
@@ -8491,6 +8508,16 @@ m_com_D14 = as.matrix(com_D14)
 m_com_D14.dist<-vegdist(m_com_D14, method='bray') #make dissimilarity matrix
 set.seed(146) #reproducible results
 polyculture.div<-adonis2(m_com_D14.dist~Temp, data=ALL_RelAb_a_NMDS_D14, permutations = 999, method="bray")
+
+#To check for homogeneity of dispersions, first create a betadisper object
+disp <- betadisper(m_com_D14.dist, ALL_RelAb_a_NMDS_D14$Temp, type = "centroid")
+#The following runs the test, default is 999 permuations
+permutest(disp)
+#visualise it using a boxplot
+par(pty = 's')
+boxplot(disp)
+plot(disp, hull=FALSE, ellipse=TRUE) ##sd ellipse
+
 ```
 
 
@@ -8513,6 +8540,15 @@ RelA_PCA$Cladocopium<-asin(sqrt(RelA_PCA$Cladocopium))
 RelA_PCA$Durusdinium<-asin(sqrt(RelA_PCA$Durusdinium))
 RelA_PCA$Fugacium<-asin(sqrt(RelA_PCA$Fugacium))
 RelA_PCA$Gerakladium<-asin(sqrt(RelA_PCA$Gerakladium))
+
+
+#
+library(phyloseq)
+library(ggplot2)
+library(vegan)
+
+
+
 ```
 
 Here is the PCA script from AH: 
