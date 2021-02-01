@@ -1038,7 +1038,7 @@ BinaryInfect<-rbind(BinaryInfect, Poly_binomial) #add the Polys for JUST this as
 
 ```
 Binomial Models
-```{r} 
+```{r}  
 #Full model including all clades/temp/time:
 BinaryInfect<-na.omit(BinaryInfect) #remove nas
 BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
