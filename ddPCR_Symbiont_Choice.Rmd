@@ -362,7 +362,7 @@ sum(FP_G3$Positives) # 60 positives per 70 wells
 ```
  
 Sample droplet cutoff (remove samples with less than 9000 dropletes), false pos rate (incoroprate), copy number (calculate), and calcualte cells/larvae
-```{r}   
+```{r}    
 # 9000 cutoff - if total droplets are below 9000 remove samples  
 dData1<-subset(dData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
 
@@ -671,7 +671,7 @@ ggplot(data = scopehemo_ddPCRCompare) +
 
 #figure out how to map 50% conf interval
 ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
-   geom_point(aes(colour=factor(count.type.x))) +
+   geom_point(aes(colour=factor(count.type.x), size=4)) +
    #geom_smooth(method=lm, na.rm = TRUE, fullrange= TRUE,aes(group=1),colour="black")+
    scale_colour_manual(name="condition",
        values=c("darkgray","orange"))+
@@ -749,8 +749,8 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull)
 ```
 
 MORTALITY
-# Larval Mortality
-```{r}        
+# Larval Survivorship
+```{r}         
 # Monos and the poly (remove control)
  # binomial mixed effects model
 Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
@@ -810,6 +810,38 @@ pairs(emm)
 #dispersion_glmer(Mort.df_NEW_D7_mod) #The package wont install :(
 
 detach(Mort.df_NEW)
+
+
+
+
+
+###Not working yet. 
+#### try using Mono-poly as an effect with nested genera
+Mort.df_NEW_MonPol<-Mort.df_NEW
+Mort.df_NEW_MonPol$MonoPoly<-Mort.df_NEW_MonPol$Symbiont
+#create monoy poly category
+Mort.df_NEW_MonPol$MonoPoly<-as.character(Mort.df_NEW_MonPol$MonoPoly)
+Mort.df_NEW_MonPol$MonoPoly[Mort.df_NEW_MonPol$MonoPoly=="C1"] <- "Mono"
+Mort.df_NEW_MonPol$MonoPoly[Mort.df_NEW_MonPol$MonoPoly=="D1"] <- "Mono"
+Mort.df_NEW_MonPol$MonoPoly[Mort.df_NEW_MonPol$MonoPoly=="F1"] <- "Mono"
+Mort.df_NEW_MonPol$MonoPoly[Mort.df_NEW_MonPol$MonoPoly=="G3"] <- "Mono"
+Mort.df_NEW_MonPol$MonoPoly[Mort.df_NEW_MonPol$MonoPoly=="All"] <- "Poly"
+Mort.df_NEW_MonPol$MonoPoly<-as.factor(as.character(Mort.df_NEW_MonPol$MonoPoly))
+#full model
+##create binomial vector
+attach(Mort.df_NEW_MonPol)
+x<-cbind(Alive, Failures)
+
+#By mono-poly
+Mort.df_NEW_MonPol_mod<-glmer(x~Temp*Day*Symbiont + (1+Symbiont)+(1|Pot), family=binomial)
+summary(Mort.df_NEW_MonPol_mod)
+Anova(Mort.df_NEW_MonPol_mod)
+ emm<-emmeans(Mort.df_NEW_MonPol_mod,  ~Temp*Day|Symbiont, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+pairs(emm)
+
+detach(Mort.df_NEW_MonPol)
+
 
 
 
@@ -1016,7 +1048,7 @@ ALLcast_9000_cast3<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars] # new df
 Poly_forCounts<-rbind(PolyFullscopehemo4,ALLcast_9000_cast3) # combine scope/hemo with ddPCR for Poly
 Poly_forCounts<-na.omit(Poly_forCounts) 
 ```
-
+ 
 Create binomial for monocultures
 ```{r}            
 BinaryInfect<-Monoculture  # make new df for binary infection
@@ -1330,7 +1362,7 @@ G3_binaryb_SinMul$PotCode<-as.factor(G3_binaryb_SinMul$PotCode)
 
 ```
 C1 Single v Multi by GENUS
-```{r}    
+```{r}     
 #Singel vs Multi  
 
 #model SINGLE vs MULTI 
@@ -1371,14 +1403,13 @@ C1_binaryb_SinMul_mean_31<-subset(C1_binaryb_SinMul_mean, Temp=="31")
 #plots
 #27
 
-
 C1_binaryb_SinMul_plot_27<-ggplot(data=C1_binaryb_SinMul_mean_27, aes(x=Day, y=mean, group=infectType, color=infectType)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.4, show.legend = T)+
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
+     geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
-      scale_linetype_manual(values=c("dotted", "solid"))+
-       geom_point(shape = 1,size = 5,colour = "black")+
+    scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1404,7 +1435,7 @@ C1_binaryb_SinMul_plot_30<-ggplot(data=C1_binaryb_SinMul_mean_30, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
   geom_line(aes(color=infectType, linetype=infectType))+
        geom_point(shape = 1,size = 5,colour = "black")+
-      scale_linetype_manual(values=c("dotted", "solid"))+
+      scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
   ylim(0,1.2)+
@@ -1430,6 +1461,8 @@ C1_binaryb_SinMul_plot_31<-ggplot(data=C1_binaryb_SinMul_mean_31, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+        scale_linetype_manual(values=c("solid", "dotted"))+
+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
   ylim(0,1.2)+
@@ -1508,7 +1541,9 @@ D1_binaryb_SinMul_plot_27<-ggplot(data=D1_binaryb_SinMul_mean_27, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
+         geom_point(shape = 1,size = 5,colour = "black")+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
           scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,15))+
@@ -1532,6 +1567,8 @@ D1_binaryb_SinMul_plot_30<-ggplot(data=D1_binaryb_SinMul_mean_30, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+         geom_point(shape = 1,size = 5,colour = "black")+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1555,6 +1592,7 @@ D1_binaryb_SinMul_plot_31<-ggplot(data=D1_binaryb_SinMul_mean_31, aes(x=Day, y=m
                 width=0.4, show.legend = T)+
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
          geom_point(shape = 1,size = 5,colour = "black")+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
@@ -1622,6 +1660,7 @@ F1_binaryb_SinMul_plot_27<-ggplot(data=F1_binaryb_SinMul_mean_27, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
   geom_line(aes(color=infectType, linetype=infectType))+
          geom_point(shape = 1,size = 5,colour = "black")+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1646,6 +1685,7 @@ F1_binaryb_SinMul_plot_30<-ggplot(data=F1_binaryb_SinMul_mean_30, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
   geom_line(aes(color=infectType, linetype=infectType))+
          geom_point(shape = 1,size = 5,colour = "black")+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1670,6 +1710,7 @@ F1_binaryb_SinMul_plot_31<-ggplot(data=F1_binaryb_SinMul_mean_31, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1736,6 +1777,7 @@ G3_binaryb_SinMul_plot_27<-ggplot(data=G3_binaryb_SinMul_mean_27, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1760,6 +1802,7 @@ G3_binaryb_SinMul_plot_30<-ggplot(data=G3_binaryb_SinMul_mean_30, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -1784,6 +1827,7 @@ G3_binaryb_SinMul_plot_31<-ggplot(data=G3_binaryb_SinMul_mean_31, aes(x=Day, y=m
   geom_point(aes(color=infectType), size=4.5, show.legend = T)+
          geom_point(shape = 1,size = 5,colour = "black")+
   geom_line(aes(color=infectType, linetype=infectType))+
+          scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("deeppink3", "turquoise3"))+
   xlab("Days") + #Label the X Axis
     ylim(0,1.2)+
@@ -2021,7 +2065,7 @@ G3heatMult<-heatmap.2(G3mat_data2,
 # Monoculture and poly infection: Cell Counts Models and Plots (updated 20200822)
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
-```{r}             
+```{r}              
   
 #set up the Poly df for this specific model! use only poly larva with ddPCR for Poly genera/larva +hemoscope
 Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
@@ -2077,18 +2121,6 @@ pairs(emm)
 emm<-emmeans(Counts_no0_all_mod_noD1431,  ~ Symbiont*Day|Temp , adjust="Tukey")
 cld(emm)
 pairs(emm)
- 
-
-# since we get the tukey -> sidak issue does it work to split the models <- still switching to sidak?????WTF
-#27C
-CellCounts_27<-subset(Poly_no0_NOD1431C, Temp=="27")
-Counts_mod_temp<-lmer(cells.larvae_log~Symbiont*Day+(1|PotCode), CellCounts_27)
-anova(Counts_mod_temp) 
-qqPlot(residuals(Counts_mod_temp))   # good
-
-  emm<-emmeans(Counts_mod_temp,  ~ Symbiont *Day, adjust="Tukey")
-cld(emm)
-pairs(emm)
 
 
 
@@ -2098,7 +2130,7 @@ pairs(emm)
 
 Plots By temp
 27C
-```{r}      
+```{r}       
 Poly_no0_27<-subset(CellCounts_no0_NOD1431C, Temp=="27")
 
 Poly_no0_27_mean <- ddply(Poly_no0_27, c("Day", "Symbiont"), summarise, #summarize cell counts
@@ -2125,9 +2157,9 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
   scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
-  ylim(0,3200)+
+  #ylim(0,3200)+
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+       scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2170,8 +2202,8 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-    ylim(0,3200)+
-       scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+   # ylim(0,3200)+
+       scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2186,7 +2218,7 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_30_mean_plot
 ``` 
 31C
-```{r}      
+```{r}       
 Poly_no0_31<-subset(CellCounts_no0_NOD1431C, Temp=="31")
 
 Poly_no0_31_mean <- ddply(Poly_no0_31, c("Day", "Symbiont"), summarise, #summarize cell counts
@@ -2217,8 +2249,8 @@ Poly_no0_31_mean_plot<-ggplot(data=Poly_no0_31_mean, aes(x=Day.num, y=mean, grou
    geom_point(shape = 1,size = 4,colour = "black")+
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-    ylim(0,3200)+
-     scale_y_log10(breaks = c(0,1,100,1000, 10000), limits=c(.1,5000))+
+   # ylim(0,3200)+
+    scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -3262,7 +3294,7 @@ pairs(emm)
 
 G3, full mod, then by temp 
 ```{r}   
-
+ 
 #due to low n's at 31C and 14, we need to remove
 CountsCompare2_G3$REMOVE<-paste0(CountsCompare2_G3$PotCode, "_", CountsCompare2_G3$Day) #code
  
@@ -3503,7 +3535,7 @@ library(lattice)
 
 Plots new bar plots (not stacked) Grey scale, FIND THE OTHER ONES in the script. 
 You likely don't need this so delete but make sure you move the subset info to next section
-```{r} 
+```{r}  
 ### STACKED BAR PLOTS 
 #27C 
 NumCladesB_mean_27<-subset(NumCladesB_mean, Temp==27)
@@ -4055,7 +4087,7 @@ GeneraWinners<-rbind(T27_D3_relc, T27_D7_relc,T27_D14_relc,T30_D3_relc, T30_D7_r
 
 Now lets do relA for each grouping of number of genera/larva  - this may be unnecessary
 df: ALL_RelA_binaryb (relative abundance, the cells.larvae=Rel abund)
-```{r}   
+```{r}    
 aData<-RelA_binaryb
 aData<-na.omit(aData) #remove larae with values not present for all 4 genera
 
@@ -4480,7 +4512,7 @@ aData4_31_D7<-subset(aData4_31, Day==7)
 
 #stacked bar - INDIVIDUAL LARVAE
     #testing to plot them all in one go by temp 27
-```{R} 
+```{R}  
 #27C
   aData4_27$NumGen_ID<-paste(aData4_27$numclade,aData4_27$ALL.number)#new col combing num clade and ID
   
@@ -5317,7 +5349,7 @@ grid.arrange(aData4_1or2_31_D3_g2_plot, aData4_1or2_31_D7_g2_plot,aData4_1or2_31
 
 # C Who was the most dominant clade in larvave. Only larvae where all four genera amped
 This is in line plots: see below for waffles. 
-```{r}          
+```{r}           
 #df ALL_RelA  
  
 ALL_RelA2<-select(ALL_RelAb, "ALL.number", "Temp", "Day","Pot","C1_round","D1_round" ,"F1_round","G3_round") #keep only cols you want
@@ -5354,7 +5386,7 @@ DomAll_mean<-na.omit(DomAll_mean)
 
 Plot dominant genus/larva 
 ```{r}
-#27C
+#27C 
 Dom27mean<-subset(DomAll_mean, Temp==27)
 #plot
 domAll_27_plot<-ggplot(data=Dom27mean, aes(x=Day, y=mean, group = clade, color=clade)) +
@@ -5364,7 +5396,7 @@ domAll_27_plot<-ggplot(data=Dom27mean, aes(x=Day, y=mean, group = clade, color=c
   geom_line(aes(color=clade))+
             scale_color_locuszoom()+
   xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
+  ylim(0, 1) + #set Y limits 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -5408,7 +5440,7 @@ domAll_30_plot<-ggplot(data=Dom30mean, aes(x=Day, y=mean, group = clade, color=c
   geom_line(aes(color=clade))+
             scale_color_locuszoom()+
   xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
+  ylim(0, 1) + #set Y limits 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -5452,7 +5484,7 @@ domAll_31_plot<-ggplot(data=Dom31mean, aes(x=Day, y=mean, group = clade, color=c
   geom_line(aes(color=clade))+
             scale_color_locuszoom()+
   xlab("Days") + #Label the X Axis 
-  #ylim(0, 1) + #set Y limits 
+  ylim(0, 1) + #set Y limits 
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -5679,7 +5711,7 @@ Win_Num_31_D7 %>%
 #Fig  Competative-infection: Polycluture only, relative abundance of each clade  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df     
-```{r}           
+```{r}            
 #calc relative abundance for each   (any non infected larvae will NA out here)
 ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
 ALL_RelAb$Durusdinium<-ALL_RelAb$D1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
@@ -5696,7 +5728,7 @@ ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae 
 ``` 
   
 Stats: Relative abundance, df = ALL_RelAb_b 
-```{r}    
+```{r}     
 ### CN says either is fine but arcsinsqrt has less heteroscedasticity
 
 #Full model  
@@ -6224,7 +6256,7 @@ ggsave(filename="Figures/InfectRaw_Fig1.png", plot=InfectRaw_Fig1, dpi=300, widt
 ```
 
 # Table H: NEW Plot cells/larvae vs number of clades infected - shows that as more cells infected more clades infected
-```{r}   
+```{r}    
 #ALL_RelA_Infect2  ALLnumb and number of clades df
 #ALLcast_9000_cast2c <- df for 
 
