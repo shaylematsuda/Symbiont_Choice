@@ -83,6 +83,8 @@ library(broom)
 #library(survival)
 #library(survminer)
 library(emmeans)
+library(ggordiplots)
+
 
 #Overdispersion check
   overdisp_fun <- function(model) {
@@ -98,7 +100,7 @@ library(emmeans)
 
 # Load in data and setup dataframes:   
 Load in Hemocytometer (Individuals subset, Days 7 and 14) and Scope (Individuals subset, Day 3) counts data: 
-```{r}      
+```{r}       
 ####Load in hemocytometer counts and fluorescent scope counts:  
 Day3Counts<-read.csv("SC18_cellcounts_day3.csv")
 Day7Counts<-read.csv("SC18_cellcounts_day7.csv")
@@ -325,7 +327,7 @@ dData$Day<-factor(dData$Day, levels=c("3","7","14"))
 dData$Pot<-as.factor(dData$Pot)
 ```
 False Positive Rate - the false positive rate was calculated using the manufacturors guidelines to 99% confidence. 
-```{r}   
+```{r}    
 #subset only FalsePositives controls (controls included each primer set (C1, D1, F1 and G3) on aposymbiotic larvae and larvae infected with each of the other three symbiont genera (for example, C1 primers used on a D1-infected larva)).
 
 FalsePos<-subset(dData, Info=="CONTROL") # subset only false positive controls 
@@ -362,7 +364,7 @@ sum(FP_G3$Positives) # 60 positives per 70 wells
 ```
  
 Sample droplet cutoff (remove samples with less than 9000 dropletes), false pos rate (incoroprate), copy number (calculate), and calcualte cells/larvae
-```{r}    
+```{r}     
 # 9000 cutoff - if total droplets are below 9000 remove samples  
 dData1<-subset(dData, Accepted.Droplets>9000)# remove samples with less than 9000 droplets (we lose 44 ddpcr samples)
 
@@ -400,7 +402,7 @@ sData<-subset(dData2, Info=="ALL"|Info=="C1"|Info=="D1"|Info=="F1"|Info=="G3")
 ```
 
 Create dfs for each symbiont genus. Subset for each ddPCR Infection trial (C1, D1, F1, G3, ALL).   
-```{r}     
+```{r}      
 #subset by infection (individual and multi infections)
 C1_9000<-subset(sData, Info=="C1")
 D1_9000<-subset(sData, Info=="D1")
@@ -427,7 +429,7 @@ Multi-Infection
 Raw and relative abundance data frames for Multi-infection  
 df = ALLcast_9000_cast2a <- df including all samples (even if not all four clades amplified)  
 df = ALLcast_9000_cast2b <- df with only samples where all four clades amplified per larvae
-```{r}     
+```{r}      
 # Raw df for comparision of counts within INDIVIDUAL GENERA between Single vs Multi
 ALLcast_9000_cast2a<-dcast(ALL_9000a, ALL.number+Temp+Day+Pot~Primer, value.var = "cells.larvae") # cast()
 ALLcast_9000_cast2a$C1_round<-round(ALLcast_9000_cast2a$C1) 
@@ -451,7 +453,7 @@ ALLcast_9000_cast2b<-ALLcast_9000_cast2b[!(ALLcast_9000_cast2b$ALL.number=="115"
 Individual-Infection:  
 Combine ddPCR df with the hemocytometer/scope count data from each time point for "Full" dataset for INDIVIDUAL INFECTIONS 
 Organize data: oragnize, scope + hemo data
-```{r}   
+```{r}    
 # create count.type column for hemo and scope id  
 Countdat_D3<-subset(Countdat1, Day=="3") #subset day 3, scope counts, individuals
 Countdat_D3$count.type<-"scope"
@@ -877,7 +879,7 @@ detach(Mort.df_NEW_mono)
 ```
 
 Plots of Mortality by TEMP
-```{r}
+```{r} 
 #New plot by temp (20210104)
 D.Summary_27<-subset(D.Summary, Temp==27)
 D.Summary_30<-subset(D.Summary, Temp==30)
@@ -2125,6 +2127,15 @@ pairs(emm)
 
 
 
+CellCounts_no0_NOD1431C_mean <- ddply(CellCounts_no0_NOD1431C, c("Day", "Symbiont","Temp"), summarise, #summarize cell counts
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+CellCounts_no0_NOD1431C_mean #display
+
 ```
 
 
@@ -2519,7 +2530,7 @@ grid.arrange(Singles_no0_C1_mean_plot, Singles_no0_D1_mean_plot, Singles_no0_F1_
 C1          
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = Alls raw that infected  
-```{r}      
+```{r}       
 MultiCounts<-ALLcast_9000_cast2a
 #MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(5:8)] #remove metadata
@@ -2589,7 +2600,7 @@ CountsCompare2_mean_31<-subset(CountsCompare2_mean, Temp=="31")
 
 subset by Symbiont plots
 C1: 27C  
-```{r}            
+```{r}             
 #subset C1 
 CountsCompare2_C1_27<-subset(CountsCompare2_mean_27, Symbiont=="C1")
  
@@ -3383,7 +3394,7 @@ pairs(emm)
  
 ##########@AH: Is this the best way to set up the mean table. I turn it into relative abundance, and then for each jar, I get the means per infection group (0,1,2,3,4). But for some reason, I'm just not sure this is right for the Mean and s.e. 
 
-
+ 
 
 
 NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
@@ -3432,7 +3443,7 @@ NumCladesB_numbonly_mean #display table
 
 Stats for Numclades~temp*time (polyculture only)
 I think Krustal is the way to go?
-```{r}  
+```{r}   
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 
@@ -3610,7 +3621,7 @@ grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
 ```
 
 Stacked bar plot old
-```{r}
+```{r} 
 ### STACKED BAR PLOTS 
 #27C  
 # barplot 
@@ -4087,7 +4098,7 @@ GeneraWinners<-rbind(T27_D3_relc, T27_D7_relc,T27_D14_relc,T30_D3_relc, T30_D7_r
 
 Now lets do relA for each grouping of number of genera/larva  - this may be unnecessary
 df: ALL_RelA_binaryb (relative abundance, the cells.larvae=Rel abund)
-```{r}    
+```{r}     
 aData<-RelA_binaryb
 aData<-na.omit(aData) #remove larae with values not present for all 4 genera
 
@@ -4106,6 +4117,17 @@ aData<-na.omit(aData) #remove larae with values not present for all 4 genera
 
 aData2<-aData[c("ALL.number","numclade")] #new row with the sum of num of genera infected 
 #combine this with the Rel Abund dataframe (ALL_RelA_b)
+
+
+#pasted from below (l 57XX) to make the next df
+ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
+ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
+ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (keep only larva that infected)
+
+
 
 aData3<-merge(aData2,ALL_RelAb_b, by="ALL.number")
 
@@ -4437,7 +4459,7 @@ grid.arrange(NumWinner_27RelA_D3a_agg_plot, NumWinner_27RelA_D7_agg_plot, NumWin
 #THIS SECTION IS RELATIVE ABUNDANCE OF LARVAE INFECTED WITH 3 OR 4 GENERA BY dom GENERA :IF YOU KEEP THIS SI only
 YOU are here!  Separeated out 3 and 4 genra groups. made mean table. figure out stats and new plots. note the single larvae with 4-genera in d7 31, do you want to include only groups with 3+. working: do all genera
 Now figure out relA by genus-infection group dom genus:
-```{r}   
+```{r}    
 # gives the relative abundance of larvae within 1, 2, 3 or 4 genera infected larvae. manually plotted by dom genus. 
 #3gen
 aData4<-aData3  #make copy
@@ -4512,7 +4534,7 @@ aData4_31_D7<-subset(aData4_31, Day==7)
 
 #stacked bar - INDIVIDUAL LARVAE
     #testing to plot them all in one go by temp 27
-```{R}  
+```{R}   
 #27C
   aData4_27$NumGen_ID<-paste(aData4_27$numclade,aData4_27$ALL.number)#new col combing num clade and ID
   
@@ -5384,9 +5406,9 @@ DomAll_mean #display table
 DomAll_mean<-na.omit(DomAll_mean)
 ```
 
-Plot dominant genus/larva 
+FIG K: Plot dominant genus/larva 
 ```{r}
-#27C 
+#27C  
 Dom27mean<-subset(DomAll_mean, Temp==27)
 #plot
 domAll_27_plot<-ggplot(data=Dom27mean, aes(x=Day, y=mean, group = clade, color=clade)) +
@@ -5717,6 +5739,13 @@ ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_
 ALL_RelAb$Durusdinium<-ALL_RelAb$D1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
 ALL_RelAb$Fugacium<-ALL_RelAb$F1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
 ALL_RelAb$Gerakladium<-ALL_RelAb$G3/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+
+#this will remove any larva with a NA for a species. This also removes a larvae with a 0 for all the species, this is because for stats, we only include infected larvae. if you want to add back manually, uncomment:
+#ALL_RelAb$Cladocopium[is.nan(ALL_RelAb$Cladocopium)] <- 0
+#ALL_RelAb$Durusdinium[is.nan(ALL_RelAb$Durusdinium)] <- 0
+#ALL_RelAb$Fugacium[is.nan(ALL_RelAb$Fugacium)] <- 0
+#ALL_RelAb$Gerakladium[is.nan(ALL_RelAb$Gerakladium)] <- 0
+
  
 ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
 ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
@@ -5802,7 +5831,7 @@ hist(Temp31_RelA$cells.larvae_log)
 Plot RA as stacked bar plots by Day and then by temp 
  
 By temps - weird boxplot chart (not used) AND BAR chart (used)
-```{r}     
+```{r}      
 library(RColorBrewer)
 display.brewer.pal(n = 9, name = 'YlOrBr')
 brewer.pal(9, 'YlOrBr')
@@ -5820,6 +5849,16 @@ ALL_RelAb_b$Day2<-as.numeric(ALL_RelAb_b$Day2)
 relabund_27<-subset(ALL_RelAb_b, Temp=="27")
 relabund_30<-subset(ALL_RelAb_b, Temp=="30")
 relabund_31<-subset(ALL_RelAb_b, Temp=="31")
+
+#all
+ALL_RelAb_mean <- ddply(ALL_RelAb_b, c("Day2","Symbiont",""), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+ALL_RelAb_27_mean #display table
  
 #27 
 ALL_RelAb_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
@@ -5966,7 +6005,7 @@ grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
 ``` 
 
 ALL relative abundance Line plots 
-```{r}     
+```{r}      
  
 #27C line plot
  ALL_STP_27_line<-ggplot(data=ALL_RelAb_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
@@ -6192,7 +6231,7 @@ grid.arrange(ALL_STP_27_line, ALL_STP_30_line, ALL_STP_31_line, nrow = 1)
 
 DELETE: Relative abundance: bubble plot
 ```{r} 
-#27C
+#27C 
 ALL_RelAb_27_mean$Day.num<-ALL_RelAb_27_mean$Day
 ALL_RelAb_27_mean$Day.num<-as.character(ALL_RelAb_27_mean$Day)
 ALL_RelAb_27_mean$Day.num<-as.numeric(ALL_RelAb_27_mean$Day.num)
@@ -6382,6 +6421,10 @@ qqPlot(residuals(CellsByNum_model))   # good
   emm<-emmeans(CellsByNum_model,  ~ numclade*Temp, adjust="Tukey")
 cld(emm)
 pairs(emm)
+
+
+
+
 
 
 
@@ -8330,7 +8373,11 @@ Counts_compare_singmult<-grid.arrange(arrangeGrob(Counts_compare_singmult, left 
 
 
 #NMDS try again
-```{r}
+```{r} 
+
+library(ggplot2)
+library(vegan)
+library(grid)
 
 #df: ALL_RelAb_a this is relA
 ALL_RelAb_a_NMDS<-ALL_RelAb_a #make copy
@@ -8350,8 +8397,8 @@ com = ALL_RelAb_a_NMDS[,5:ncol(ALL_RelAb_a_NMDS)]
 #turn abundance data frame into a matrix
 m_com = as.matrix(com)
 
-set.seed(123)
-nmds = metaMDS(m_com, distance = "bray")
+set.seed(144)
+nmds = metaMDS(m_com, distance = "bray") #stress 0.09687447 
 nmds
 plot(nmds)
 
@@ -8367,10 +8414,25 @@ head(data.scores)
 #write.csv(ALL_RelAb_a_NMDS, "ALL_RelAb_a_NMDS.csv")
 ```
 Plots
+Make vectors
 ```{r}
-Palette1<- c("blue", "orange","red")
-Palette2<- c("green", "magenta","cyan")
 
+#environmental data - reef and species arrows
+data.env <- as.data.frame(ALL_RelAb_a_NMDS[,1:2]) #Make a dataframe of all the environmental variables you want - here I used specific columns
+
+
+envfit <- envfit(nmds, data.env, perm = 999) #run an envfit on the NMDS you made above
+scores(envfit, "factors") #make sure you get scores for your enivronmental variables
+envfit.df <- scores(envfit, display = c("factors")) #I assume we are making a dataframe here
+envfit.df <- envfit.df*vegan:::ordiArrowMul(envfit.df) #Do a little arrow code from vegan
+envfit.df <- as.data.frame(envfit.df) #make sure it's a data frame
+
+
+```
+
+```{r}
+ Palette1<- c("blue", "orange","red") 
+Palette2<- c("green", "magenta","cyan")
 
 xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) + 
     geom_point(size = 2, aes( shape = Day, colour = Temp))+ 
@@ -8382,12 +8444,40 @@ xx = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
     legend.title = element_text(size = 14, colour = "black", face = "bold"), 
     panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.2),
     legend.key=element_blank()) + 
-    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
+    labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  +
+  geom_segment(data = envfit.df, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2), arrow = arrow(length = unit(0.5, "cm")),
+               colour = "grey", inherit_aes = FALSE) +
+  geom_text(data = envfit.df, aes(x = NMDS1, y = NMDS2, label = rownames(envfit.df)), size = 5) +
   scale_fill_manual(values=Palette1) +  
   scale_colour_manual(values=Palette1)+
- stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
-  #stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Day))+
+ stat_ellipse(geom = "polygon",level=.75, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.75,  aes(x=NMDS1, y=NMDS2,color=Temp))+
+  coord_fixed(ratio = .95);xx
+ 
+
+
+
+gg = ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+     geom_point(data = data.scores, aes(colour = season), size = 3, alpha = 0.5) + 
+     scale_colour_manual(values = c("orange", "steelblue"))  + 
+     geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+       data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
+     geom_point(data = en_coord_cat, aes(x = NMDS1, y = NMDS2), 
+       shape = "diamond", size = 4, alpha = 0.6, colour = "navy") +
+     geom_text(data = en_coord_cat, aes(x = NMDS1, y = NMDS2+0.04), 
+       label = row.names(en_coord_cat), colour = "navy", fontface = "bold") + 
+     geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
+       fontface = "bold", label = row.names(en_coord_cont)) + 
+     theme(axis.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+       panel.background = element_blank(), panel.border = element_rect(fill = NA, colour = "grey30"), 
+       axis.ticks = element_blank(), axis.text = element_blank(), legend.key = element_blank(), 
+       legend.title = element_text(size = 10, face = "bold", colour = "grey30"), 
+       legend.text = element_text(size = 9, colour = "grey30")) + 
+     labs(colour = "Season")
+     
+gg
+
+#stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Day))+
  # stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Day))
 
  xx 
@@ -8406,8 +8496,8 @@ xxDay = ggplot(data.scores, aes(x = NMDS1, y = NMDS2)) +
     labs(x = "NMDS1", colour = "Day", y = "NMDS2", shape = "Temp")  + 
   scale_fill_manual(values=Palette2) +  
   scale_colour_manual(values=Palette2)+
- stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Day))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2, color=Day))
+ stat_ellipse(geom = "polygon",level=.75, alpha = .2, aes(fill=Day))+
+  stat_ellipse(level=.75,  aes(x=NMDS1, y=NMDS2, color=Day));xxDay
   
 
  xxDay
@@ -8426,9 +8516,8 @@ xday3 = ggplot(data.scores_d3, aes(x = NMDS1, y = NMDS2)) +
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
 scale_fill_manual(values=Palette1) +  
-  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
-xday3
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.75, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.75,  aes(x=NMDS1, y=NMDS2,color=Temp));xday3
 
 data.scores_d7<-subset(data.scores, Day==7)
 # day 7 only
@@ -8444,8 +8533,8 @@ xday7 = ggplot(data.scores_d7, aes(x = NMDS1, y = NMDS2)) +
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
     scale_fill_manual(values=Palette1) +  
-  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.75, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.75,  aes(x=NMDS1, y=NMDS2,color=Temp))
 
 xday7
 
@@ -8465,10 +8554,8 @@ xday14 = ggplot(data.scores_d14, aes(x = NMDS1, y = NMDS2)) +
     legend.key=element_blank()) + 
     labs(x = "NMDS1", colour = "Temp", y = "NMDS2", shape = "Day")  + 
     scale_fill_manual(values=Palette1) +  
-  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.25, alpha = .2, aes(fill=Temp))+
-  stat_ellipse(level=.25,  aes(x=NMDS1, y=NMDS2,color=Temp))
-
-xday14
+  scale_colour_manual(values=Palette1)+  stat_ellipse(geom = "polygon",level=.75, alpha = .2, aes(fill=Temp))+
+  stat_ellipse(level=.75,  aes(x=NMDS1, y=NMDS2,color=Temp));xday14
 
 xday3<-xday3+ theme(legend.position = "none") #remove legend
 xday7<-xday7+ theme(legend.position = "none") #remove legend
