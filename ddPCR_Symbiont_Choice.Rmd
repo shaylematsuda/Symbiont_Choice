@@ -327,12 +327,13 @@ dData$Day<-factor(dData$Day, levels=c("3","7","14"))
 dData$Pot<-as.factor(dData$Pot)
 ```
 False Positive Rate - the false positive rate was calculated using the manufacturors guidelines to 99% confidence. 
-```{r}    
+```{r}     
 #subset only FalsePositives controls (controls included each primer set (C1, D1, F1 and G3) on aposymbiotic larvae and larvae infected with each of the other three symbiont genera (for example, C1 primers used on a D1-infected larva)).
 
 FalsePos<-subset(dData, Info=="CONTROL") # subset only false positive controls 
 #write.csv(FalsePos, "FalsePos.csv")
 FalsePos1<-FalsePos #make copy
+write.csv(FalsePos1,"falsepos.csv")
 
 #subset for each primer pair:
 FP_C1<-subset(FalsePos1, Primer=="C1") #n=61, n=56 with samples with less than <9000 dropletes rm
@@ -742,7 +743,7 @@ PolyFullscopehemo$cells.larvae_log<-(PolyFullscopehemo$cells.larvae_log*0.96) #c
 PolyFull<-rbind(PolyFullddPCR,PolyFullscopehemo) #rebind with ddPCR
 PolyFull$cells.larvae_counts_unlog<-(10^PolyFull$cells.larvae_log)-1  #converted Poly log back to Raw counts
 #PolyFull$cells.larvae_counts_round<-round(PolyFull$cells.larvae_counts)
-
+ 
 #plot(PolyFull$cells.larvae, PolyFull$cells.larvae_counts_round) #check
 
 Monoculture<-rbind(C1Full,D1Full, F1Full, G3Full)
@@ -984,7 +985,7 @@ dfs: C1Full, D1Full, F1Full, G3Full, Poly
  
 Make binomial dfs
 Organize df for Polyculture: ddPCR and hemo./scope
-```{r}        
+```{r}          
 #ALLcast_9000_cast2a includes all good ddpcrs even if not all genera amped for each larva
  
 #polyculture df: create binary df, if at least one genus had at least 1 cell, designate "1"
@@ -1052,7 +1053,7 @@ Poly_forCounts<-na.omit(Poly_forCounts)
 ```
  
 Create binomial for monocultures
-```{r}            
+```{r}              
 BinaryInfect<-Monoculture  # make new df for binary infection
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
   BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
@@ -1072,10 +1073,12 @@ BinaryInfect<-rbind(BinaryInfect, Poly_binomial) #add the Polys for JUST this as
 
 ```
 Binomial Models
-```{r}  
+```{r}   
 #Full model including all clades/temp/time:
 BinaryInfect<-na.omit(BinaryInfect) #remove nas
 BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
+
+BinaryInfect14<-BinaryInfect #to include day 14
 
   #Full model remove day 14 at 31   
 BinaryInfect$daytemp<-paste0(BinaryInfect$Day, BinaryInfect$Temp )  #create tag
@@ -1129,7 +1132,7 @@ dispersion_glmer(BinaryInfect_D3andD7_mod) # no overdispersion  1.01
 ```
 
 Subset by temp
-```{r}     
+```{r}      
 
   Binary_27<-subset(BinaryInfect, Temp=="27")
 Binary_27$Infect<-as.numeric(as.character(Binary_27$Infect)) #change back to numeric for plots
@@ -1139,7 +1142,11 @@ Binary_27$Infect<-as.numeric(as.character(Binary_27$Infect)) #change back to num
   Binary_31<-subset(BinaryInfect, Temp=="31")
 Binary_31$Infect<-as.numeric(as.character(Binary_31$Infect)) #change back to numeric for plots
 
- 
+ # subset to keep C1 and G at 31 d 14 for plot
+#df BinaryInfect14
+
+Binary_31_31CD13<-subset(BinaryInfect14, Temp=="31")
+Binary_31_31CD13$Infect<-as.numeric(as.character(Binary_31_31CD13$Infect)) #change back to numeric for plots
 ```
 
 Plots:  
@@ -1179,7 +1186,7 @@ Binary_27_mean_plot<-ggplot(data=Binary_27_mean, aes(x=Day.num, y=mean, group = 
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste(""))) + 
+  ylab(expression(paste("Percent of larvae"))) + 
  ggtitle("27C")+ 
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Binary_27_mean_plot
 ```
@@ -1224,14 +1231,14 @@ Binary_30_mean_plot<-ggplot(data=Binary_30_mean, aes(x=Day.num, y=mean, group = 
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Binary_30_mean_plot
 ```
 31C
-```{r}        
+```{r}         
 Binary_31_mean <- ddply(Binary_31, c("Symbiont","Day"), summarise, #summarize cell counts
                  N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
                  max = max(Infect, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
-
+ 
 Binary_31_mean #display table
 
 #remove F1 day 14, n=3
@@ -1267,15 +1274,61 @@ Binary_31_mean_plot<-ggplot(data=Binary_31_mean, aes(x=Day.num, y=mean, group = 
   ylab(expression(paste(""))) + 
  ggtitle("31C")+ 
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Binary_31_mean_plot
+
+
+##### do 31c with all that ampted. Binary_31_31CD13
+Binary_31_31CD13_mean <- ddply(Binary_31_31CD13, c("Symbiont","Day"), summarise, #summarize cell counts
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(Infect, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+Binary_31_31CD13_mean #display table
+
+#remove F1 day 14, n=3, do you want to make 3 the cut off
+#Binary_31_31CD13_mean<-Binary_31_31CD13_mean[!(Binary_31_31CD13_mean$N=="3"),]
+
+
+ #change Day back to Numeric from Factor, reapply the actual numeric dates
+Binary_31_31CD13_mean$Day.num<-as.numeric(Binary_31_31CD13_mean$Day)
+Binary_31_31CD13_mean$Day.num[Binary_31_31CD13_mean$Day.num == 2] =7
+Binary_31_31CD13_mean$Day.num[Binary_31_31CD13_mean$Day.num == 3] =14
+Binary_31_31CD13_mean$Day.num[Binary_31_31CD13_mean$Day.num == 1] =3
+#plot
+Binary_31_31CD13_mean_plot<-ggplot(data=Binary_31_31CD13_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Symbiont), size=4, show.legend = T)+ 
+  geom_line(aes(color=Symbiont),linetype="dotted")+
+  scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+  ylim(0,1) + #set Y limits 
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+   #scale_y_log10()+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) + 
+ ggtitle("31C")+ 
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Binary_31_31CD13_mean_plot
+
 ```
 
 SI Figure x 
-```{r} 
+```{r}  
 #log scale axis only  
 Binary_27_mean_plot<-Binary_27_mean_plot+ theme(legend.position = "none") #remove legend
 Binary_30_mean_plot<-Binary_30_mean_plot+ theme(legend.position = "none") #remove legend
-Binary_31_mean_plot<-Binary_31_mean_plot+ theme(legend.position = "none") #remove legend
-grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_mean_plot, nrow = 1)
+Binary_31_31CD13_mean_plot<-Binary_31_31CD13_mean_plot+ theme(legend.position = "none") #remove legend
+grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_31CD13_mean_plot, nrow = 1)
 ```
 
 
@@ -2067,8 +2120,8 @@ G3heatMult<-heatmap.2(G3mat_data2,
 # Monoculture and poly infection: Cell Counts Models and Plots (updated 20200822)
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 Single infections (histograms and full model) 
-```{r}              
-  
+```{r}               
+   
 #set up the Poly df for this specific model! use only poly larva with ddPCR for Poly genera/larva +hemoscope
 Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
 Poly_forCounts$Symbiont<-"Poly" #add symbiont col
@@ -2136,6 +2189,19 @@ CellCounts_no0_NOD1431C_mean <- ddply(CellCounts_no0_NOD1431C, c("Day", "Symbion
  
 CellCounts_no0_NOD1431C_mean #display
 
+
+
+# make means with D14 31C  CellCounts_no0
+CellCounts_no0_mean <- ddply(CellCounts_no0, c("Day", "Symbiont","Temp"), summarise, #summarize cell counts
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+CellCounts_no0_mean #display
+
+
 ```
 
 
@@ -2170,7 +2236,7 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
   #ylim(0,3200)+
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-       scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
+       scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2181,7 +2247,7 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ylab(expression(paste("cells/larvae"))) +
-  ggtitle("27C Cell Counts")+
+  ggtitle("27C")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_27_mean_plot
 ``` 
 30C
@@ -2214,7 +2280,7 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    # ylim(0,3200)+
-       scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
+       scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2224,8 +2290,8 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("30C Cell Counts")+
+  ylab(expression(paste(""))) +
+  ggtitle("30C")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_30_mean_plot
 ``` 
 31C
@@ -2261,7 +2327,7 @@ Poly_no0_31_mean_plot<-ggplot(data=Poly_no0_31_mean, aes(x=Day.num, y=mean, grou
   xlab("") + #Label the X Axis
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
    # ylim(0,3200)+
-    scale_y_log10(breaks = c(0,100,1000, 10000), limits=c(.1,5000))+
+    scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(.1,5000))+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -2271,18 +2337,80 @@ Poly_no0_31_mean_plot<-ggplot(data=Poly_no0_31_mean, aes(x=Day.num, y=mean, grou
         text = element_text(size=18),  # set element text
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("cells/larvae"))) +
-  ggtitle("31C Cell Counts")+
+  ylab(expression(paste(""))) +
+  ggtitle("31C")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Poly_no0_31_mean_plot
+
+
+
+#####make plot with D14 31C, CellCounts_no0_mean
+
+CellCounts_no0_mean_31<-subset(CellCounts_no0, Temp=="31")
+
+CellCounts_no0_mean_31_mean <- ddply(CellCounts_no0_mean_31, c("Day", "Symbiont"), summarise, #summarize cell counts
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE)) #calculate max, could also calculate min () if desired  
+ 
+CellCounts_no0_mean_31_mean #display table
+
+#change Day back to Numeric from Factor, reapply the actual numeric dates
+CellCounts_no0_mean_31_mean$Day.num<-as.numeric(CellCounts_no0_mean_31_mean$Day)
+CellCounts_no0_mean_31_mean$Day.num[CellCounts_no0_mean_31_mean$Day.num == 2] =7
+CellCounts_no0_mean_31_mean$Day.num[CellCounts_no0_mean_31_mean$Day.num == 3] =14
+CellCounts_no0_mean_31_mean$Day.num[CellCounts_no0_mean_31_mean$Day.num == 1] =3
+CellCounts_no0_mean_31_mean
+
+
+#plot with yaxis log10, real data (not transformed)
+CellCounts_no0_mean_31_mean_plot<-ggplot(data=CellCounts_no0_mean_31_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point(aes(color=Symbiont), size=4, show.legend = T)+  
+  geom_line(aes(color=Symbiont),linetype="dotted")+
+  scale_color_manual(values=c('#EEA236FF','#46B8DAFF','#D43F3AFF','#5CB85CFF',"black"))+
+   geom_point(shape = 1,size = 4,colour = "black")+
+  xlab("") + #Label the X Axis
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+   # ylim(0,3200)+
+    scale_y_log10(breaks = c(1,100,1000, 10000), limits=c(.1,5000))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border 
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste(""))) +
+  ggtitle("31C")+
+  theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));CellCounts_no0_mean_31_mean_plot
+
 ``` 
 
 Plot all four SINGLE INFECTION together: Figure 1 20200822
-```{r} 
+```{r}  
 #log scale axis only   
 Poly_no0_27_mean_plot<-Poly_no0_27_mean_plot+ theme(legend.position = "none") #remove legend
 Poly_no0_30_mean_plot<-Poly_no0_30_mean_plot+ theme(legend.position = "none") #remove legend
 Poly_no0_31_mean_plot<-Poly_no0_31_mean_plot+ theme(legend.position = "none") #remove legend
-grid.arrange(Poly_no0_27_mean_plot, Poly_no0_30_mean_plot, Poly_no0_31_mean_plot, nrow = 1) 
+  CellCounts_no0_mean_31_mean_plot<-CellCounts_no0_mean_31_mean_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(Poly_no0_27_mean_plot, Poly_no0_30_mean_plot, CellCounts_no0_mean_31_mean_plot, nrow = 1) 
+
+
+
+
+
+
+
+
+# print binomial and counts
+grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_31CD13_mean_plot,Poly_no0_27_mean_plot, Poly_no0_30_mean_plot, CellCounts_no0_mean_31_mean_plot, nrow = 2)
+
 ```
 
 Plots By genus for your own benefit
@@ -2514,7 +2642,7 @@ Singles_no0_ALL_mean_plot<-ggplot(data=Singles_no0_ALL_mean, aes(x=Day.num, y=me
 
 
 Plot all four counts by genus
-```{r} 
+```{r}  
 #log scale axis only   
 Singles_no0_C1_mean_plot<-Singles_no0_C1_mean_plot+ theme(legend.position = "none") #remove legend
 Singles_no0_D1_mean_plot<-Singles_no0_D1_mean_plot+ theme(legend.position = "none") #remove legend
@@ -2523,6 +2651,10 @@ Singles_no0_G3_mean_plot<-Singles_no0_G3_mean_plot+ theme(legend.position = "non
 Singles_no0_ALL_mean_plot<-Singles_no0_ALL_mean_plot+ theme(legend.position = "none") #remove legend
 
 grid.arrange(Singles_no0_C1_mean_plot, Singles_no0_D1_mean_plot, Singles_no0_F1_mean_plot, Singles_no0_G3_mean_plot,Singles_no0_ALL_mean_plot,nrow = 2) 
+
+
+
+
 ```
 
 
@@ -2633,7 +2765,7 @@ CountsCompare2_C1_plot27<-ggplot(data=CountsCompare2_C1_27, aes(x=Day, y=mean, g
 ```
 C1: 30C
 
-```{r}  
+```{r}   
 #Subset 30 
 CountsCompare2_C1_30<-subset(CountsCompare2_mean_30, Symbiont=="C1")
 
@@ -2663,7 +2795,7 @@ CountsCompare2_C1_plot30<-ggplot(data=CountsCompare2_C1_30, aes(x=Day, y=mean, g
 ```
 
 C1: 31C
-```{r} 
+```{r}  
 #Subset 31 - day 7 multi is only 2. see below for just day 3 comparison
 CountsCompare2_C1_31<-subset(CountsCompare2_mean_31, Symbiont=="C1" & Day=="3")
 
@@ -3389,8 +3521,8 @@ pairs(emm)
 ```
 
 
-# B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..  
-```{r}              
+# B PLOT Polyculture infection, % larvae infected with 0,1, 2, 3, or 4 clades (not by clade, by number of clades). "rel1"= 1 clade,..   
+```{r}               
  
 ##########@AH: Is this the best way to set up the mean table. I turn it into relative abundance, and then for each jar, I get the means per infection group (0,1,2,3,4). But for some reason, I'm just not sure this is right for the Mean and s.e. 
 
@@ -3443,7 +3575,7 @@ NumCladesB_numbonly_mean #display table
 
 Stats for Numclades~temp*time (polyculture only)
 I think Krustal is the way to go?
-```{r}   
+```{r}     
 ALL_RelAvar<-c("Day", "Temp", "ALL.number","C1","D1","F1" ,"G3","Pot","numclade")
 ALL_RelA_Infect<-RelA_CladeComp[ALL_RelAvar]
 
