@@ -1,7 +1,7 @@
 ---
 title: "Symb_Choice_ddPCR"
 author: "Shayle Matsuda"
-date: "12/7/2019"
+date: "04/11/21"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,17 +9,16 @@ editor_options:
 
 Data analysis of the Symbiont Choice 2018 experiment conducted at AIMS in 2018 and 2019. 
 
-Authors: Matsuda, SB, Chakravarti, LC, Cunning, JR, Huffmyer, AS, Gates, RD, van Oppen, MJH
+Authors: Matsuda, SB, Chakravarti, LC, Cunning, JR, Huffmyer, AS, Nelson, CE, Gates, RD, van Oppen, MJH
 Symbiont choice experiment tests the uptake of cultured Symbiodiniaceae alone and as a mixture in A. tenuis larvae at ambient (27C) and two elevated (30C and 31C) temperatures over the course of 2 weeks. Sampling was on days 3, 7 and 14. Digital droplet PCR was used to analyze data. 
 
 Single infection: Individual infection of single clades: C1, D1, F1, and G3
 Multi-infection: Mix of all four clades 
 Pot: the containers larvae kept in (3 reps/clade/temp)
+4-way (coded as poly in some instances)
 
 ```{r setup chunk, setup, warning=FALSE, message=FALSE, fig.align='center'}
 require("knitr")
-
-#knitr::opts_knit$set(root.dir = normalizePath("~/Desktop/Symb_choice/Symbiont Choice 2018"))
 ```
 
 
@@ -62,7 +61,7 @@ library(vegan)
 
 
 #load in df
-load("SC18data.RData")
+load("Symbiont_choice_df.RData")
 
 
 ```
@@ -99,9 +98,8 @@ anova(CountsMOD4)
 ```
 
 Plot: logged10 SI Fig 1   
-```{r}  
+```{r}   
 # plotting the model2
-
 #map 50% conf interval
 ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
    geom_point(aes(colour=factor(count.type.x), size=4)) +
@@ -115,7 +113,7 @@ Monocultures and the polyculture
 Apply hemo.scope conversion and remake df with raw counts
 ```{r}   
 #Convert Scope/hemo data, remake df with ddPCR data. Make new col with "raw" counts post conversion of logs
-#C1
+#C1 
 C1FullddPCR<-subset(C1Full, count.type=="ddPCR")
 C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
 #C1Fullscopehemo$cells.larvae_log_Pre<-C1Fullscopehemo$cells.larvae_log #save old to check then comment out
@@ -174,8 +172,8 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull)
 ```
 
 
-# Larval Survivorship: Table S12, S13, Figure 6 DONE
-```{r}             
+# Larval Survivorship: Table S12, S13, Figure 6 
+```{r}              
 # No-choice and 4-way choice (remove control)
 # binomial mixed effects model
 Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
@@ -337,8 +335,8 @@ Make binomial dfs
 Organize df for Polyculture: ddPCR and hemo./scope WORKS
 ```{r}           
 #ALLcast_9000_cast2a for 4-way choice
-#4-way df: create binary df, if at least one genus had at least 1 cell, designate "1"
-#organize the ddPCR data 
+#4-way df: create binary df, if at least one genus had >=1 cell, designate "1"
+#organize the ddPCR data  
 ALL_RelAb<-ALLcast_9000_cast2a #copy ddPCR df
 drops <- c("C1","D1","F1","G3") #get rid of cell.larvae col
 ALL_RelAb<-ALL_RelAb[ , !(names(ALL_RelAb) %in% drops)]
@@ -420,7 +418,7 @@ BinaryInfect<-rbind(BinaryInfect, Poly_binomial) #add the Polys for JUST this as
 ```
 Binomial Models
 ```{r}   
-#Full model including all clades/temp/time:
+#Full model including all clades/temp/time: 
 BinaryInfect<-na.omit(BinaryInfect) #remove nas
 BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
 
@@ -1230,7 +1228,7 @@ grid.arrange(C1_binaryb_SinMul_plot_27, C1_binaryb_SinMul_plot_30, C1_binaryb_Si
 # No-choice and 4-way choice infection: Cell Counts Models and Plots, Table 1
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 No-choice infections (histograms and full model) 
-```{r}   
+```{r}    
 # poly=4-way
 #set up the 4-way df for this specific model! use only 4-way larva with ddPCR for 4-way genera/larva + hemoscope
 Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
@@ -1756,7 +1754,6 @@ C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = 4-way that infected  
 ```{r}        
 MultiCounts<-ALLcast_9000_cast2a
-#MultiCounts$cells.larvae<-MultiCounts$C1+MultiCounts$D1+MultiCounts$F1+MultiCounts$G3
 MultiCounts2<-MultiCounts[-c(5:8)] #remove metadata
 MultiCounts2$single.multi<-"multi"
 MultiCounts2$ALL.number<-as.factor(MultiCounts2$ALL.number)
@@ -2392,50 +2389,36 @@ pairs(emm)
 # 4-way infection, % larvae infected with 0,1, 2, 3, or 4 species   
 ```{r}        
 #figure out number of species per larva
-aDataTEST<-ALLcast_9000_cast2a
-aDataTEST<-na.omit(aDataTEST) #remove larae with values not present for all 4 genera
+aDatat<-ALLcast_9000_cast2a
+aDatat<-na.omit(aDatat) #remove larae with values not present for all 4 genera
 
- aDataTEST$C1[aDataTEST$C1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
-aDataTEST$C1[aDataTEST$C1_round==0]<-0
- aDataTEST$D1[aDataTEST$D1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
-aDataTEST$D1[aDataTEST$D1_round==0]<-0
-aDataTEST$F1[aDataTEST$F1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
-aDataTEST$F1[aDataTEST$F1_round==0]<-0
- aDataTEST$G3[aDataTEST$G3_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
-aDataTEST$G3[aDataTEST$G3_round==0]<-0
+ aDatat$C1[aDatat$C1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
+aDatat$C1[aDatat$C1_round==0]<-0
+ aDatat$D1[aDatat$D1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
+aDatat$D1[aDatat$D1_round==0]<-0
+aDatat$F1[aDatat$F1_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
+aDatat$F1[aDatat$F1_round==0]<-0
+ aDatat$G3[aDatat$G3_round>0]<-1  #make new cols for infect or not 1 for infect, 0 not.
+aDatat$G3[aDatat$G3_round==0]<-0
   
   
   colnms=c("C1", "D1", "F1", "G3") # name cols to sum
-aDataTEST$numbClades<-rowSums(aDataTEST[,colnms]) #new row with the sum of num of genera infected 
-write.csv(aDataTEST,"aDataTEST.csv")
+aDatat$numbClades<-rowSums(aDatat[,colnms]) #new row with the sum of num of genera infected 
+#write.csv(aDatat,"aDatat.csv")
 
 #Do you need below? 
-aDataTEST2<-aDataTEST[c("ALL.number","numclade")] #new row with the sum of num of genera infected 
+aDatat2<-aDatat[c("ALL.number","numbClades")] #new row with the sum of num of genera infected 
 #combine this with the Rel Abund dataframe (ALL_RelA_b)
 
-#pasted from below (l 57XX) to make the next df
-ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+#pasted from belowto make the next df 
+ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","C1_round","D1_round","F1_round" ,"G3_round")
 ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
-ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("C1_round","D1_round","F1_round" ,"G3_round"))
 colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
 colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
 ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (keep only larva that infected)
 
-aData3Test<-merge(aDataTEST2,ALL_RelAb_b, by="ALL.number")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+aData3t<-merge(aDatat2,ALL_RelAb_b, by="ALL.number")
 
 
 NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
@@ -2603,13 +2586,423 @@ grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
  
 ```
 
+#Fig  Competative-infection: Polycluture only, relative abundance of each clade  
+What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
+setup df     
+```{r}             
+#calc relative abundance for each   (any non infected larvae will NA out here)
+ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Durusdinium<-ALL_RelAb$D1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Fugacium<-ALL_RelAb$F1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+ALL_RelAb$Gerakladium<-ALL_RelAb$G3/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
+
+ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
+ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
+ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
+#write.csv(ALL_RelAb,"ALL_RelAb2021.csv")
+``` 
+  
+Stats: Relative abundance, df = ALL_RelAb_b 
+```{r}      
+# arcsinsqrt has less heteroscedasticity
+
+#Full model  
+hist(ALL_RelAb_b$cells.larvae)
+ALL_RelAb_b$cells.larvae_log<-log10(ALL_RelAb_b$cells.larvae+1)
+hist(ALL_RelAb_b$cells.larvae_log)
+qqnorm(ALL_RelAb_b$cells.larvae_log) #
+
+ALL_RelAb_b$cells.larvae_arc<-asin(sqrt(ALL_RelAb_b$cells.larvae))
+hist(ALL_RelAb_b$cells.larvae_arc)
+qqnorm(ALL_RelAb_b$cells.larvae_arc) #
+  ALL_RelAb_b$PotCode<-paste0(ALL_RelAb_b$Temp, ALL_RelAb_b$Pot,ALL_RelAb_b$clade )
+ ALL_RelAb_b$PotCode<-as.factor(ALL_RelAb_b$PotCode) #make factor
+
+ 
+# FULL MODEL lmer  symbionts*days*temp
+ALL_RelAb_b_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b)
+anova(ALL_RelAb_b_mod)
+qqPlot(residuals(ALL_RelAb_b_mod))
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
+    cld(emm)
+    pairs(emm)
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Day *Temp|Symbiont, adjust="Tukey")
+    cld(emm)
+    pairs(emm)
+  emm<-emmeans(ALL_RelAb_b_mod,  ~ Day |Temp*Symbiont, adjust="Tukey")
+    cld(emm)
+    pairs(emm)
+
+##Subset 27 and 30C
+ALL_RelAb_b_27C30C<-subset(ALL_RelAb_b, Temp=="27"|Temp=="30")
+
+ALL_RelAb_b_27C30C_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_27C30C)
+anova(ALL_RelAb_b_27C30C_mod)
+qqPlot(residuals(ALL_RelAb_b_27C30C_mod))   # meh
+   emm<-emmeans(ALL_RelAb_b_27C30C_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
+    cld(emm)
+    pairs(emm)
+
+##Subset Day 3 and D7
+ALL_RelAb_b_D3D7<-subset(ALL_RelAb_b, Day=="3"|Day=="7")
+
+ALL_RelAb_b_D3D7_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_D3D7)
+anova(ALL_RelAb_b_D3D7_mod)
+qqPlot(residuals(ALL_RelAb_b_D3D7_mod))   # meh
+  emm<-emmeans(ALL_RelAb_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
+    cld(emm)
+    pairs(emm)
+```
+Plot RA as stacked bar plots by Day and then by temp 
+ 
+Figure 2B: By temps - weird boxplot chart (not used) AND BAR chart (used)
+```{r}       
+library(RColorBrewer)
+
+ALL_RelAb_b$Day2<-ALL_RelAb_b$Day #change Day to numeric for plots
+ALL_RelAb_b$Day2<-as.character(ALL_RelAb_b$Day2)
+ALL_RelAb_b$Day2<-as.numeric(ALL_RelAb_b$Day2)
+
+relabund_27<-subset(ALL_RelAb_b, Temp=="27")
+relabund_30<-subset(ALL_RelAb_b, Temp=="30")
+relabund_31<-subset(ALL_RelAb_b, Temp=="31")
+
+#all
+ALL_RelAb_mean <- ddply(ALL_RelAb_b, c("Day2","Symbiont",""), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+ALL_RelAb_27_mean #display table
+ 
+#27 
+ALL_RelAb_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+ALL_RelAb_27_mean #display table
+
+#round to nearest integer
+ALL_RelAb_27_mean$mean100<-ALL_RelAb_27_mean$mean*100
+ALL_RelAb_27_mean$mean100r<-round(ALL_RelAb_27_mean$mean100, digits = 0)
+ 
+ #30C means  
+ALL_RelAb_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ALL_RelAb_30_mean #display table
+
+#round to nearest integer
+ALL_RelAb_30_mean$mean100<-ALL_RelAb_30_mean$mean*100
+ALL_RelAb_30_mean$mean100r<-round(ALL_RelAb_30_mean$mean100, digits = 1)
+
+
+#31C
+ALL_RelAb_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ALL_RelAb_31_mean #display table
+
+#round to nearest integer
+ALL_RelAb_31_mean$mean100<-ALL_RelAb_31_mean$mean*100
+ALL_RelAb_31_mean$mean100r<-round(ALL_RelAb_31_mean$mean100, digits = 0)  
+ 
+
+# barplot 
+RelAbund27_plot<-ggplot(ALL_RelAb_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund27_plot   
+
+RelAbund30_plot<-ggplot(ALL_RelAb_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund30_plot
+
+RelAbund31_plot<-ggplot(ALL_RelAb_31_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
+           geom_bar(stat="identity")+
+  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
+            #scale_fill_locuszoom()+
+   xlab("Day")+
+ theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("RelAbund"))) +
+  ggtitle("27C");RelAbund31_plot
+
+ #plot all together
+RelAbund27_plot<-RelAbund27_plot+ theme(legend.position = "none") #remove legend
+RelAbund30_plot<-RelAbund30_plot+ theme(legend.position = "none") #remove legend
+RelAbund31_plot<-RelAbund31_plot+ theme(legend.position = "none") #remove legend
+
+grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
+
+
+``` 
+
+ALL relative abundance Line plots (same as above but line with se)
+```{r}      
+ 
+#27C line plot
+ ALL_STP_27_line<-ggplot(data=ALL_RelAb_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("27C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_27_line
+
+
+#30C line plot
+ ALL_STP_30_line<-ggplot(data=ALL_RelAb_30_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+          scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("30C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_30_line
+ 
+ #31C line plot
+ ALL_STP_31_line<-ggplot(data=ALL_RelAb_31_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("31C_RelAbund")+
+  theme(plot.title = element_text(size=20));ALL_STP_31_line
+     
+#plot all together
+ALL_STP_27_line<-ALL_STP_27_line+ theme(legend.position = "none") #remove legend
+ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
+ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
+
+grid.arrange(ALL_STP_27_line, ALL_STP_30_line,ALL_STP_31_line, nrow = 1)
+       
+
+#Rel abund by Genus
+ALL_RelAb_genus<-ALL_RelAb_b #make copy
+ 
+#mean
+ALL_RelAb_genus_mean <- ddply(ALL_RelAb_genus, c("Day2","Symbiont","Temp"), summarise, #summarize cell counts
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
+                 se   = sd / sqrt(N), #calculate standard error
+                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
+) 
+ALL_RelAb_genus_mean #display table
+
+#separate by genus
+ALL_RelAb_C1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Cladocopium")
+ALL_RelAb_D1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Durusdinium")
+ALL_RelAb_F1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Fugacium")
+ALL_RelAb_G3_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Gerakladium")
+
+#C1 plot
+ ALL_RelAb_C1_mean_line<-ggplot(data=ALL_RelAb_C1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('blue','orange','red'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("C1 poly")+
+  theme(plot.title = element_text(size=20));ALL_RelAb_C1_mean_line
+ 
+ #D1 plot
+ ALL_RelAb_D1_mean_line<-ggplot(data=ALL_RelAb_D1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('blue','orange','red'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("D1 poly")+
+  theme(plot.title = element_text(size=20));ALL_RelAb_D1_mean_line
+ 
+ #F1 plot
+ ALL_RelAb_F1_mean_line<-ggplot(data=ALL_RelAb_F1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('blue','orange','red'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("F1 poly")+
+  theme(plot.title = element_text(size=20));ALL_RelAb_F1_mean_line
+ 
+ #G3 plot
+ ALL_RelAb_G3_mean_line<-ggplot(data=ALL_RelAb_G3_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1, show.legend = T)+
+  geom_point( size=4, show.legend = T)+ 
+      scale_color_manual(values=c('blue','orange','red'))+
+       geom_point(shape = 1,size = 4,colour = "black")+
+  geom_line(linetype="dotted")+
+  xlab("Days") + #Label the X Axis 
+  ylim(0, 1) + #set Y limits 
+  theme_bw() + #Set the background color
+       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        text = element_text(size=18),  # set element text
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ylab(expression(paste("Relative Abundance"))) +
+  ggtitle("G3 poly")+
+  theme(plot.title = element_text(size=20));ALL_RelAb_G3_mean_line
+ 
+ 
+ #plot all together
+ALL_RelAb_C1_mean_line<-ALL_RelAb_C1_mean_line+ theme(legend.position = "none") #remove legend
+ALL_RelAb_D1_mean_line<-ALL_RelAb_D1_mean_line+ theme(legend.position = "none") #remove legend
+ALL_RelAb_F1_mean_line<-ALL_RelAb_F1_mean_line+ theme(legend.position = "none") #remove legend
+ALL_RelAb_G3_mean_line<-ALL_RelAb_G3_mean_line+ theme(legend.position = "none") #remove legend
+
+grid.arrange(ALL_RelAb_C1_mean_line, ALL_RelAb_D1_mean_line,ALL_RelAb_F1_mean_line, ALL_RelAb_G3_mean_line,nrow = 1)
+ 
+```
+ 
 
 
 
-#Bar plots of relative abundance by individual larva
+#Bar plots of relative abundance by individual larva Fig 4
 ```{r}     
 aData<-RelA_binaryb
-aData<-na.omit(aData) #remove larae with values not present for all 4 genera
+aData<-na.omit(aData) #remove larvae with values not present for all 4 genera
  # colnms=c("C1", "D1", "F1", "G3") # name cols to sum
 #aData$numbClades<-rowSums(aData[,colnms]) #new row with the sum of num of genera infected 
 
@@ -2617,15 +3010,18 @@ aData2<-aData[c("ALL.number","numclade")] #new row with the sum of num of genera
 #combine this with the Rel Abund dataframe (ALL_RelA_b)
 
 
-#pasted from below (l 57XX) to make the next df
-ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
-ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
-ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
-colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
-ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (keep only larva that infected)
+#pasted from below (l 57XX) to make the next df ALL_RelAb
 
-aData3<-merge(aData2,ALL_RelAb_b, by="ALL.number") #merge number of species infected 
+
+ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
+ALL_RelAb_a2<-ALL_RelAb_a[ALL_RelAbvar]
+ALL_RelAb_a2<-na.omit(ALL_RelAb_a2)
+
+ALL_RelAb_b2<-melt(ALL_RelAb_a2, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
+colnames(ALL_RelAb_b2)[colnames(ALL_RelAb_b2)=="value"]<-"cells.larvae" #rename value col
+colnames(ALL_RelAb_b2)[colnames(ALL_RelAb_b2)=="variable"]<-"Symbiont" #rename value col
+
+aData3<-merge(aData2,ALL_RelAb_b2, by="ALL.number") #merge number of species infected 
    
 aData4<-aData3  #make copy
 
@@ -2639,9 +3035,8 @@ aData4_30<-subset(aData4, Temp==30)
 aData4_31<-subset(aData4, Temp==31)
 
 ```
-
-#stacked bar - INDIVIDUAL LARVAE Figure 4
-```{r}    
+stacked bar - INDIVIDUAL LARVAE by time
+```{r}     
 #27C 
   aData4_27$NumGen_ID<-paste(aData4_27$numclade,aData4_27$ALL.number)#new col combing num clade and ID
   
@@ -2724,9 +3119,7 @@ scales = "free_x", # Let the x axis vary across facets.
 space = "free_x"# Let the width of facets vary and force all bars to have the same width.
 );aData4_31_plot
 ```
-
-BY TEMP AND DAY (delete if you decide)   
-    
+BY TEMP AND DAY 
 ```{r} 
 #27C 
 #Day3 3gen
@@ -3477,416 +3870,6 @@ grid.arrange(aData4_1or2_31_D3_g2_plot, aData4_1or2_31_D7_g2_plot,aData4_1or2_31
 ```
 
 
-#Fig  Competative-infection: Polycluture only, relative abundance of each clade  
-What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
-setup df     
-```{r}             
-#calc relative abundance for each   (any non infected larvae will NA out here)
-ALL_RelAb$Cladocopium<-ALL_RelAb$C1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
-ALL_RelAb$Durusdinium<-ALL_RelAb$D1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
-ALL_RelAb$Fugacium<-ALL_RelAb$F1/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
-ALL_RelAb$Gerakladium<-ALL_RelAb$G3/(ALL_RelAb$C1+ALL_RelAb$D1+ALL_RelAb$F1+ALL_RelAb$G3)
-
-ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
-ALL_RelAb_a<-ALL_RelAb[ALL_RelAbvar]
-ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.vars = c("Cladocopium","Durusdinium","Fugacium" ,"Gerakladium"))
-colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
-colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
-ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
-#write.csv(ALL_RelAb,"ALL_RelAb2021.csv")
-``` 
-  
-Stats: Relative abundance, df = ALL_RelAb_b 
-```{r}      
-# arcsinsqrt has less heteroscedasticity
-
-#Full model  
-hist(ALL_RelAb_b$cells.larvae)
-ALL_RelAb_b$cells.larvae_log<-log10(ALL_RelAb_b$cells.larvae+1)
-hist(ALL_RelAb_b$cells.larvae_log)
-qqnorm(ALL_RelAb_b$cells.larvae_log) #
-
-ALL_RelAb_b$cells.larvae_arc<-asin(sqrt(ALL_RelAb_b$cells.larvae))
-hist(ALL_RelAb_b$cells.larvae_arc)
-qqnorm(ALL_RelAb_b$cells.larvae_arc) #
-  ALL_RelAb_b$PotCode<-paste0(ALL_RelAb_b$Temp, ALL_RelAb_b$Pot,ALL_RelAb_b$clade )
- ALL_RelAb_b$PotCode<-as.factor(ALL_RelAb_b$PotCode) #make factor
-
- 
-# FULL MODEL lmer  symbionts*days*temp
-ALL_RelAb_b_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b)
-anova(ALL_RelAb_b_mod)
-qqPlot(residuals(ALL_RelAb_b_mod))
-  emm<-emmeans(ALL_RelAb_b_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
-    cld(emm)
-    pairs(emm)
-  emm<-emmeans(ALL_RelAb_b_mod,  ~ Day *Temp|Symbiont, adjust="Tukey")
-    cld(emm)
-    pairs(emm)
-  emm<-emmeans(ALL_RelAb_b_mod,  ~ Day |Temp*Symbiont, adjust="Tukey")
-    cld(emm)
-    pairs(emm)
-
-##Subset 27 and 30C
-ALL_RelAb_b_27C30C<-subset(ALL_RelAb_b, Temp=="27"|Temp=="30")
-
-ALL_RelAb_b_27C30C_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_27C30C)
-anova(ALL_RelAb_b_27C30C_mod)
-qqPlot(residuals(ALL_RelAb_b_27C30C_mod))   # meh
-   emm<-emmeans(ALL_RelAb_b_27C30C_mod,  ~ Symbiont *Day*Temp, adjust="Tukey")
-    cld(emm)
-    pairs(emm)
-
-##Subset Day 3 and D7
-ALL_RelAb_b_D3D7<-subset(ALL_RelAb_b, Day=="3"|Day=="7")
-
-ALL_RelAb_b_D3D7_mod<-lmer(cells.larvae_arc~Symbiont*Day*Temp+(1|ALL.number)+(1|Pot), ALL_RelAb_b_D3D7)
-anova(ALL_RelAb_b_D3D7_mod)
-qqPlot(residuals(ALL_RelAb_b_D3D7_mod))   # meh
-  emm<-emmeans(ALL_RelAb_b_D3_mod,  ~ Symbiont |Temp, adjust="Tukey")
-    cld(emm)
-    pairs(emm)
-```
-Plot RA as stacked bar plots by Day and then by temp 
- 
-Figure 2B: By temps - weird boxplot chart (not used) AND BAR chart (used)
-```{r}       
-library(RColorBrewer)
-
-ALL_RelAb_b$Day2<-ALL_RelAb_b$Day #change Day to numeric for plots
-ALL_RelAb_b$Day2<-as.character(ALL_RelAb_b$Day2)
-ALL_RelAb_b$Day2<-as.numeric(ALL_RelAb_b$Day2)
-
-relabund_27<-subset(ALL_RelAb_b, Temp=="27")
-relabund_30<-subset(ALL_RelAb_b, Temp=="30")
-relabund_31<-subset(ALL_RelAb_b, Temp=="31")
-
-#all
-ALL_RelAb_mean <- ddply(ALL_RelAb_b, c("Day2","Symbiont",""), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-ALL_RelAb_27_mean #display table
- 
-#27 
-ALL_RelAb_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-ALL_RelAb_27_mean #display table
-
-#round to nearest integer
-ALL_RelAb_27_mean$mean100<-ALL_RelAb_27_mean$mean*100
-ALL_RelAb_27_mean$mean100r<-round(ALL_RelAb_27_mean$mean100, digits = 0)
- 
- #30C means  
-ALL_RelAb_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-ALL_RelAb_30_mean #display table
-
-#round to nearest integer
-ALL_RelAb_30_mean$mean100<-ALL_RelAb_30_mean$mean*100
-ALL_RelAb_30_mean$mean100r<-round(ALL_RelAb_30_mean$mean100, digits = 1)
-
-
-#31C
-ALL_RelAb_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-ALL_RelAb_31_mean #display table
-
-#round to nearest integer
-ALL_RelAb_31_mean$mean100<-ALL_RelAb_31_mean$mean*100
-ALL_RelAb_31_mean$mean100r<-round(ALL_RelAb_31_mean$mean100, digits = 0)  
- 
-
-# barplot 
-RelAbund27_plot<-ggplot(ALL_RelAb_27_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
-           geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-            #scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("RelAbund"))) +
-  ggtitle("27C");RelAbund27_plot   
-
-RelAbund30_plot<-ggplot(ALL_RelAb_30_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
-           geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-            #scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("RelAbund"))) +
-  ggtitle("27C");RelAbund30_plot
-
-RelAbund31_plot<-ggplot(ALL_RelAb_31_mean, aes(y=mean, x=Day2, fill=Symbiont)) + 
-           geom_bar(stat="identity")+
-  scale_fill_manual(values=c("#D43F3AFF","#EEA236FF","#5CB85CFF","#46B8DAFF"))+
-            #scale_fill_locuszoom()+
-   xlab("Day")+
- theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("RelAbund"))) +
-  ggtitle("27C");RelAbund31_plot
-
- #plot all together
-RelAbund27_plot<-RelAbund27_plot+ theme(legend.position = "none") #remove legend
-RelAbund30_plot<-RelAbund30_plot+ theme(legend.position = "none") #remove legend
-RelAbund31_plot<-RelAbund31_plot+ theme(legend.position = "none") #remove legend
-
-grid.arrange(RelAbund27_plot, RelAbund30_plot,RelAbund31_plot, nrow = 1)
-
-
-``` 
-
-ALL relative abundance Line plots (same as above but line with se)
-```{r}      
- 
-#27C line plot
- ALL_STP_27_line<-ggplot(data=ALL_RelAb_27_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-         scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("27C_RelAbund")+
-  theme(plot.title = element_text(size=20));ALL_STP_27_line
-
-
-#30C line plot
- ALL_STP_30_line<-ggplot(data=ALL_RelAb_30_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-          scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("30C_RelAbund")+
-  theme(plot.title = element_text(size=20));ALL_STP_30_line
- 
- #31C line plot
- ALL_STP_31_line<-ggplot(data=ALL_RelAb_31_mean, aes(x=Day2, y=mean, group = Symbiont, color=Symbiont)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('#D43F3AFF','#EEA236FF','#5CB85CFF','#46B8DAFF'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("31C_RelAbund")+
-  theme(plot.title = element_text(size=20));ALL_STP_31_line
-     
-#plot all together
-ALL_STP_27_line<-ALL_STP_27_line+ theme(legend.position = "none") #remove legend
-ALL_STP_30_line<-ALL_STP_30_line+ theme(legend.position = "none") #remove legend
-ALL_STP_31_line<-ALL_STP_31_line+ theme(legend.position = "none") #remove legend
-
-grid.arrange(ALL_STP_27_line, ALL_STP_30_line,ALL_STP_31_line, nrow = 1)
-       
-
-#Rel abund by Genus
-ALL_RelAb_genus<-ALL_RelAb_b #make copy
- 
-#mean
-ALL_RelAb_genus_mean <- ddply(ALL_RelAb_genus, c("Day2","Symbiont","Temp"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                 mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                 sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
-                 se   = sd / sqrt(N), #calculate standard error
-                 max = max(cells.larvae, na.rm=TRUE) #calculate max, could also calculate min () if desired
-) 
-ALL_RelAb_genus_mean #display table
-
-#separate by genus
-ALL_RelAb_C1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Cladocopium")
-ALL_RelAb_D1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Durusdinium")
-ALL_RelAb_F1_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Fugacium")
-ALL_RelAb_G3_mean<-subset(ALL_RelAb_genus_mean, Symbiont=="Gerakladium")
-
-#C1 plot
- ALL_RelAb_C1_mean_line<-ggplot(data=ALL_RelAb_C1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('blue','orange','red'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("C1 poly")+
-  theme(plot.title = element_text(size=20));ALL_RelAb_C1_mean_line
- 
- #D1 plot
- ALL_RelAb_D1_mean_line<-ggplot(data=ALL_RelAb_D1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('blue','orange','red'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("D1 poly")+
-  theme(plot.title = element_text(size=20));ALL_RelAb_D1_mean_line
- 
- #F1 plot
- ALL_RelAb_F1_mean_line<-ggplot(data=ALL_RelAb_F1_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('blue','orange','red'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("F1 poly")+
-  theme(plot.title = element_text(size=20));ALL_RelAb_F1_mean_line
- 
- #G3 plot
- ALL_RelAb_G3_mean_line<-ggplot(data=ALL_RelAb_G3_mean, aes(x=Day2, y=mean, group = Temp, color=Temp)) +
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1, show.legend = T)+
-  geom_point( size=4, show.legend = T)+ 
-      scale_color_manual(values=c('blue','orange','red'))+
-       geom_point(shape = 1,size = 4,colour = "black")+
-  geom_line(linetype="dotted")+
-  xlab("Days") + #Label the X Axis 
-  ylim(0, 1) + #set Y limits 
-  theme_bw() + #Set the background color
-       scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        text = element_text(size=18),  # set element text
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ylab(expression(paste("Relative Abundance"))) +
-  ggtitle("G3 poly")+
-  theme(plot.title = element_text(size=20));ALL_RelAb_G3_mean_line
- 
- 
- #plot all together
-ALL_RelAb_C1_mean_line<-ALL_RelAb_C1_mean_line+ theme(legend.position = "none") #remove legend
-ALL_RelAb_D1_mean_line<-ALL_RelAb_D1_mean_line+ theme(legend.position = "none") #remove legend
-ALL_RelAb_F1_mean_line<-ALL_RelAb_F1_mean_line+ theme(legend.position = "none") #remove legend
-ALL_RelAb_G3_mean_line<-ALL_RelAb_G3_mean_line+ theme(legend.position = "none") #remove legend
-
-grid.arrange(ALL_RelAb_C1_mean_line, ALL_RelAb_D1_mean_line,ALL_RelAb_F1_mean_line, ALL_RelAb_G3_mean_line,nrow = 1)
- 
-```
- 
 # SI Fig S5  Plot: cells/larvae vs number of species infected per larva - shows that as more cells infected more clades infected
 ```{r}     
 #ALL_RelA_Infect2  ALLnumb and number of clades df
