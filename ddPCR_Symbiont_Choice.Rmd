@@ -2222,7 +2222,7 @@ InfectRaw_Fig1<-plot_grid(CountsCompare2_C1_plot27, CountsCompare2_C1_plot30, Co
 
 ```
   
-# No-choice vs 40way: (Pink and Blue Models by symbiont), infected only, SI Tab S8
+# No-choice vs 4-way: (Pink and Blue Models by symbiont), infected only, SI Tab S8
 ```{r}            
 #stats, log10:  
 hist(CountsCompare2$cells.larvae_round)
@@ -2483,7 +2483,7 @@ hist(NumClades_stats$numclade)  #is this actually better?
 skewness(NumClades_stats$numclade, na.rm = TRUE) #-1.11889 neg skew
   NumClades_stats$numclade_log2<-log10(NumClades_stats$numclade+1) #this doesn't help
   hist(NumClades_stats$numclade_log2)
-
+write.csv(NumClades_stats,"numstats.csv")
 
 #Kruskal test
 #by  temp and day 
