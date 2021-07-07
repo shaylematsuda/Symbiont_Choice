@@ -227,6 +227,46 @@ Anova(Mort.df_NEW_mod)
   pairs(emm)
 
 detach(Mort.df_NEW)
+
+#by date: Day 7 
+  Mort.df_NEW_D7<-subset(Mort.df_NEW, Day=="7")
+##create binomial vector
+attach(Mort.df_NEW_D7)
+x<-cbind(Alive, Failures)
+
+#Analyze survivorship at the end of the thermal stress using a binomial mixed effects model.  
+#Main effects: temperature, Symbiont treatment, time
+#Run model and display summary as well as anova table for use of p-values.   
+
+#Full model
+Mort.df_NEW_mod_D7<-glmer(x~Temp*Symbiont + (1|Pot), family=binomial)
+summary(Mort.df_NEW_mod_D7)
+Anova(Mort.df_NEW_mod_D7)
+ emm<-emmeans(Mort.df_NEW_mod_D7,  ~Symbiont|Temp, adjust="Tukey")
+  cld(emm)
+  pairs(emm)
+
+detach(Mort.df_NEW_mod_D7)
+  
+  #by date: Day 14 
+  Mort.df_NEW_D14<-subset(Mort.df_NEW, Day=="14")
+##create binomial vector
+attach(Mort.df_NEW_D14)
+x<-cbind(Alive, Failures)
+
+#Analyze survivorship at the end of the thermal stress using a binomial mixed effects model.  
+#Main effects: temperature, Symbiont treatment, time
+#Run model and display summary as well as anova table for use of p-values.   
+
+#Full model
+Mort.df_NEW_mod_D14<-glmer(x~Temp*Symbiont + (1|Pot), family=binomial)
+summary(Mort.df_NEW_mod_D14)
+Anova(Mort.df_NEW_mod_D14)
+ emm<-emmeans(Mort.df_NEW_mod_D14,  ~Symbiont|Temp, adjust="Tukey")
+  cld(emm)
+  pairs(emm)
+
+detach(Mort.df_NEW_mod_D14)
 ``` 
  
 Plots of Mortality by TEMP
