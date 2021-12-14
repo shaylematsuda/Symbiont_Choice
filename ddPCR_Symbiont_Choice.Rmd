@@ -7,14 +7,15 @@ editor_options:
   chunk_output_type: console
 ---
 
-Data analysis of the Symbiont Choice experiment conducted at AIMS in 2018. 
+Temperature mediated acquisition of rare heterologous symbionts promotes survival of coral larvae under ocean warming
 
 Authors: Matsuda, SB, Chakravarti, LC, Cunning, JR, Huffmyer, AS, Nelson, CE, Gates, RD, van Oppen, MJH
-Symbiont choice experiment tests the uptake of cultured Symbiodiniaceae alone and as a mixture in A. tenuis larvae at ambient (27C) and two elevated (30C and 31C) temperatures over the course of 2 weeks. Sampling was on days 3, 7 and 14. Digital droplet PCR was used to analyze data. 
 
-Single-choice infection: Individual infection of single species: C1, D1, F1, and G3
+Symbiont choice experiment: uptake of cultured Symbiodiniaceae in no-choice and in a 4-way choice experiments in A. tenuis larvae at ambient (27C) and two elevated (30C and 31C) temperatures over the course of 2 weeks. Sampling was on days 3, 7 and 14.
+
+No-choice infections (single-choice): Individual infection of single species: C1, D1, F1, and G3
 4-way choice: Mix of all four species (coded as poly/polyculture)
-Pot: the containers larvae were kept in (3 reps/clade/temp)
+Pot: the containers larvae were kept in (3 reps/symbiont/temp)
 
 ```{r setup chunk, setup, warning=FALSE, message=FALSE, fig.align='center'}
 require("knitr")
@@ -57,6 +58,9 @@ library(moments)
 library(ggpubr)
 library(vegan)
 library(blmeco)
+library(ggplot2)
+library(vegan)
+library(grid)
 
 
 #load in df
@@ -66,10 +70,10 @@ load("Symbiont_choice_df.RData")
 ```
 
 # Regression - Fig S2, Tab S1 
-Scope/hemo Calc means for clade/temp/time/pot VS ddPCR
+Scope/hemo means for symb/temp/time/pot VS ddPCR
 
 Model2 regression: Do ddPCR counts differe significantly from hemocytometer + scope counts?
-For individual infections, we additionally counted symbionts by eye (flurescent scope) on Day 3, and by hemoctyometer (Days 7 and 14) per instrument capacity. Running a model2 analysis, we show that the slope of ddPCR x scope/hemo counts is not different than 1.  
+For infection treatments, we additionally counted symbionts by eye (flurescent scope) on Day 3, and by hemoctyometer (Days 7 and 14) per instrument capacity. Running a model2 analysis, we show that the slope of ddPCR x scope/hemo counts is not different than 1.  
 ```{r}  
 #Model_II_linear_regression   
 
@@ -96,8 +100,8 @@ anova(CountsMOD4)
 
 ```
 
-Plot: logged10 SI Fig 1   
-```{r}   
+Plot:SI Fig 1   
+```{r}    
 # plotting the model2
 #map 50% conf interval
 ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
@@ -108,7 +112,7 @@ ggplot(data=scopehemo_ddPCRCompare,aes(x=Countmean_log, y=ddPCRmean_log)) +
         geom_abline(intercept = 0, slope = 1.04) 
 ```
 
-Monocultures and the polyculture 
+No-choice and 4-way choice 
 Apply hemo.scope conversion and remake df with raw counts
 ```{r}   
 #Convert Scope/hemo data, remake df with ddPCR data. Make new col with "raw" counts post conversion of logs
@@ -118,7 +122,7 @@ C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
 #C1Fullscopehemo$cells.larvae_log_Pre<-C1Fullscopehemo$cells.larvae_log #save old to check then comment out
 C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*0.96) #convert and check
 C1Full<-rbind(C1FullddPCR,C1Fullscopehemo) #rebind with ddPCR
-C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted all log back to Raw counts to check
+#C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted back to confirm
 #C1Full$cells.larvae_counts_round<-round(C1Full$cells.larvae_counts)
 
  
@@ -154,7 +158,7 @@ G3Full$cells.larvae_counts_unlog<-(10^G3Full$cells.larvae_log)-1  #converted all
 #plot(G3Full$cells.larvae, G3Full$cells.larvae_counts_round) #check
 
 
-#Poly
+#Poly (4-way choice)
 PolyFullddPCR<-subset(PolyFull, count.type=="ddPCR")
 PolyFullscopehemo<-subset(PolyFull, count.type=="hemo"|count.type=="scope")
 #PolyFullscopehemo$cells.larvae_log_Pre<-PolyFullscopehemo$cells.larvae_log #save old to check then comment out
@@ -165,14 +169,14 @@ PolyFull$cells.larvae_counts_unlog<-(10^PolyFull$cells.larvae_log)-1  #converted
  
 #plot(PolyFull$cells.larvae, PolyFull$cells.larvae_counts_round) #check
  
-Monoculture<-rbind(C1Full,D1Full, F1Full, G3Full)
-MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull)
+Monoculture<-rbind(C1Full,D1Full, F1Full, G3Full) #no-choice
+MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull) #4-way
 
 ```
 
 
 # Larval Survivorship: Table S12, S13, Figure 6 
-```{r}              
+```{r}               
 # No-choice and 4-way choice (remove control)
 # binomial mixed effects model
 Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
@@ -369,11 +373,11 @@ grid.arrange(FigSurv_D.Summary_27, FigSurv_D.Summary_30,FigSurv_D.Summary_31, nr
 
 # Binomial: Did a larvae infect (Y/N) modeles and plots - Fig 2A, Tab S4
 dfs: C1Full, D1Full, F1Full, G3Full, Poly
+
  
- 
-Make binomial dfs
+Making binomial dfs
 Organize df for 4-way: ddPCR and hemo/scope 
-```{r}           
+```{r}            
 #ALLcast_9000_cast2a for 4-way choice
 #4-way df: create binary df, if at least one genus had >=1 cell, designate "1"
 #organize the ddPCR data  
@@ -403,11 +407,10 @@ RelA_binaryb<-RelA_binaryb[!(RelA_binaryb$ALL.number=="231"),]
 RelA_binaryb$Infect[RelA_binaryb$numclade>0]<-1  
 RelA_binaryb$Infect[RelA_binaryb$numclade==0]<-0
 RelA_binaryb$Infect<-as.factor(RelA_binaryb$Infect) #make factor
-
 RelA_CladeComp<-RelA_binaryb #make a copy for the nextsection
 
 # Combine ddPCR data with ALL scope/hemo converted counts for the BINOMIAL only df
-  RelAvars<-c("Temp","Day","Pot","Infect") 
+RelAvars<-c("Temp","Day","Pot","Infect") 
 RelA_binaryb_2<-RelA_binaryb[RelAvars]
 RelA_binaryb_2$count.type<-"ddPCR"
 
@@ -417,32 +420,30 @@ PolyFullscopehemo2$Infect[PolyFullscopehemo2$cells.larvae>0]<-1
 PolyFullscopehemo2$Infect[PolyFullscopehemo2$cells.larvae==0]<-0
 PolyFullscopehemo3<-subset(PolyFullscopehemo2, select = -c(cells.larvae))# drop cells.larvae col
  
-Poly_binomial<-rbind(PolyFullscopehemo3,RelA_binaryb_2) #combine for the Poly BINOMIAL ONLY DF
+Poly_binomial<-rbind(PolyFullscopehemo3,RelA_binaryb_2) #combine for the 4-way BINOMIAL ONLY df
 Poly_binomial$Symbiont<-"Poly" #create symbiont col
-
 Poly_binomial$Infect<-as.factor(Poly_binomial$Infect)
-  Poly_binomial$count.type<-as.factor(Poly_binomial$count.type)
+Poly_binomial$count.type<-as.factor(Poly_binomial$count.type)
   
-#make DF for Poly cell densities for COUNTS (not binomial) (ALL =Poly) for below
+#make DF for 4-way cell densities for COUNTS (not binomial) (ALL=Poly/4-way) for below
 #ALLcast_9000_cast2b  ALL df only larva with 4 genera, add this to the scopecounts stuff: ALLFullscopehemo2
-  ALLcast_9000_cast2c<-ALLcast_9000_cast2b
-  ALLcast_9000_cast2c<- ALLcast_9000_cast2c %>% mutate(sumrow= C1 + D1 + F1 + G3) #create sum for larva
+ALLcast_9000_cast2c<-ALLcast_9000_cast2b
+ALLcast_9000_cast2c<- ALLcast_9000_cast2c %>% mutate(sumrow= C1 + D1 + F1 + G3) #create sum for larva
 names(ALLcast_9000_cast2c)[names(ALLcast_9000_cast2c)=="sumrow"] <- "cells.larvae" #rename col
 ALLcast_9000_cast2c$count.type<-"ddPCR"
 ALLcast_9000_cast2cAvars<-c("Temp","Day","cells.larvae","Pot","count.type") #select cols to keep
 ALLcast_9000_cast3<-ALLcast_9000_cast2c[ALLcast_9000_cast2cAvars] # new df
   
-  PolyFullscopehemo4<-subset(PolyFullscopehemo2, select = -c(Infect)) #prep scope hemo df (with cells.lar still there)
-  
-Poly_forCounts<-rbind(PolyFullscopehemo4,ALLcast_9000_cast3) # combine scope/hemo with ddPCR for Poly
+PolyFullscopehemo4<-subset(PolyFullscopehemo2, select = -c(Infect)) #prep scope hemo df
+Poly_forCounts<-rbind(PolyFullscopehemo4,ALLcast_9000_cast3) # combine scope/hemo with ddPCR for 4-way
 Poly_forCounts<-na.omit(Poly_forCounts) 
 ```
  
-Create binomial for monocultures
-```{r}                
+Create binomial for no-choices
+```{r}                 
 BinaryInfect<-Monoculture  # make new df for binary infection
-  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
-  BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
+BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog>0]<-1  #make new col for infect or not 1 for infect, 0 not.
+BinaryInfect$Infect[BinaryInfect$cells.larvae_counts_unlog==0]<-0
  BinaryInfect$Infect<-as.character(BinaryInfect$Infect)
   BinaryInfect$Infect<-as.numeric(BinaryInfect$Infect)
 
@@ -457,12 +458,11 @@ BinaryInfect<-rbind(BinaryInfect, Poly_binomial) #add the Polys for JUST this as
  BinaryInfect$PotCode<-as.factor(BinaryInfect$PotCode) #make factor
 ```
 Binomial Models
-```{r}   
-#Full model including all clades/temp/time: 
-BinaryInfect<-na.omit(BinaryInfect) #remove nas
+```{r}    
+#Full model including all symbiont treatments/temp/time: 
+BinaryInfect<-na.omit(BinaryInfect) #remove NAs
 BinaryInfect$Infect<-as.factor(BinaryInfect$Infect)
-
-BinaryInfect14<-BinaryInfect #to include day 14
+  BinaryInfect14<-BinaryInfect #to include day 14
 
 #Full model remove day 14 at 31 due to low n  
 BinaryInfect$daytemp<-paste0(BinaryInfect$Day, BinaryInfect$Temp )  #create tag
@@ -471,14 +471,12 @@ BinaryInfect<-subset(BinaryInfect, daytemp !=1431)       #remove 1431
  Binary_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect)
   Anova(Binary_mod)
   summary(Binary_mod)
-  
   emm<-emmeans(Binary_mod,  ~ Symbiont|Temp*Day)
     pairs(emm)
     cld(emm) 
   emm<-emmeans(Binary_mod,  ~ Symbiont)
       cld(emm)
   
-
 #subset 27 and 30 ONLY
 BinaryInfect_27and30<-subset(BinaryInfect, Temp=="27"|Temp=="30")
 BinaryInfect_27and30_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect_27and30) #
@@ -490,10 +488,9 @@ BinaryInfect_D3andD7<-subset(BinaryInfect, Day=="3"|Day=="7")
 BinaryInfect_D3andD7_mod<-glmer(Infect~Symbiont*Temp*Day+(1|PotCode), family="binomial", BinaryInfect_D3andD7) #
   Anova(BinaryInfect_D3andD7_mod)
 #dispersion_glmer(BinaryInfect_D3andD7_mod) # no overdispersion  1.01
-
 ```
 
-Subset by temp for plots
+Subset by temp (for plots)
 ```{r}       
   Binary_27<-subset(BinaryInfect, Temp=="27")
   Binary_27$Infect<-as.numeric(as.character(Binary_27$Infect)) #change back to numeric for plots
@@ -514,7 +511,7 @@ Plots:
 27C
 ```{r}           
 Binary_27_mean <- ddply(Binary_27, c("Symbiont","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -526,6 +523,7 @@ Binary_27_mean$Day.num<-as.numeric(Binary_27_mean$Day)
 Binary_27_mean$Day.num[Binary_27_mean$Day.num == 2] =7
 Binary_27_mean$Day.num[Binary_27_mean$Day.num == 3] =14
 Binary_27_mean$Day.num[Binary_27_mean$Day.num == 1] =3
+
 #plot
 Binary_27_mean_plot<-ggplot(data=Binary_27_mean, aes(x=Day.num, y=mean, group = Symbiont, color=Symbiont)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), 
@@ -537,7 +535,6 @@ Binary_27_mean_plot<-ggplot(data=Binary_27_mean, aes(x=Day.num, y=mean, group = 
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-   #scale_y_log10()+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -554,7 +551,7 @@ Binary_27_mean_plot<-ggplot(data=Binary_27_mean, aes(x=Day.num, y=mean, group = 
 30C
 ```{r}        
 Binary_30_mean <- ddply(Binary_30, c("Symbiont","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -577,7 +574,6 @@ Binary_30_mean_plot<-ggplot(data=Binary_30_mean, aes(x=Day.num, y=mean, group = 
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-   #scale_y_log10()+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -594,7 +590,7 @@ Binary_30_mean_plot<-ggplot(data=Binary_30_mean, aes(x=Day.num, y=mean, group = 
 31C
 ```{r}         
 Binary_31_mean <- ddply(Binary_31, c("Symbiont","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -622,7 +618,6 @@ Binary_31_mean_plot<-ggplot(data=Binary_31_mean, aes(x=Day.num, y=mean, group = 
   xlab("") + #Label the X Axis
   ylim(0,1) + #set Y limits 
        scale_x_continuous(breaks=seq(0, 14, 2), limits =c(0,14))+
-   #scale_y_log10()+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -637,9 +632,9 @@ Binary_31_mean_plot<-ggplot(data=Binary_31_mean, aes(x=Day.num, y=mean, group = 
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Binary_31_mean_plot
 
 
-##### do 31c with all that ampted. Binary_31_31CD13
+##### including 31C day 14, all that ampted. Binary_31_31CD13 #####
 Binary_31_31CD13_mean <- ddply(Binary_31_31CD13, c("Symbiont","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -647,11 +642,7 @@ Binary_31_31CD13_mean <- ddply(Binary_31_31CD13, c("Symbiont","Day"), summarise,
  
 Binary_31_31CD13_mean #display table
 
-#remove F1 day 14, n=3, do you want to make 3 the cut off
-#Binary_31_31CD13_mean<-Binary_31_31CD13_mean[!(Binary_31_31CD13_mean$N=="3"),]
-
-
- #change Day back to Numeric from Factor, reapply the actual numeric dates
+#change Day back to Numeric from Factor, reapply the actual numeric dates
 Binary_31_31CD13_mean$Day.num<-as.numeric(Binary_31_31CD13_mean$Day)
 Binary_31_31CD13_mean$Day.num[Binary_31_31CD13_mean$Day.num == 2] =7
 Binary_31_31CD13_mean$Day.num[Binary_31_31CD13_mean$Day.num == 3] =14
@@ -694,43 +685,43 @@ grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_31CD13_mean_plo
 
 # Binomial: No-choice vs 4-way choice by genus: Binomial (pink and blue plots) - Fig S3, Tab S5  
 all amplifications= ALLcast_9000_cast2a 
-Plots and comparison models singe v multi 
+Plots and comparison models no-choice v 4-way 
 Did larvae with single clades infect more or less than larvae offered multiple clades:
-```{r}      
+```{r}       
 #stats    
 #df for poly:RelA_binaryb, df for mono: BinaryInfect
 RelA_binaryb$PotCode<-paste0(RelA_binaryb$Temp, RelA_binaryb$Pot) #add PotCode
 
 # Set up to run models by GENUS ddPCR
-# C1 in polyculture
+# C1 in no-choice
 RelA_binarybb_C1<-RelA_binaryb[,c("Temp","Day","PotCode","C1")] #keep only cols you need
 RelA_binarybb_C1$infectType<-"Multi"
 names(RelA_binarybb_C1)[names(RelA_binarybb_C1) == "C1"] <- "Infect"   #change C1 col name to "infect"
 RelA_binarybb_C1<-na.omit(RelA_binarybb_C1) #remove NAS
 RelA_binarybb_C1$Symbiont<-"C1"
 
-# D1 in polyculture
+# D1 in no-choice
 RelA_binarybb_D1<-RelA_binaryb[,c("Temp","Day","PotCode","D1")] #keep only cols you need
 RelA_binarybb_D1$infectType<-"Multi"
 names(RelA_binarybb_D1)[names(RelA_binarybb_D1) == "D1"] <- "Infect"   #change C1 col name to "infect"
 RelA_binarybb_D1<-na.omit(RelA_binarybb_D1) #remove NAS
 RelA_binarybb_D1$Symbiont<-"D1"
 
-# F1 in polyculture
+# F1 in no-choice
 RelA_binarybb_F1<-RelA_binaryb[,c("Temp","Day","PotCode","F1")] #keep only cols you need
 RelA_binarybb_F1$infectType<-"Multi"
 names(RelA_binarybb_F1)[names(RelA_binarybb_F1) == "F1"] <- "Infect"   #change C1 col name to "infect"
 RelA_binarybb_F1<-na.omit(RelA_binarybb_F1) #remove NAS
 RelA_binarybb_F1$Symbiont<-"F1"
 
-# G3 in polyculture
+# G3 in no-choice
 RelA_binarybb_G3<-RelA_binaryb[,c("Temp","Day","PotCode","G3")] #keep only cols you need
 RelA_binarybb_G3$infectType<-"Multi"
 names(RelA_binarybb_G3)[names(RelA_binarybb_G3) == "G3"] <- "Infect"   #change C1 col name to "infect"
 RelA_binarybb_G3<-na.omit(RelA_binarybb_G3) #remove NAS
 RelA_binarybb_G3$Symbiont<-"G3"
 
-#Monoculture by clade (monoculture df binary already, new col for infect type)
+#No-choice by species (no-choice df binary already, new col for infect type)
 BinaryInfect_C1<-subset(BinaryInfect, Symbiont=="C1")
 BinaryInfect_D1<-subset(BinaryInfect, Symbiont=="D1")
 BinaryInfect_F1<-subset(BinaryInfect, Symbiont=="F1")
@@ -745,7 +736,7 @@ binaryb_F1_binaryb$infectType<-"Single"
 binaryb_G3_binaryb<-BinaryInfect_G3[,c("Temp","Day","PotCode","Symbiont","Infect")]
 binaryb_G3_binaryb$infectType<-"Single"
 
-#Individual Infections of Polyculture larvae: only use this data to compare to SINGLE infections. PotCode is coded to keep separate single and multi pots
+#Individual Infections of 4-way larvae: only use this data to compare to SINGLE infections. PotCode is coded to keep separate single and multi pots
 #Set up dfs for plots  
    
 C1_binaryb_SinMul<-rbind(RelA_binarybb_C1, binaryb_C1_binaryb)
@@ -774,7 +765,7 @@ G3_binaryb_SinMul$PotCode<-as.factor(G3_binaryb_SinMul$PotCode)
 
 ```
 C1 no-choice vs 4-way
-```{r}      
+```{r}       
 #model SINGLE vs MULTI 
 C1_binaryb_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", C1_binaryb_SinMul) 
 Anova(C1_binaryb_SinMul_mod)   #variance-covariance issues
@@ -787,7 +778,7 @@ C1_binaryb_SinMul$Infect<-as.character(C1_binaryb_SinMul$Infect) #change infect 
 C1_binaryb_SinMul$Infect<-as.numeric(C1_binaryb_SinMul$Infect)
 
 C1_binaryb_SinMul_mean <- ddply(C1_binaryb_SinMul, c("Temp", "infectType","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -810,7 +801,6 @@ C1_binaryb_SinMul_mean_31<-subset(C1_binaryb_SinMul_mean, Temp=="31")
 
 #plots
 #27
-
 C1_binaryb_SinMul_plot_27<-ggplot(data=C1_binaryb_SinMul_mean_27, aes(x=Day, y=mean, group=infectType, color=infectType)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.4, show.legend = T)+
@@ -836,7 +826,6 @@ C1_binaryb_SinMul_plot_27<-ggplot(data=C1_binaryb_SinMul_mean_27, aes(x=Day, y=m
   theme(plot.title = element_text(size=20, face = "italic"));C1_binaryb_SinMul_plot_27
 
 #30
-
 C1_binaryb_SinMul_plot_30<-ggplot(data=C1_binaryb_SinMul_mean_30, aes(x=Day, y=mean, group=infectType, color=infectType)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.4, show.legend = T)+
@@ -862,7 +851,6 @@ C1_binaryb_SinMul_plot_30<-ggplot(data=C1_binaryb_SinMul_mean_30, aes(x=Day, y=m
   theme(plot.title = element_text(size=20, face = "italic"));C1_binaryb_SinMul_plot_30
 
 #31
-
 C1_binaryb_SinMul_plot_31<-ggplot(data=C1_binaryb_SinMul_mean_31, aes(x=Day, y=mean, group=infectType, color=infectType)) +
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.4, show.legend = T)+
@@ -897,7 +885,6 @@ grid.arrange(C1_binaryb_SinMul_plot_27, C1_binaryb_SinMul_plot_30, C1_binaryb_Si
 ```
 D1 no-choice vs 4-way
 ```{r}  
- 
 #model 
 D1_binaryb_SinMul_no14<-subset(D1_binaryb_SinMul, Day=="3"|Day=="7")
 D1_binaryb_SinMul_mod<-glmer(Infect~Temp*infectType*Day+(1|PotCode), family="binomial", D1_binaryb_SinMul_no14) 
@@ -911,7 +898,7 @@ D1_binaryb_SinMul$Infect<-as.character(D1_binaryb_SinMul$Infect) #change infect 
 D1_binaryb_SinMul$Infect<-as.numeric(D1_binaryb_SinMul$Infect)
 
 D1_binaryb_SinMul_mean <- ddply(D1_binaryb_SinMul, c("Temp", "infectType","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -931,8 +918,6 @@ D1_binaryb_SinMul_mean_27<-subset(D1_binaryb_SinMul_mean, Temp=="27")
 D1_binaryb_SinMul_mean_30<-subset(D1_binaryb_SinMul_mean, Temp=="30")
 D1_binaryb_SinMul_mean_31<-subset(D1_binaryb_SinMul_mean, Temp=="31")
 D1_binaryb_SinMul_mean_31<-na.omit(D1_binaryb_SinMul_mean_31)
-
-
 
 #plot
 #27
@@ -1032,7 +1017,7 @@ F1_binaryb_SinMul$Infect<-as.character(F1_binaryb_SinMul$Infect) #change infect 
 F1_binaryb_SinMul$Infect<-as.numeric(F1_binaryb_SinMul$Infect)
 
 F1_binaryb_SinMul_mean <- ddply(F1_binaryb_SinMul, c("Temp", "infectType","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1149,7 +1134,7 @@ G3_binaryb_SinMul$Infect<-as.character(G3_binaryb_SinMul$Infect) #change infect 
 G3_binaryb_SinMul$Infect<-as.numeric(G3_binaryb_SinMul$Infect)
 
 G3_binaryb_SinMul_mean <- ddply(G3_binaryb_SinMul, c("Temp", "infectType","Day"), summarise, #summarize cell counts
-                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                 N    = length(Infect[!is.na(Infect)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(Infect, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(Infect, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1262,10 +1247,10 @@ grid.arrange(C1_binaryb_SinMul_plot_27, C1_binaryb_SinMul_plot_30, C1_binaryb_Si
 # No-choice and 4-way choice infection: Cell Counts Models and Plots, Table 2, Tab S6
 Model: `lmer(Infect~Symbiont*Temp*Day+(1|PotCode))` 
 No-choice infections (histograms and full model) 
-```{r}     
+```{r}      
 # poly=4-way choice
 #set up the 4-way df for this specific model.
-Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log Polys
+Poly_forCounts$cells.larvae_log<-log10(Poly_forCounts$cells.larvae+1) #log transform
 Poly_forCounts$Symbiont<-"Poly" #add symbiont col
 
 #remove 0s
@@ -1335,11 +1320,11 @@ CellCounts_no0_mean #display
 ```
 Plots By temp
 27C
-```{r}       
+```{r}        
 Poly_no0_27<-subset(CellCounts_no0_NOD1431C, Temp=="27")
 
 Poly_no0_27_mean <- ddply(Poly_no0_27, c("Day", "Symbiont"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1383,7 +1368,7 @@ Poly_no0_27_mean_plot<-ggplot(data=Poly_no0_27_mean, aes(x=Day.num, y=mean, grou
 Poly_no0_30<-subset(CellCounts_no0_NOD1431C, Temp=="30")
 
 Poly_no0_30_mean <- ddply(Poly_no0_30, c("Day", "Symbiont"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1427,7 +1412,7 @@ Poly_no0_30_mean_plot<-ggplot(data=Poly_no0_30_mean, aes(x=Day.num, y=mean, grou
 Poly_no0_31<-subset(CellCounts_no0_NOD1431C, Temp=="31")
 
 Poly_no0_31_mean <- ddply(Poly_no0_31, c("Day", "Symbiont"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1519,7 +1504,7 @@ CellCounts_no0_mean_31_mean_plot<-ggplot(data=CellCounts_no0_mean_31_mean, aes(x
 
 ``` 
 # Plot of Symbiont Aquisition and Densities for all four no-choice and 4-way choice - Figure 2
-```{r}  
+```{r}   
 #log scale axis only   
 Poly_no0_27_mean_plot<-Poly_no0_27_mean_plot+ theme(legend.position = "none") #remove legend
 Poly_no0_30_mean_plot<-Poly_no0_30_mean_plot+ theme(legend.position = "none") #remove legend
@@ -1534,11 +1519,11 @@ grid.arrange(Binary_27_mean_plot, Binary_30_mean_plot, Binary_31_31CD13_mean_plo
 ```
 # Symbiont density plots by temp by genus - Fig S4 
 C1
-```{r}     
+```{r}      
 Singles_no0_C1<-subset(CellCounts_no0_NOD1431C, Symbiont=="C1")
 
 Singles_no0_C1_mean <- ddply(Singles_no0_C1, c("Day", "Temp"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1583,11 +1568,11 @@ Singles_no0_C1_mean_plot<-ggplot(data=Singles_no0_C1_mean_remove31D14, aes(x=Day
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_C1_mean_plot
 ``` 
 D1
-```{r}     
+```{r}      
 Singles_no0_D1<-subset(CellCounts_no0_NOD1431C, Symbiont=="D1")
 
 Singles_no0_D1_mean <- ddply(Singles_no0_D1, c("Day", "Temp"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1631,7 +1616,7 @@ F1
 Singles_no0_F1<-subset(CellCounts_no0_NOD1431C, Symbiont=="F1")
 
 Singles_no0_F1_mean <- ddply(Singles_no0_F1, c("Day", "Temp"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1675,7 +1660,7 @@ G3
 Singles_no0_G3<-subset(CellCounts_no0_NOD1431C, Symbiont=="G3")
 
 Singles_no0_G3_mean <- ddply(Singles_no0_G3, c("Day", "Temp"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1714,12 +1699,12 @@ Singles_no0_G3_mean_plot<-ggplot(data=Singles_no0_G3_mean, aes(x=Day.num, y=mean
   ggtitle("G3C Cell Counts")+
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_G3_mean_plot
 ```
-ALL
-```{r}     
+4-way
+```{r}      
 Singles_no0_ALL<-subset(CellCounts_no0_NOD1431C, Symbiont=="Poly")
 
 Singles_no0_ALL_mean <- ddply(Singles_no0_ALL, c("Day", "Temp"), summarise, #summarize cell counts
-                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s *this part is important*
+                  N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame,  excluding NA’s 
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation 
                  se   = sd / sqrt(N), #calculate standard error
@@ -1759,7 +1744,7 @@ Singles_no0_ALL_mean_plot<-ggplot(data=Singles_no0_ALL_mean, aes(x=Day.num, y=me
   theme(plot.title = element_text(size=20, face = "italic", hjust=0.5));Singles_no0_ALL_mean_plot
 ```
 Plot all together
-```{r}  
+```{r}   
 #log scale axis only   
 Singles_no0_C1_mean_plot<-Singles_no0_C1_mean_plot+ theme(legend.position = "none") #remove legend
 Singles_no0_D1_mean_plot<-Singles_no0_D1_mean_plot+ theme(legend.position = "none") #remove legend
@@ -1779,7 +1764,7 @@ grid.arrange(Singles_no0_C1_mean_plot, Singles_no0_D1_mean_plot, Singles_no0_F1_
 C1            
 C1Full2 = Single cells.larvae raw
 ALLcast_9000_cast2a = 4-way that infected  
-```{r}        
+```{r}         
 MultiCounts<-ALLcast_9000_cast2a
 MultiCounts2<-MultiCounts[-c(5:8)] #remove metadata
 MultiCounts2$single.multi<-"multi"
@@ -1796,7 +1781,6 @@ names(MultiCounts2)[names(MultiCounts2) == "G3_round"] <- "G3"
 MultiCounts2<-melt(MultiCounts2, id=c("Temp","Day","single.multi","Pot"))
 colnames(MultiCounts2)[colnames(MultiCounts2)=="value"]<-"cells.larvae_round" #rename value col
 colnames(MultiCounts2)[colnames(MultiCounts2)=="variable"]<-"Symbiont" #rename value col
-
 
 SingleCounts<-rbind(C1Full_no0,D1Full_no0,F1Full_no0,G3Full_no0)
 SingleCounts<-SingleCounts[-c(5:7)] #remove metadata
@@ -2434,7 +2418,7 @@ NumCladesB$Pot<-as.factor(as.character((NumCladesB$Pot)))
 
 #MEANs
 NumCladesB_mean <- ddply(NumCladesB, c("Temp","Day","Number"), summarise, #summarize cell count
-                 N    = length(NumGenera[!is.na(NumGenera)]), #calculate the length of the data frame, excluding NA’s *this part is important* 
+                 N    = length(NumGenera[!is.na(NumGenera)]), #calculate the length of the data frame, excluding NA’s  
                  mean = mean(NumGenera, na.rm=TRUE), #calculate mean of response variable, removing NA's
                   sd   = sd(NumGenera, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
@@ -2519,7 +2503,6 @@ NumCladesB_mean_31<-subset(NumCladesB_mean, Temp==31)
 Infect27_plot<-ggplot(NumCladesB_mean_27, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
-            #scale_fill_locuszoom()+
    xlab("Day")+
  theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -2534,8 +2517,6 @@ Infect27_plot<-ggplot(NumCladesB_mean_27, aes(y=mean, x=Day, fill=Number)) +
   ggtitle("27C");Infect27_plot   
 
 #30C
-
-#plot
 Infect30_plot<-ggplot(NumCladesB_mean_30, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
@@ -2553,8 +2534,6 @@ Infect30_plot<-ggplot(NumCladesB_mean_30, aes(y=mean, x=Day, fill=Number)) +
   ggtitle("30C");Infect30_plot  
 
 #31C
-
-#plot
 Infect31_plot<-ggplot(NumCladesB_mean_31, aes(y=mean, x=Day, fill=Number)) + 
            geom_bar(stat="identity")+
   scale_fill_manual(values=c("#F7F7F7","#CCCCCC", "#969696" ,"#636363" ,"#252525"))+
@@ -2580,7 +2559,7 @@ grid.arrange(Infect27_plot, Infect30_plot,Infect31_plot, nrow = 1)
  
 ```
 
-# Fig Competative-infection: Polycluture only, relative abundance of each clade - Figure 3B, Table 4, Tab S11  
+# Fig Competative-infection: 4-way only, relative abundance of each species - Figure 3B, Table 4, Tab S11  
 What is the rel abund of each clade infected in each larvae, over time and at ambient and high temp. 
 setup df     
 ```{r}              
@@ -2596,7 +2575,6 @@ ALL_RelAb_b<-melt(ALL_RelAb_a, id=c("Day", "Temp", "ALL.number","Pot"), measure.
 colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="value"]<-"cells.larvae" #rename value col
 colnames(ALL_RelAb_b)[colnames(ALL_RelAb_b)=="variable"]<-"Symbiont" #rename value col
 ALL_RelAb_b<-na.omit(ALL_RelAb_b) #remove larvae with 0 infection in all larvae (due to possible extraction issue)
-#write.csv(ALL_RelAb,"ALL_RelAb2021.csv")
 ``` 
   
 Stats: Relative abundance, df = ALL_RelAb_b 
@@ -2676,7 +2654,7 @@ ALL_RelAb_mean #display table
  
 #27 
 ALL_RelAb_27_mean <- ddply(relabund_27, c("Day2","Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
@@ -2690,7 +2668,7 @@ ALL_RelAb_27_mean$mean100r<-round(ALL_RelAb_27_mean$mean100, digits = 0)
  
  #30C means  
 ALL_RelAb_30_mean <- ddply(relabund_30, c("Day2", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s
                  mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
@@ -2705,7 +2683,7 @@ ALL_RelAb_30_mean$mean100r<-round(ALL_RelAb_30_mean$mean100, digits = 1)
 
 #31C
 ALL_RelAb_31_mean <- ddply(relabund_31, c("Day2", "Symbiont"), summarise, #summarize cell counts
-                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                 N    = length(cells.larvae[!is.na(cells.larvae)]), #calculate the length of the data frame, excluding NA’s 
                   mean = mean(cells.larvae, na.rm=TRUE), #calculate mean of response variable, removing NA's
                  sd   = sd(cells.larvae, na.rm=TRUE), #calculate standard deviation
                  se   = sd / sqrt(N), #calculate standard error
@@ -2998,9 +2976,7 @@ aData<-na.omit(aData) #remove larvae with values not present for all 4 genera
 aData2<-aData[c("ALL.number","numclade")] #new row with the sum of num of genera infected 
 #combine this with the Rel Abund dataframe (ALL_RelA_b)
 
-
 #pasted from below (l 57XX) to make the next df ALL_RelAb
-
 
 ALL_RelAbvar<-c("Day", "Temp", "Pot","ALL.number","Cladocopium","Durusdinium","Fugacium" ,"Gerakladium")
 ALL_RelAb_a2<-ALL_RelAb_a[ALL_RelAbvar]
@@ -3226,10 +3202,6 @@ qqPlot(residuals(CellsByNum_model))   # good
 
 #NMDS - Figure 5
 ```{r}   
-library(ggplot2)
-library(vegan)
-library(grid)
-
 #df: ALL_RelAb_a this is relA
 ALL_RelAb_a_NMDS<-ALL_RelAb_a #make copy
 ALL_RelAb_a_NMDS<-na.omit(ALL_RelAb_a_NMDS) #remove NAs
@@ -3237,7 +3209,6 @@ ALL_RelAb_a_NMDS$Cladocopium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Cladocopium))
 ALL_RelAb_a_NMDS$Durusdinium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Durusdinium))
 ALL_RelAb_a_NMDS$Fugacium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Fugacium))
 ALL_RelAb_a_NMDS$Gerakladium_arc<-asin(sqrt(ALL_RelAb_a_NMDS$Gerakladium))
-
 
 ALL_RelAb_a_NMDS<-subset(ALL_RelAb_a_NMDS, select=-c(Cladocopium,Durusdinium,Fugacium,Gerakladium))
 
@@ -3259,8 +3230,6 @@ data.scores$Temp = ALL_RelAb_a_NMDS$Temp
 data.scores$Day = ALL_RelAb_a_NMDS$Day
  
 head(data.scores)
-#write.csv(data.scores, "data.scores.csv")
-#write.csv(ALL_RelAb_a_NMDS, "ALL_RelAb_a_NMDS.csv")
 
 #Plots
 #Make vectors
@@ -3349,8 +3318,6 @@ xday7 = ggplot(data.scores_d7, aes(x = NMDS1, y = NMDS2)) +
 
 xday7
 
-
-
 data.scores_d14<-subset(data.scores, Day==14)
 # day 14 only
 xday14 = ggplot(data.scores_d14, aes(x = NMDS1, y = NMDS2)) + 
@@ -3377,9 +3344,9 @@ grid.arrange(xday3, xday7, xday14, nrow = 2)
 
 ```
 #PERMANOVAs Table 3, Tab S10
-```{r} 
+```{r}  
 #my matrix is m_com
-#full 
+#full  
 m_com.dist<-vegdist(m_com, method='bray') #make dissimilarity matrix
 set.seed(36) #reproducible results
 polyculture.div<-adonis2(m_com.dist~Temp*Day, data=ALL_RelAb_a_NMDS, permutations = 999, method="bray")
