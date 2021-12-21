@@ -64,7 +64,7 @@ library(grid)
 
 
 #load in df
-load("Symbiont_choice_df.RData")
+load("Symbiont_choice_data.RData")
 
 
 ```
@@ -179,7 +179,7 @@ MonoPoly<-rbind(C1Full,D1Full, F1Full, G3Full,PolyFull) #4-way
 ```{r}               
 # No-choice and 4-way choice (remove control)
 # binomial mixed effects model
-Mort.df_NEW<-read.csv("SC_mortality_20200104.csv") #read mortality df
+Mort.df_NEW<-read.csv("Survivorship.csv") #read mortality df
 Mort.df_NEW$Temp<-as.factor(as.character(Mort.df_NEW$Temp))
 Mort.df_NEW$Pot<-as.factor(as.character(Mort.df_NEW$Pot))
 Mort.df_NEW$Day<-as.factor(as.character(Mort.df_NEW$Day))
@@ -2399,7 +2399,7 @@ pairs(emm)
 
 # 4-way infection, % larvae infected with 0,1, 2, 3, or 4 species - Figure 3A   
 ```{r}        
-NumClades<-read.csv("NumberofGeneraperLarva_20200824.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
+NumClades<-read.csv("NumberofGeneraperLarva.csv") #Spreadsheet of number of clades each larva infected with by treatments.day.temp
 
 NumClades$T0_relA<-NumClades$T0/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
 NumClades$T1_relA<-NumClades$T1/(NumClades$T0+NumClades$T1+NumClades$T2+NumClades$T3+NumClades$T4)
