@@ -122,7 +122,7 @@ C1Fullscopehemo<-subset(C1Full, count.type=="hemo"|count.type=="scope")
 #C1Fullscopehemo$cells.larvae_log_Pre<-C1Fullscopehemo$cells.larvae_log #save old to check then comment out
 C1Fullscopehemo$cells.larvae_log<-(C1Fullscopehemo$cells.larvae_log*0.96) #convert and check
 C1Full<-rbind(C1FullddPCR,C1Fullscopehemo) #rebind with ddPCR
-#C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted back to confirm
+C1Full$cells.larvae_counts_unlog<-(10^C1Full$cells.larvae_log)-1  #converted back to confirm
 #C1Full$cells.larvae_counts_round<-round(C1Full$cells.larvae_counts)
 
  
